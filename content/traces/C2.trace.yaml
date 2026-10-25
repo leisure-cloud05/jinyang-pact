@@ -1,0 +1,38 @@
+# Reference trace for C2. See the header of C1.trace.yaml for the conventions.
+case: C2
+description: >-
+  R1 the player delays dispatch two rounds (notBeforeRound 3); Shi approves v1 (no pause) -> R2 pressure 64; the
+  player advances the timing to now; Shi dispatches v1 (dispatch_request pause, endorsed) -> R3 Yelü confirms;
+  Li receives the G08 intelligence and commits 20,000 reserves to press the siege (+8 pressure) -> R4 PREPARE
+  delivers the acceptance => pact_concluded in round 4 (pressure 88; relief projected for day 25).
+max_rounds: 6
+rounds:
+  - round: 1
+    note: The delay is a player-initiated action (no pause). Shi is addressed (tier 2).
+    player:
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: delay, rounds: 2 } }
+      - action: { type: speak, args: { to: [shi_jingtang, liu_zhiyuan], text: 北路唐骑游弋，使者恐为所获。表可先用印，缓两轮再发，待道路稍靖。 } }
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: liu_speak, actor: liu_zhiyuan, action: { type: speak, args: { to: [shi_jingtang, player], text: 缓发亦可，然城不可久待。 } } }
+  - round: 2
+    note: Advancing the timing keeps the approval (timing is not a document version change).
+    player:
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: now, rounds: null } }
+      - action: { type: speak, args: { to: [shi_jingtang], text: 城外攻势日急，不可再待。请明公即遣使，早一日至契丹，则早一日得援。 } }
+    proposals:
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+    decisions:
+      - { ref: dispatch, category: dispatch_request, choose: endorse }
+  - round: 3
+    note: Yelü is a pending responder (tier 1); Li received the intel this round (tier 1b).
+    player:
+      - action: { type: speak, args: { to: [liu_zhiyuan], text: 使者既去，唐廷或已闻之，恐将增兵压城。请押牙严守四门。 } }
+    proposals:
+      - ref: confirm
+        actor: yelu_deguang
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } }
+      - ref: press
+        actor: li_congke
+        action: { type: allocate_resources, args: { faction: tang, resource: reserve_troops, amount: 20000, purpose: intensify_siege } }
+expected: { terminal: pact_concluded, round: 4 }

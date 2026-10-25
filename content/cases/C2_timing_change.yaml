@@ -1,0 +1,139 @@
+# C2 — change in request timing (PLAN §12.4). FROZEN before first live exposure.
+# Reference trace: content/traces/C2.trace.yaml
+#   R1 the player delays dispatch by two rounds; Shi approves (no pause) → R2 pressure rises, the player advances the
+#   dispatch to "now"; Shi dispatches (pause, endorse) → R3 Yelü confirms; Li gets the G08 intelligence and commits
+#   reserves to press the siege (+8 pressure) → R4 PREPARE delivers the acceptance ⇒ pact_concluded (pressure 88).
+#   Had the two-round delay stood, the pact would come at R5 with pressure 96; a three-round delay loses the city
+#   (pressure 100 at R5's ADVANCE) — the timing trade-off the case is about.
+id: C2
+title: { zh: 遣使时机之变, en: Changing the timing of the request }
+purpose:
+  zh: >-
+    检验遣使时机（推迟/提前）如何影响书信到达、唐廷得报与围城压力：推迟期间不得遣使（H11）；遣使后五日唐帝方知"有使北去"而不知条款（G08）；
+    契丹主只能在收表后作答；援军到达日按成约日推算（G09）。
+  en: >-
+    Tests how the timing of the request (delay, then advance) changes arrival, Tang intelligence and siege pressure:
+    no dispatch while the delay is active (H11); Li learns only that 'an envoy went north', five days after dispatch,
+    never the terms (G08); Yelü can answer only after delivery; the relief arrival day follows the confirmation day (G09).
+
+initial_overrides:
+  siege: { pressure: 56 }
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: false
+        cession: yanmen_north
+        annual_silk: 100000
+        immediate_silk: 100000
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 称臣，不行父礼，事捷之日割雁门关以北诸州，岁帛十万匹，即奉帛十万匹。 / Vassalage without filial rites; Yanmen north; silk.
+
+player_goal:
+  text:
+    zh: 不行父礼，割地至多雁门关以北诸州，总负担不过 75；遣使时机要拿捏好——道路不靖则暂缓，城危则即发。
+    en: >-
+      No filial rites, cession at most the prefectures north of Yanmen, total burden at most 75. Time the envoy
+      well: hold back while the road is unsafe, send at once when the city is in danger.
+  limits:
+    filial: false
+    cession_max: yanmen_north
+    burden_max: 75
+
+script:
+  - round: 1
+    inputs:
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: delay, rounds: 2 } }
+      - dialogue:
+          to: [shi_jingtang, liu_zhiyuan]
+          text:
+            zh: 北路唐骑游弋，使者恐为所获。表可先用印，缓两轮再发，待道路稍靖。
+            en: Tang horsemen are patrolling the northern road and the envoy could be caught. Seal the memorial now, but hold it two rounds until the road is quieter.
+  - round: 2
+    inputs:
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: now, rounds: null } }
+      - dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 城外攻势日急，不可再待。请明公即遣使，早一日至契丹，则早一日得援。
+            en: The assault grows fiercer by the day; we cannot wait. Please send the envoy now, my lord — every day earlier to the Khitan is a day earlier for relief.
+  - round: 3
+    inputs:
+      - when: { doc_status: { docId: "doc:1", status: sent } }
+        dialogue:
+          to: [liu_zhiyuan]
+          text:
+            zh: 使者既去，唐廷或已闻之，恐将增兵压城。请押牙严守四门。
+            en: The envoy has gone; the Tang court may have heard of it and may bring up more troops. Commander, please guard the four gates closely.
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request, within_limits: false }
+    choose: withhold
+    advice: 表中所许超出所议，请先删改。 / The terms exceed our limits; revise first.
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: false }
+    choose: counter_draft
+    advice: 请仍以原表条件答之。 / Answer with the original terms.
+    counter_terms:
+      vassal: true
+      filial: false
+      cession: yanmen_north
+      annual_silk: 100000
+      immediate_silk: 100000
+      aid_cavalry: 30000
+      aid_arrival_days: 15
+      neutrality: false
+      marriage_alliance: false
+      secret_clauses: []
+  - match: { category: strategic_turn }
+    choose: withhold
+    advice: 城危在旦夕，援兵不可绝。 / The city is in peril; do not give up on relief.
+  - match: { category: negotiation_deadlock }
+    choose: urge_accept
+    advice: 时不我待，若契丹所索在可忍之内，请允之。 / Time is short; if their price is bearable, accept.
+  - match: { category: mutiny }
+    choose: urge_payment
+    advice: 请发库帛犒军。 / Pay the troops from the silk store.
+  - match: { category: risky_delay }
+    choose: withhold
+    advice: 压力已重，不可再缓。 / Pressure is already heavy; no further delay.
+  - match: { category: internal_disagreement, within_limits: true }
+    choose: endorse
+  - match: { category: internal_disagreement }
+    choose: withhold
+    advice: 众议未定，且缓。 / The council is divided; wait.
+  - match: { category: goal_conflict }
+    choose: withhold
+    advice: 此举超出所议。 / This goes beyond our limits.
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request, within_limits: false }
+    choose: withhold
+    advice: 不可。 / No.
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: dispatch_request, round: 2, object: "doc:1@v1", note: Dispatch after the player advanced the timing. }
+
+constraints:
+  - { id: c2-terminal, kind: terminal_in, terminals: [pact_concluded, talks_failed, jinyang_falls] }
+  - { id: c2-no-invalid, kind: no_invalid_commit }
+  - { id: c2-timing, kind: timing_respected, docId: "doc:1", description: No dispatch commits while a delay/hold is in force (H11). }
+  - { id: c2-dispatch-control, kind: user_control_before_commit, category: dispatch_request, description: "H10 user control (pause, authorization or player-initiated) before every dispatch; actual pauses reported separately." }
+  - { id: c2-intel, kind: intel_without_terms, description: "Li's G08 intelligence arrives dispatch day + 5 and carries no terms; Li never holds the offer's terms." }
+  - { id: c2-arrival, kind: arrival_day_recorded, description: "If a pact is concluded, khitanArrivalDay = confirmation day + aid_arrival_days (G09)." }
+
+valid_terminals: [pact_concluded, talks_failed, jinyang_falls]
+max_rounds: 6

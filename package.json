@@ -1,0 +1,48 @@
+{
+  "name": "jinyang-pact",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Jinyang Pact: a controllable multi-agent historical narrative system (DSA4213 group project)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p web/tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:agents": "vitest run tests/agents",
+    "test:engine": "vitest run tests/engine",
+    "test:eval": "vitest run tests/eval",
+    "test:server": "vitest run tests/server",
+    "build": "npm run play:web:build",
+    "play:server": "tsx src/server/index.ts",
+    "play:web": "tsx src/server/dev.ts",
+    "play:web:build": "vite build --config web/vite.config.ts",
+    "live:smoke": "tsx src/cli/smoke.ts",
+    "exp": "tsx src/cli/exp.ts",
+    "reconcile": "tsx src/cli/reconcile.ts",
+    "report": "tsx src/cli/report.ts",
+    "humaneval:packets": "tsx src/cli/humaneval.ts packets",
+    "humaneval:agreement": "tsx src/cli/humaneval.ts agreement",
+    "pack": "tsx src/cli/pack.ts"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.5",
+    "fastify": "^5.12.5",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

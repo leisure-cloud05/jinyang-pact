@@ -1,0 +1,47 @@
+# Reference trace for D3 (dev). See C1.trace.yaml for the conventions. Interrupts, duplicate requests and the
+# narration failure are engine-level (WP-D) and do not change this committed world path.
+case: D3
+description: >-
+  R1 Shi approves and dispatches v1 -> dispatch_request pause; the policy amends (regenerating decision: the player's
+  revision commits as v2, the batch is obsolete, the round regenerates) -> Shi approves and dispatches v2 -> pause,
+  endorsed -> R2 Yelü confirms -> R3 PREPARE delivers the acceptance => pact_concluded in round 3.
+max_rounds: 3
+rounds:
+  - round: 1
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 请明公用印遣使。 } }
+    proposals:
+      - { ref: approve_v1, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch_v1, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+    decisions:
+      - ref: dispatch_v1
+        category: dispatch_request
+        choose: amend
+        advice: 即付之帛减为五万匹再发。 / Cut the immediate silk to 50,000 bolts before sending.
+        amend:
+          docId: "doc:1"
+          baseDocVersion: "$current"
+          terms:
+            vassal: true
+            filial: true
+            cession: yanmen_north
+            annual_silk: 0
+            immediate_silk: 50000
+            aid_cavalry: 30000
+            aid_arrival_days: 15
+            neutrality: false
+            marriage_alliance: false
+            secret_clauses: []
+          note: 书记删改：即奉帛五万匹。 / The clerk's amendment — 50,000 bolts now.
+    regenerations:
+      - proposals:
+          - { ref: approve_v2, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 2 } } }
+          - { ref: dispatch_v2, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 2 } } }
+        decisions:
+          - { ref: dispatch_v2, category: dispatch_request, choose: endorse }
+  - round: 2
+    proposals:
+      - ref: confirm
+        actor: yelu_deguang
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } }
+expected: { terminal: pact_concluded, round: 3 }

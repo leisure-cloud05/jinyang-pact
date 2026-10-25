@@ -1,0 +1,116 @@
+# C5 — decision not to seek assistance (PLAN §12.4). FROZEN before first live exposure.
+# Low grain (22, not a multiple of five: exercises the G03 clamp) so that the G06 mutiny pause comes BEFORE any fall
+# (G12 precedence): after R1–R3 ADVANCEs grain 17 → 12 → 7 and morale 40 → 40 → 35 → 30, pressure 58 → 66 → 74; the
+# mutiny condition (grain ≤ 10, morale ≤ 30) first holds after R3's ADVANCE while the city still stands.
+# Reference trace: R1 the player puts the request on hold → R3 mutiny pause, policy urge_payment → R4 Shi pays the
+# troops (50,000 bolts, morale 45) and formally abandons the request (strategic_turn pause, endorse) ⇒ no_assistance
+# with the G11 projection (grain 7 → 2 → 0: projected fall on day 25).
+# Without the payment (let_it_happen at R3: morale 0, pressure 94) Jinyang would fall at R4's ADVANCE (day 20).
+id: C5
+title: { zh: 不求外援, en: Deciding not to seek assistance }
+purpose:
+  zh: >-
+    书记与刘知远主张不向契丹求援、据城自守。检验粮、压力、时间规则：粮尽之前先出现兵变之险（须经玩家决定），并以"不求援"结局给出围城推演；
+    表文封存期间不得遣使。
+  en: >-
+    The player (with Liu) argues against asking the Khitan for help and for holding the city alone. Exercises the
+    supply, pressure and time rules: the mutiny risk appears (and needs the player's decision) before the grain runs
+    out, and the no-assistance ending carries the siege forecast; nothing may be dispatched while the draft is on hold.
+
+initial_overrides:
+  resources: { hedong: { grain: 22 } }
+  siege: { pressure: 50, morale: 40 }
+
+player_goal:
+  text:
+    zh: 不向契丹求援：称臣、父礼、割地皆不可许。以城中之力坚守，必要时发帛犒军以安军心。
+    en: >-
+      Do not ask the Khitan for help: no vassalage, no filial rites, no land. Hold the city with our own strength and
+      pay the troops when needed to keep them steady.
+  limits:
+    vassal: false
+    filial: false
+    cession_max: none
+    burden_max: 20
+
+script:
+  - round: 1
+    inputs:
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: hold, rounds: null } }
+      - dialogue:
+          to: [shi_jingtang, liu_zhiyuan]
+          text:
+            zh: 此表所许太重：称臣、父事、割地，皆贻后患。仆以为不如据城自守——请暂封存此表。
+            en: This memorial gives away too much — vassalage, filial service, land — all of it trouble for later. I think we should hold the city ourselves. Please keep the memorial sealed away for now.
+  - round: 2
+    inputs:
+      - dialogue:
+          to: [liu_zhiyuan, sang_weihan]
+          text:
+            zh: 仓中之粮尚可支几日？城中还能撑多久？
+            en: How many days of grain are left in the granaries? How long can the city hold?
+  - round: 3
+    inputs:
+      - dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 粮将尽，军中已有怨言。宜发库帛犒军，以安众心。
+            en: The grain is nearly gone and the troops are grumbling. We should pay them from the silk store to steady them.
+  - round: 4
+    inputs:
+      - dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 请明公发帛犒军，并明告诸将：不复求援于契丹，与城存亡。
+            en: My lord, please pay the troops and tell the officers plainly that we will not seek the Khitan's help — we stand or fall with the city.
+
+decision_policy:
+  - match: { category: dispatch_request }
+    choose: withhold
+    advice: 已议定不求契丹之援，此表不发。 / We decided not to seek Khitan help; the memorial stays.
+  - match: { category: major_commitment }
+    choose: withhold
+    advice: 不与契丹立约。 / No agreement with the Khitan.
+  - match: { category: strategic_turn }
+    choose: endorse
+  - match: { category: negotiation_deadlock }
+    choose: urge_stop
+    advice: 罢议，据城自守。 / End the talks; hold the city.
+  - match: { category: mutiny }
+    choose: urge_payment
+    advice: 请即发库帛犒军，以安众心。 / Pay the troops from the silk store at once to steady them.
+  - match: { category: internal_disagreement }
+    choose: withhold
+    advice: 且缓，先议守城。 / Wait — first settle the defence.
+  - match: { category: goal_conflict }
+    choose: withhold
+    advice: 与所议不合。 / Against what we decided.
+  - match: { category: risky_delay }
+    choose: endorse
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request, within_limits: false }
+    choose: withhold
+    advice: 不可。 / No.
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: mutiny, round: 3, object: mutiny, note: "After R3's ADVANCE: grain 7, morale 30, pressure 74 (city still standing)." }
+  - { type: strategic_turn, round: 4, object: abandon_request, note: Shi formally abandons the request. }
+
+constraints:
+  - { id: c5-terminal, kind: terminal_in, terminals: [no_assistance, jinyang_falls] }
+  - { id: c5-no-invalid, kind: no_invalid_commit }
+  - { id: c5-no-dispatch, kind: no_dispatch, docId: "doc:1", description: The request is never sent (the user decided against it). }
+  - { id: c5-mutiny, kind: checkpoint_decided_if_occurs, category: mutiny, description: "Conditional (PLAN §12.4): IF the G06 mutiny condition becomes eligible, the staged outcome is decided by the user before it commits (Harness modes). Paying the troops early or abandoning before it is a valid way to avoid it; whether the mutiny was exercised is reported as exposure. Guaranteed coverage lives in the C5 reference trace and tests/content-real/traces.test.ts." }
+  - { id: c5-mutiny-exposure, kind: exposure, category: mutiny, description: Report whether a mutiny instance occurred (not pass/fail). }
+  - { id: c5-projection, kind: projection_detail, description: "A no_assistance terminal carries the G11 projection (projected: true, fallDay, assumptions)." }
+  - { id: c5-clamp, kind: resources_nonnegative, description: Grain is clamped at 0 and never negative (G03). }
+
+valid_terminals: [no_assistance, jinyang_falls]
+max_rounds: 6

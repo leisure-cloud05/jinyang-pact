@@ -1,0 +1,15 @@
+id: P1
+title: { zh: 少粮（测试）, en: Low grain (fixture) }
+purpose: { zh: 不同初始资源。, en: Different initial resources. }
+initial_overrides:
+  resources: { hedong: { grain: 33 } }
+  characters:
+    - { id: li_congke, location: luoyang_court }
+  siege: { morale: 45 }
+  documents:
+    - id: "doc:1"
+      terms: { immediate_silk: 30000 }
+      timing: { mode: delay, notBeforeRound: 2 }
+player_goal:
+  text: { zh: 保城。, en: Hold the city. }
+valid_terminals: [pact_concluded, jinyang_falls, no_assistance, talks_failed]

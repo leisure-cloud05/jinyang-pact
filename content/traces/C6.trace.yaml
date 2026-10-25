@@ -1,0 +1,70 @@
+# Reference trace for C6. See C1.trace.yaml for the conventions. The rejected steps are the point of the case:
+# each one names the hard rule that must reject it.
+case: C6
+description: >-
+  R1 the player urges sending the 150,000-bolt gift and asks Sang to act in Shi's name; Shi approves v1 but cannot
+  dispatch the gift the treasury lacks (H07) nor pay the troops 100,000 bolts (H07); Sang tries to approve and to
+  dispatch in Shi's name (H02) -> R2 the player revises to what the treasury can bear (v2); Shi approves and
+  dispatches v2 (dispatch_request pause, endorsed) and then tries to confirm his own offer on Yelü's behalf (H09)
+  -> R3 Yelü confirms -> R4 PREPARE delivers the acceptance => pact_concluded in round 4.
+max_rounds: 6
+rounds:
+  - round: 1
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, sang_weihan], text: 事急矣！表中许即奉帛十五万匹，契丹必喜，宜速发之。桑公，明公若未暇，可代明公用印遣使否？ } }
+    proposals:
+      - { ref: approve_v1, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - ref: dispatch_overdraft
+        actor: shi_jingtang
+        action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } }
+        expect: { status: rejected, rule: H07 }
+      - ref: pay_overdraft
+        actor: shi_jingtang
+        action: { type: allocate_resources, args: { faction: hedong, resource: silk, amount: 100000, purpose: pay_troops } }
+        expect: { status: rejected, rule: H07 }
+      - ref: sang_approve
+        actor: sang_weihan
+        action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } }
+        expect: { status: rejected, rule: H02 }
+      - ref: sang_dispatch
+        actor: sang_weihan
+        action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } }
+        expect: { status: rejected, rule: H02 }
+  - round: 2
+    player:
+      - action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: 1
+            terms:
+              vassal: true
+              filial: true
+              cession: yanmen_north
+              annual_silk: 0
+              immediate_silk: 40000
+              aid_cavalry: 30000
+              aid_arrival_days: 20
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 库帛不足，改为即奉帛四万匹，事捷之日割雁门关以北诸州。 / Treasury-feasible revision.
+      - action: { type: speak, args: { to: [shi_jingtang], text: 库中之帛不足十五万匹，前表所许无以为继。仆已改为即奉帛四万匹、事捷之日割雁门关以北诸州，请明公定夺。 } }
+    proposals:
+      - { ref: approve_v2, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 2 } } }
+      - { ref: dispatch_v2, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 2 } } }
+      - ref: self_confirm
+        actor: shi_jingtang
+        note: On-behalf consent — Shi cannot accept his own offer for the Khitan ruler.
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } }
+        expect: { status: rejected, rule: H09 }
+    decisions:
+      - { ref: dispatch_v2, category: dispatch_request, choose: endorse }
+  - round: 3
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, sang_weihan], text: 桑公，契丹回书若到，可代明公先允之，以免迁延否？ } }
+    proposals:
+      - ref: confirm
+        actor: yelu_deguang
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } }
+expected: { terminal: pact_concluded, round: 4 }

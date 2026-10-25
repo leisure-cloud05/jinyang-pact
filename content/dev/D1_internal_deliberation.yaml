@@ -1,0 +1,125 @@
+# D1 — internal deliberation among Shi, Sang and Liu (PLAN §12.4, proposal Table 3 week 3). Dev/tuning config:
+# may be used for live prompt tuning (never the frozen cases C1–C6). Uses the default historical draft.
+# Reference trace (content/traces/D1.trace.yaml): R1 Sang polishes the draft and adds a gift (v2); Liu suggests
+# dropping filial rites and land → R2 the player writes a compromise (v3); Shi approves it. No dispatch: the run
+# ends at max_rounds (run outcome, not a world terminal) by design.
+id: D1
+title: { zh: 帅府议表, en: Council deliberation over the draft }
+purpose:
+  zh: 只在晋阳帅府之内议表：桑维翰润色、刘知远进谏、书记折中、石敬瑭裁决。检验三人各自之口吻与立场，及"改稿不等于同意"。
+  en: >-
+    Deliberation inside Jinyang headquarters only: Sang polishes, Liu objects, the player compromises, Shi decides.
+    Tunes the three voices and positions, and checks that editing a draft never counts as anyone's consent.
+
+initial_overrides: {}
+
+player_goal:
+  text:
+    zh: 调和众议：若刘押牙坚持，可去父礼；割地至多雁门关以北诸州，总负担不过 80。
+    en: Reconcile the council — drop the filial rites if Liu insists; cede at most the prefectures north of Yanmen; total burden at most 80.
+  limits:
+    cession_max: yanmen_north
+    burden_max: 80
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [sang_weihan, liu_zhiyuan]
+          text:
+            zh: 表稿在此：称臣、父礼、割卢龙一道及雁门以北诸州。请二公各陈所见。
+            en: "Here is the draft: vassalage, filial rites, the Lulong circuit and the prefectures north of Yanmen. Gentlemen, please give your views."
+  - round: 2
+    inputs:
+      # The revision (bound to the version the player sees) and its report apply only while the request is still
+      # a draft or approved — two copies, exactly one of which can hold at the PLAYER step.
+      - when: { doc_status: { docId: "doc:1", status: draft } }
+        action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: "$current"
+            terms:
+              vassal: true
+              filial: false
+              cession: yanmen_north
+              annual_silk: 0
+              immediate_silk: 100000
+              aid_cavalry: 30000
+              aid_arrival_days: 15
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 书记折中二公之议：称臣，不行父礼，只割雁门关以北诸州，即奉帛十万匹。 / The clerk's compromise.
+      - when: { doc_status: { docId: "doc:1", status: draft } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 仆已折中二公之议改定此稿，请明公裁决。
+            en: I have revised the draft to meet both gentlemen halfway; the decision is yours, my lord.
+      - when: { doc_status: { docId: "doc:1", status: approved } }
+        action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: "$current"
+            terms:
+              vassal: true
+              filial: false
+              cession: yanmen_north
+              annual_silk: 0
+              immediate_silk: 100000
+              aid_cavalry: 30000
+              aid_arrival_days: 15
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 书记折中二公之议：称臣，不行父礼，只割雁门关以北诸州，即奉帛十万匹。 / The clerk's compromise.
+      - when: { doc_status: { docId: "doc:1", status: approved } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 仆已折中二公之议改定此稿，请明公裁决。
+            en: I have revised the draft to meet both gentlemen halfway; the decision is yours, my lord.
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request }
+    choose: withhold
+    advice: 众议未定，且缓遣使。 / The council has not settled; hold the envoy.
+  - match: { category: major_commitment }
+    choose: withhold
+    advice: 且缓。 / Not yet.
+  - match: { category: strategic_turn }
+    choose: withhold
+    advice: 且缓。 / Not yet.
+  - match: { category: negotiation_deadlock }
+    choose: urge_stop
+  - match: { category: mutiny }
+    choose: urge_payment
+  - match: { category: internal_disagreement }
+    choose: withhold
+    advice: 请先听刘押牙之言。 / Hear Commander Liu first.
+  - match: { category: goal_conflict }
+    choose: withhold
+  - match: { category: risky_delay }
+    choose: endorse
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: user_requested }
+    choose: resume
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints: []
+constraints:
+  - { id: d1-no-invalid, kind: no_invalid_commit }
+  - { id: d1-edit-not-consent, kind: consent_by_party, description: Editing or suggesting never records consent. }
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 2
+interrupts: []
+faults: []

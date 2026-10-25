@@ -1,0 +1,64 @@
+# Reference trace for D1 (dev). See C1.trace.yaml for the conventions. No world terminal by design.
+case: D1
+description: >-
+  R1 Sang polishes the historical draft and adds a 50,000-bolt gift (v2); Liu suggests dropping the filial rites and
+  the land in favour of 200,000 bolts -> R2 the player's compromise (v3: vassalage, no filial rites, Yanmen north,
+  100,000 bolts); Shi approves v3 (approval is not dispatch; no pause). The run ends at max_rounds.
+max_rounds: 2
+rounds:
+  - round: 1
+    note: Sang and Liu are addressed (tier 2). Sang commits before Liu (commitPriority 4 < 5).
+    player:
+      - action: { type: speak, args: { to: [sang_weihan, liu_zhiyuan], text: 表稿在此：称臣、父礼、割卢龙一道及雁门以北诸州。请二公各陈所见。 } }
+    proposals:
+      - ref: sang_revise
+        actor: sang_weihan
+        action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: 1
+            terms:
+              vassal: true
+              filial: true
+              cession: sixteen_prefectures
+              annual_silk: 0
+              immediate_silk: 50000
+              aid_cavalry: 30000
+              aid_arrival_days: 15
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 桑维翰润色：辞意加恳，另奉帛五万匹以示诚意。 / Sang's polish — a 50,000-bolt gift as a token of sincerity.
+      - ref: liu_suggest
+        actor: liu_zhiyuan
+        action:
+          type: suggest_revision
+          args:
+            target: { kind: document, id: "doc:1" }
+            terms: { vassal: null, filial: false, cession: none, annual_silk: null, immediate_silk: 200000, aid_cavalry: null, aid_arrival_days: null, neutrality: null, marriage_alliance: null, secret_clauses: null }
+            reason: 称臣可矣，以父事之太过；厚以金帛赂之，自足致其兵，不必许以土田。
+  - round: 2
+    note: Shi is addressed (tier 2).
+    player:
+      - action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: 2
+            terms:
+              vassal: true
+              filial: false
+              cession: yanmen_north
+              annual_silk: 0
+              immediate_silk: 100000
+              aid_cavalry: 30000
+              aid_arrival_days: 15
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 书记折中二公之议：称臣，不行父礼，只割雁门关以北诸州，即奉帛十万匹。 / The clerk's compromise.
+      - action: { type: speak, args: { to: [shi_jingtang], text: 仆已折中二公之议改定此稿，请明公裁决。 } }
+    proposals:
+      - { ref: approve_v3, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 3 } } }
+expected: { terminal: null, round: null }

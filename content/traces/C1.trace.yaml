@@ -1,0 +1,30 @@
+# Reference trace for C1 (PLAN §12.4 reference timing). Replayed by tests/content-real/traces.test.ts through the
+# pure core (src/core/simulate.ts): every step must commit (or be rejected exactly as `expect` says), only characters
+# the §10.3 scheduler activates may act, and every decision must be the case policy's choice.
+# `player` lists the case script's inputs for the round in order (dialogue as `speak`, zh text).
+case: C1
+description: >-
+  R1 Shi approves and dispatches v1 (dispatch_request pause, endorsed) -> R2 Yelü receives the offer and confirms
+  (khitan pays 30,000 horse; Hedong's 50,000-bolt gift is debited) -> R3 PREPARE delivers the acceptance to Shi
+  => pact_concluded in round 3 (relief projected for day 20).
+max_rounds: 6
+rounds:
+  - round: 1
+    note: Shi is scheduled because the player addresses him (tier 2).
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, sang_weihan], text: 明公，表已誊毕：称臣，以父礼事之，事捷之日割雁门关以北诸州，另奉帛五万匹为礼。所许皆在前议之内，请即用印遣使。 } }
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: sang_speak, actor: sang_weihan, action: { type: speak, args: { to: [shi_jingtang, player], text: 此表辞意恳切，契丹主必喜。宜速遣之，朝发则夕有望。 } } }
+    decisions:
+      - { ref: dispatch, category: dispatch_request, choose: endorse }
+  - round: 2
+    note: Yelü holds the delivered live offer (tier 1).
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 使者已北去，往返约需旬日。其间城守，还望明公与刘押牙多加留意。 } }
+    proposals:
+      - ref: confirm
+        actor: yelu_deguang
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } }
+expected: { terminal: pact_concluded, round: 3 }

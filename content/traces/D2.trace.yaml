@@ -1,0 +1,52 @@
+# Reference trace for D2 (dev). See C1.trace.yaml for the conventions.
+case: D2
+description: >-
+  R1 Shi approves and dispatches v1 (dispatch_request pause, endorsed); Sang sends a covering letter to the Khitan
+  ruler -> R2 Yelü (offer and letter delivered) counters with 100,000 bolts a year and writes back to Sang
+  -> R3 Shi holds the delivered counter and confirms it (major_commitment pause, endorsed) => pact_concluded in
+  round 3 on Shi's own confirmation.
+max_rounds: 3
+rounds:
+  - round: 1
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, sang_weihan], text: 表已具，请明公即遣使。桑公可附私书致契丹主，以通款曲。 } }
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: sang_letter, actor: sang_weihan, action: { type: send_letter, args: { to: yelu_deguang, text: 河东掌书记桑维翰再拜：明公推心以事大国，愿陛下垂念明宗兄弟之旧，早发援兵，朝呼夕至，则晋阳之围立解。 } } }
+    decisions:
+      - { ref: dispatch, category: dispatch_request, choose: endorse }
+  - round: 2
+    note: Yelü holds the delivered offer (tier 1) and received Sang's letter (tier 1b).
+    proposals:
+      - ref: yelu_counter
+        actor: yelu_deguang
+        action:
+          type: respond_to_offer
+          args:
+            offerId: "offer:1"
+            response: counter
+            reason: 大国出兵，岂可无岁币？岁输帛十万匹，则朕当亲往。
+            counterTerms:
+              vassal: true
+              filial: true
+              cession: yanmen_north
+              annual_silk: 100000
+              immediate_silk: 0
+              aid_cavalry: 25000
+              aid_arrival_days: 20
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+      - { ref: yelu_letter, actor: yelu_deguang, action: { type: send_letter, args: { to: sang_weihan, text: 书悉。尔主诚意，朕已知之；然须岁帛，方可兴师。 } } }
+  - round: 3
+    note: Shi holds the delivered counter (tier 1).
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 契丹回书已至。若其所索在所许之内（岁帛至多十万匹），请明公允之。 } }
+    proposals:
+      - ref: confirm
+        actor: shi_jingtang
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:2", termsVersion: 2 } }
+    decisions:
+      - { ref: confirm, category: major_commitment, choose: endorse }
+expected: { terminal: pact_concluded, round: 3 }

@@ -1,0 +1,31 @@
+# Reference trace for C4. See C1.trace.yaml for the conventions. Ids: the pre-start Tang bid is cmt:1 / offer:1;
+# Hedong's dispatch opens cmt:2 / offer:2. Exclusivity is probed in both orders by tests/content-real/probes.test.ts.
+case: C4
+description: >-
+  R1 Shi dispatches v1 with the sealed secret article (dispatch_request pause, endorsed); the Tang bid (sent before
+  the chapter began) is still on the road -> R2 PREPARE delivers the Tang bid and then Hedong's request to Yelü,
+  and the G08 intelligence to Li; Yelü, with both offers before him, confirms Hedong's request (khitan_stance now
+  claimed) and rejects the Tang bid -> R3 PREPARE delivers the acceptance to Shi => pact_concluded in round 3. Li,
+  Liu and the player never hold the secret article; no Hedong holder learns of the Tang–Khitan thread.
+max_rounds: 6
+rounds:
+  - round: 1
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, sang_weihan], text: 表已誊毕，另有一纸封缄，仆未敢启视。请明公用印遣使。 } }
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+    decisions:
+      - { ref: dispatch, category: dispatch_request, choose: endorse }
+  - round: 2
+    note: Yelü holds two delivered live offers, one per principal pair (tier 1). The player's dialogue applies because the request was sent.
+    player:
+      - action: { type: speak, args: { to: [liu_zhiyuan], text: 押牙，使者已北去。城守如何？ } }
+    proposals:
+      - ref: confirm_hedong
+        actor: yelu_deguang
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:2", offerId: "offer:2", termsVersion: 1 } }
+      - ref: reject_tang
+        actor: yelu_deguang
+        action: { type: respond_to_offer, args: { offerId: "offer:1", response: reject, counterTerms: null, reason: 河东所许更厚，且已许之，不可两从。 } }
+expected: { terminal: pact_concluded, round: 3 }

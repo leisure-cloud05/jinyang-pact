@@ -1,0 +1,124 @@
+{
+  "freezeFormat": 2,
+  "createdAt": "2026-10-21T18:27:52.059Z",
+  "models": {
+    "character": "deepseek/deepseek-v4-flash",
+    "judge": "deepseek/deepseek-v4-flash",
+    "narrator": "deepseek/deepseek-v4-flash",
+    "mapper": "deepseek/deepseek-v4-flash"
+  },
+  "settings": {
+    "provider": "openrouter",
+    "responseFormat": "json_schema",
+    "reasoning": "off",
+    "providerIgnore": [
+      "atlas-cloud"
+    ],
+    "temperatures": {
+      "character": 0.7,
+      "judge": 0.2,
+      "narrator": 0.7,
+      "mapper": 0,
+      "answer": 0.7,
+      "rater": 0.2,
+      "smoke": 0.2
+    },
+    "maxTokens": {
+      "character": 700,
+      "judge": 500,
+      "narrator": 900,
+      "mapper": 700,
+      "answer": 300,
+      "rater": 500,
+      "smoke": 300
+    },
+    "maxInputChars": {
+      "character": 32000,
+      "judge": 16000,
+      "narrator": 12000,
+      "mapper": 8000,
+      "answer": 24000,
+      "rater": 48000,
+      "smoke": 8000
+    },
+    "timeoutMs": 60000,
+    "httpRetries": 2,
+    "clientBudget": {
+      "maxCallsPerSession": 100,
+      "maxUsdPerSession": 0.5
+    },
+    "runBudget": {
+      "maxCalls": 100,
+      "maxUsd": 0.5,
+      "wallClockMs": 1200000
+    },
+    "priceBounds": {
+      "deepseek/deepseek-v4-flash": {
+        "inputUsdPerMTok": 0.15,
+        "outputUsdPerMTok": 0.3
+      }
+    },
+    "lang": "zh",
+    "cases": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "modes": [
+      "baseline",
+      "no_judge",
+      "full"
+    ],
+    "reps": 2,
+    "seeds": {
+      "C1-r1": 73242648,
+      "C1-r2": 962984464,
+      "C2-r1": 129102389,
+      "C2-r2": 3366810914,
+      "C3-r1": 1829297769,
+      "C3-r2": 1458531387,
+      "C4-r1": 529827648,
+      "C4-r2": 3386636036,
+      "C5-r1": 3822225183,
+      "C5-r2": 1451216510,
+      "C6-r1": 2625452577,
+      "C6-r2": 1323235261
+    },
+    "maxRounds": {
+      "C1": 6,
+      "C2": 6,
+      "C3": 6,
+      "C4": 6,
+      "C5": 6,
+      "C6": 6
+    }
+  },
+  "hashes": {
+    "files": "b1aab64563555f2c4dca1a46d2ed9ca8641e183e560c339284fd2556ae6e14bf",
+    "byPath": {
+      "content": "a44755187d79641a18718086e2b2c51eb317bbf0a244f0e14c06b4e1a9c9680c",
+      "src/core": "b9794a8db4a59a1c461c937e4274953f5430d5b15e49e44f2fef21810f468fe5",
+      "src/harness": "f7b189435fac74bfa722fc9fdb8d3c23aaf63f79697160efeaa74ec88b0f7619",
+      "src/store": "2a2adc52d82fee49aa903eab93c9bd4356a1c16fbe06dde3ff5368dee5fc87ac",
+      "src/llm": "9e1202586bae73b4fb5871c3ba92e52c307b3cd8680b692c4b7436f7a075824d",
+      "src/agents": "ecfbe3d2e3490bf8ae6fb59c1d6a5cc9f29cfd3714d8b82c4d6fe2792972d040",
+      "src/engine": "a8cbe4bc69a7dd6c19ce615f829b913b0bcb7ee89f1c22be86ce92165dce32b2",
+      "src/content": "824f4825c9588af934eab34cc5573e93f6687906ec17dea7404de9a551786599",
+      "src/config": "640d3755c2e26cf9742000ba59220b2f191a49cc286eb51c70b9d6e244614d28",
+      "src/eval/runner.ts": "bf35e1f998a30e5ed69b6bd1ea9c3fb9301774655d7b6aa2a60e55abb9ffe131",
+      "src/eval/engine-adapter.ts": "0b713992fd775b87ee1e9f09aa9df0c33cc5fad0602c60c55ed37d93d6e64fd5",
+      "src/eval/narration-listing.ts": "2de39d9885b52a051bba30e9a40917186dd6d9d2d9ff9fbfdd7a78522ab24267",
+      "src/eval/detectors.ts": "744ce6c78a5d846975925d3997b79d7a9ce60500cceb731eab5cd852763a02b7",
+      "src/eval/constraints.ts": "7cf55f56b5d74a5d2d8195255e98c803f96c71f417344c8377835e5f56096cf6",
+      "src/eval/leak.ts": "c31a585faaa4890c8f37c16ee338a89d6114d90020b79595765af316b9690d8a",
+      "src/eval/oracle": "b8fb3027f8addfdb0d1edaf66afc80bec159684bbb82e3b1c1682f04da084a5d",
+      "src/eval/freeze.ts": "96451b917ae88f246a82f599b90fc6aecdcd792562c899b2f3cae645f17b0269",
+      "src/cli/exp.ts": "82aac30efac0439b42557da3d8efa82ad5b721ac0c9b8e1e8613d5a847197ac1",
+      "package-lock.json": "454bf13f113d12b9f6c3e18d0b14824f48497954a78969f150c13390309df165"
+    },
+    "prompts": "bd1b9e46ca0f595cdaae204ff22113055dc98f2b7ed831a71c9d1c2dba4ffedc"
+  }
+}

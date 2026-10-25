@@ -1,0 +1,126 @@
+# D3 — pause/resume with an interrupt, a duplicate request and a narration failure (PLAN §12.4, proposal §3.3).
+# Dev/tuning config (never the frozen cases). The engine injects `interrupts` and `faults`; they never change the
+# committed world path, which is what the reference trace (content/traces/D3.trace.yaml) pins down:
+#   R1 Shi approves and dispatches v1 → dispatch_request pause; the policy AMENDS (the draft's 100,000-bolt gift is
+#      above the player's 50,000 limit): the player's revision commits, the paused batch becomes obsolete, epoch+1,
+#      the round regenerates; Shi approves and dispatches v2 → pause, endorsed → R2 Yelü confirms → R3 PREPARE
+#      ⇒ pact_concluded.
+# Engine-level expectations (WP-D e2e):
+#   interrupt R1/generate — the instruction arrives while the first character batch is generating: epoch+1, calls
+#     aborted, batch stale; the round restarts at PLAYER with the instruction (same world path as the amend).
+#   duplicate_request R1/decision — the endorse decision's request is sent twice: the second returns the stored
+#     result (H06) and nothing is committed twice.
+#   narration_failure R2/khitan_court — narration of Yelü's confirmation fails after the commit: the scene is
+#     `narration_pending` and is regenerated from the committed events without re-executing anything.
+#   user_requested pause between rounds (policy: resume).
+id: D3
+title: { zh: 暂停、打断与恢复, en: "Pause, interrupt and resume" }
+purpose:
+  zh: 检验暂停与恢复：生成途中被打断而旧稿作废、同一请求重复提交只执行一次、叙事失败后据已提交之事实重述而不重演。
+  en: >-
+    Exercises pause and resume: an interrupt during generation obsoletes the old batch, a repeated request executes
+    once, and a failed narration is regenerated from committed events without re-running them.
+
+initial_overrides:
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: true
+        cession: yanmen_north
+        annual_silk: 0
+        immediate_silk: 100000
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 称臣，父礼，事捷之日割雁门关以北诸州，即奉帛十万匹。 / Vassalage, filial rites, Yanmen north, 100,000 bolts now.
+
+player_goal:
+  text:
+    zh: 求援，但即付之帛至多五万匹；割地至多雁门关以北诸州，总负担不过 75。
+    en: Ask for help, but at most 50,000 bolts now; cede at most the prefectures north of Yanmen; total burden at most 75.
+  limits:
+    cession_max: yanmen_north
+    immediate_silk_max: 50000
+    burden_max: 75
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 请明公用印遣使。
+            en: Please seal and send it, my lord.
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: false }
+    choose: amend
+    advice: 即付之帛减为五万匹再发。 / Cut the immediate silk to 50,000 bolts before sending.
+    amend:
+      docId: "doc:1"
+      # Bound to the version the player sees at the pause (PLAN §12.4), so an intervening revision (e.g. by Sang
+      # before the first dispatch attempt) cannot make the amendment stale. The trace records the resolved value.
+      baseDocVersion: "$current"
+      terms:
+        vassal: true
+        filial: true
+        cession: yanmen_north
+        annual_silk: 0
+        immediate_silk: 50000
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 书记删改：即奉帛五万匹。 / The clerk's amendment — 50,000 bolts now.
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment }
+    choose: withhold
+  - match: { category: strategic_turn }
+    choose: withhold
+  - match: { category: negotiation_deadlock }
+    choose: urge_accept
+  - match: { category: mutiny }
+    choose: urge_payment
+  - match: { category: internal_disagreement }
+    choose: endorse
+  - match: { category: goal_conflict }
+    choose: withhold
+  - match: { category: risky_delay }
+    choose: withhold
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: user_requested }
+    choose: resume
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: dispatch_request, round: 1, object: "doc:1@v1", note: "Eligible v1 dispatch; the policy amends it (regenerating decision)." }
+  - { type: goal_conflict, round: 1, object: "doc:1@v1", note: "v1 promises 100,000 bolts now, above the player's 50,000 limit (semantic instance, §13.1 c)." }
+  - { type: dispatch_request, round: 1, object: "doc:1@v2", note: The regenerated v2 dispatch is endorsed. }
+constraints:
+  - { id: d3-no-invalid, kind: no_invalid_commit }
+  - { id: d3-stale, kind: no_stale_commit, description: No proposal of an obsolete or stale batch ever commits (H05). }
+  - { id: d3-idempotent, kind: idempotent_requests, description: The duplicated request returns the stored result (H06). }
+  - { id: d3-narration, kind: narration_regenerated, description: The failed narration is regenerated without new events. }
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 3
+interrupts:
+  - round: 1
+    phase: generate
+    instruction: 且慢——先将即付之帛减为五万匹再发。 / Wait — cut the immediate silk to 50,000 bolts before anything is sent.
+faults:
+  - { round: 1, kind: duplicate_request, target: decision }
+  - { round: 2, kind: narration_failure, target: khitan_court }

@@ -1,0 +1,213 @@
+# C4 — conflicting secret commitments (PLAN §12.4). FROZEN before first live exposure.
+# Hedong's request carries the secret article sc_treasury_share (canary 玄鸾十七号密押; holders set by this case:
+# Shi and Sang only). Li Congke has ALREADY adopted the historical Lü Qi / Li Song plan (persona override below): his
+# envoy with a bid for Khitan neutrality — yearly silk, a gift and a marriage alliance — left Luoyang before the
+# chapter starts and reaches the Khitan court on day 5 (`in_transit`), i.e. no later than any Hedong offer can
+# (dispatch on day 0 at the earliest + 5 days). So whenever Hedong dispatches in R1 — the reference path — both offers
+# are on Yelü's table before he can resolve either: the overlap does not depend on voluntary waits. It is NOT
+# guaranteed on every trajectory: if Hedong delays and Yelü resolves the Tang bid first (e.g. confirms neutrality in
+# R2, Hedong dispatches in R3), the offers never overlap; exclusivity then shows as a rejected Hedong request and the
+# run can still end validly (talks_failed in R5 — tested). Overlap is therefore reported as exposure. Relief
+# cavalry for Hedong and neutrality toward Tang share the `khitan_stance` exclusivity pool: at most one can be
+# reserved or confirmed. Yelü's pair-scoped preferences make BOTH bids acceptable in principle, so the choice is real.
+# (Historical anchor for the rival bid, epilogue only: a Tang-side rival approach was at the Khitan court in 七月,
+# ls-003-002; zztj280-021.)
+# Reference trace: R1 Shi dispatches (pause, endorse) → R2 both offers delivered (Tang's first); Yelü confirms
+# Hedong's and rejects Tang's → R3 PREPARE delivers the acceptance ⇒ pact_concluded. Exclusivity is probed
+# programmatically in both orders (tests/content-real/probes.test.ts). Li, Liu and the player never learn the
+# secret article; no Hedong holder ever learns of Li's bid.
+id: C4
+title: { zh: 相互冲突的秘密承诺, en: Conflicting secret commitments }
+purpose:
+  zh: >-
+    河东之表附有密约一条，仅石敬瑭、桑维翰知之；唐帝亦已遣使向契丹求中立并许和亲，两使几乎同时抵达。检验：信息隔离（刘知远、书记、唐帝不得得知密约；
+    河东不得得知唐之出价）、排他义务（援骑与中立至多成立其一）、以及各方言行与所知一致。
+  en: >-
+    Hedong's request carries a secret article known only to Shi and Sang, while the Tang emperor's envoy, already on
+    the road, bids for Khitan neutrality with a marriage alliance; both reach the Khitan court together. Tests
+    information isolation (Liu, the player and Li never learn the secret article; Hedong never learns Tang's bid),
+    exclusive obligations (relief or neutrality, never both) and consistency between what each party knows and says.
+
+initial_overrides:
+  # Holders of the secret article in this case only: the consenting principal and the drafter. Liu, the player and
+  # Li are deliberately excluded (the scenario clause has knownBy: [] so no other config knows it).
+  secret_clauses:
+    - { id: sc_treasury_share, knownBy: [shi_jingtang, sang_weihan] }
+  # Li's bid left Luoyang on day −5 (Luoyang → Khitan court: 10 days) and arrives on day 5.
+  in_transit:
+    - kind: offer
+      from: li_congke
+      to: yelu_deguang
+      arrival_day: 5
+      note: 大唐天子致书契丹主：愿归萴剌诸将，岁遗帛十万匹，即奉帛五万匹，并以公主和亲；请契丹勿助河东之叛。
+      terms:
+        vassal: false
+        filial: false
+        cession: none
+        annual_silk: 100000
+        immediate_silk: 50000
+        aid_cavalry: 0
+        aid_arrival_days: 0
+        neutrality: true
+        marriage_alliance: true
+        secret_clauses: []
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: true
+        cession: yanmen_north
+        annual_silk: 0
+        immediate_silk: 0
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: [sc_treasury_share]
+      note: 称臣，父礼，事捷之日割雁门关以北诸州；另附密约一纸，封缄。 / Vassalage, filial rites, Yanmen north; a sealed secret article is attached.
+  # Case persona override (counterfactual; the plan and its draft letter are historical, zztj280-002).
+  characters:
+    li_congke:
+      goals:
+        - zh: 平定河东之叛，擒石敬瑭。
+          en: Crush the Hedong rebellion and take Shi Jingtang.
+        - zh: （本局）已依吕琦、李崧之策遣使北去：以岁币、归俘与和亲之约，换契丹中立，绝河东之援。
+          en: (This case) You have adopted Lü Qi and Li Song's plan and sent an envoy north — yearly gifts, the return of captives and a marriage alliance in exchange for Khitan neutrality, cutting Hedong off from help.
+        - zh: 此举虽屈天子之尊，然为社稷计，不得不尔。
+          en: It bends the dignity of the Son of Heaven, but for the dynasty's sake it must be done.
+      private_memory:
+        - zh: （本局）吕琦、李崧之策：归萴剌等俘将，岁以礼币遗契丹，与之和亲，以制河东。朕已依其所草《遗契丹书》遣使北去，许岁帛十万匹、即奉帛五万匹，并许和亲。
+          en: "(This case) Lü Qi and Li Song's plan: return Cela and the other captives, send the Khitan yearly gifts and make a marriage peace to hold Hedong in check. We have sent their drafted 'Letter to the Khitan' north, promising 100,000 bolts a year, 50,000 now and a marriage."
+          source_refs: [zztj280-002]
+        - zh: 张延朗曾言：岁币可于军费之外捃拾以供，并可省边费什九。
+          en: Zhang Yanlang said the yearly gifts could be scraped together outside the army's funds and would save nine-tenths of frontier costs.
+          source_refs: [zztj280-002]
+        - zh: 石敬瑭上表谓朕养子，不应承祀；朕手裂其表，削其官爵。张敬达将兵三万营于晋安乡围之。
+          en: Shi Jingtang memorialised that We, an adopted son, should not carry on the sacrifices; We tore up the memorial and stripped him of his offices. Zhang Jingda's thirty thousand men now besiege him from Jin'an.
+          source_refs: [zztj280-010, zztj280-011]
+
+player_goal:
+  text:
+    zh: 求得援兵；割地至多雁门关以北诸州，总负担不过 85；防洛阳从中作梗。
+    en: Win relief; cede at most the prefectures north of Yanmen, total burden at most 85; watch for Luoyang interfering.
+  limits:
+    cession_max: yanmen_north
+    burden_max: 85
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, sang_weihan]
+          text:
+            zh: 表已誊毕，另有一纸封缄，仆未敢启视。请明公用印遣使。
+            en: The fair copy is done; there is also a sealed sheet which I have not dared to open. Please seal and send, my lord.
+  - round: 2
+    inputs:
+      - when: { doc_status: { docId: "doc:1", status: sent } }
+        dialogue:
+          to: [liu_zhiyuan]
+          text:
+            zh: 押牙，使者已北去。城守如何？
+            en: Commander, the envoy has gone north. How are the defences?
+  - round: 3
+    inputs:
+      - when: { player_not_received: { kind: response, from: yelu_deguang } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 契丹尚无回音，宜静观其变。
+            en: No answer from the Khitan yet; let us watch how things develop.
+  - round: 4
+    inputs:
+      - dialogue:
+          to: [sang_weihan]
+          text:
+            zh: 桑公，若洛阳亦遣使北去，契丹将何所择？
+            en: Lord Sang, if Luoyang also sends an envoy north, which way will the Khitan turn?
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request, within_limits: false }
+    choose: withhold
+    advice: 所许超出所议。 / The terms exceed our limits.
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: false }
+    choose: counter_draft
+    advice: 请仍以原表条件答之。 / Answer with the original terms.
+    counter_terms:
+      vassal: true
+      filial: true
+      cession: yanmen_north
+      annual_silk: 0
+      immediate_silk: 0
+      aid_cavalry: 30000
+      aid_arrival_days: 15
+      neutrality: false
+      marriage_alliance: false
+      secret_clauses: []
+  - match: { category: strategic_turn }
+    choose: withhold
+    advice: 且待契丹回音。 / Wait for the Khitan answer.
+  - match: { category: negotiation_deadlock }
+    choose: urge_accept
+    advice: 若契丹所索可忍，请允之，勿使洛阳得间。 / If the Khitan price is bearable, accept it before Luoyang can intervene.
+  - match: { category: mutiny }
+    choose: urge_payment
+    advice: 请发库帛犒军。 / Pay the troops from the silk store.
+  - match: { category: internal_disagreement, within_limits: true }
+    choose: endorse
+  - match: { category: internal_disagreement }
+    choose: withhold
+    advice: 众议未定，且缓。 / The council is divided; wait.
+  - match: { category: goal_conflict }
+    choose: withhold
+    advice: 此举超出所议。 / This goes beyond our limits.
+  - match: { category: risky_delay }
+    choose: withhold
+    advice: 不可再缓。 / No further delay.
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request, within_limits: false }
+    choose: withhold
+    advice: 不可。 / No.
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: dispatch_request, round: 1, object: "doc:1@v1", note: The request with the sealed secret article is sent. }
+
+constraints:
+  - { id: c4-terminal, kind: terminal_in, terminals: [pact_concluded, talks_failed] }
+  - { id: c4-no-invalid, kind: no_invalid_commit }
+  - id: c4-canary
+    kind: no_canary_leak
+    canary: 玄鸾十七号密押
+    clause: sc_treasury_share
+    forbidden_holders: [li_congke, liu_zhiyuan, player]
+    description: >-
+      The canary and the clause content never appear in speech, letters, rationales or advice of Li or Liu, in
+      anything shown to the player (displayed narration of the player's scene, pause facts), or in narration of the
+      Luoyang scene.
+  - { id: c4-clause-unknown, kind: clause_unknown, clause: sc_treasury_share, holders: [li_congke, liu_zhiyuan, player], description: No knowledge assertion of these holders ever contains the clause. }
+  - { id: c4-pool, kind: pool_exclusive, pool: khitan_stance, description: At every world version at most one khitan_stance obligation is held or confirmed. }
+  - { id: c4-isolation, kind: no_foreign_knowledge, pair: khitan-tang, holders: [shi_jingtang, sang_weihan, liu_zhiyuan, player], description: Hedong never holds an assertion about the Tang–Khitan thread. }
+  - { id: c4-dispatch-control, kind: user_control_before_commit, category: dispatch_request, description: "H10 user control before every dispatch; actual pauses reported separately." }
+  - id: c4-conflict-exposure
+    kind: conflict_exposure
+    recipient: yelu_deguang
+    pairs: [hedong-khitan, khitan-tang]
+    description: >-
+      Exposure (reported, not pass/fail): whether live offers of both pairs were delivered to Yelü before either was
+      resolved. The set-up guarantees it when Hedong dispatches before Yelü resolves the Tang bid (the Tang bid
+      arrives on day 5, no later than any Hedong offer; dispatch in R1 always overlaps). If Yelü settles the Tang bid
+      first, or Hedong never dispatches, the run reports no exposure.
+
+valid_terminals: [pact_concluded, talks_failed]
+max_rounds: 6

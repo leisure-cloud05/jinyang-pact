@@ -1,0 +1,81 @@
+# P1 — pilot variant for live prompt tuning ONLY (PLAN §0 tuning hygiene). Differs from every case: the full
+# historical draft plus yearly silk, less grain and more pressure. No reference trace (not an evaluation case).
+id: P1
+title: { zh: 重约紧围, en: Heavy terms under a tight siege }
+purpose:
+  zh: 调试用：原表之条件再加岁帛，城中粮少而围急；观察桑、刘之争与石敬瑭之取舍。
+  en: "Tuning only: the recorded draft plus yearly silk, with less grain and heavier pressure; watch the Sang–Liu dispute and Shi's choice."
+
+initial_overrides:
+  resources: { hedong: { grain: 45 } }
+  siege: { pressure: 48 }
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: true
+        cession: sixteen_prefectures
+        annual_silk: 100000
+        immediate_silk: 0
+        aid_cavalry: 40000
+        aid_arrival_days: 20
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 称臣，父礼，割卢龙一道及雁门关以北诸州，岁帛十万匹。 / Recorded terms plus yearly silk.
+
+player_goal:
+  text:
+    zh: 求援，但割地至多雁门关以北诸州，总负担不过 85。
+    en: Ask for help, but cede at most the prefectures north of Yanmen; total burden at most 85.
+  limits:
+    cession_max: yanmen_north
+    burden_max: 85
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [sang_weihan, liu_zhiyuan]
+          text:
+            zh: 此表所许甚重，二公以为当删改否？
+            en: This memorial gives a great deal — gentlemen, should it be cut?
+  - round: 2
+    inputs:
+      - dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 城中粮少，明公宜早决。
+            en: Grain is short, my lord; please decide soon.
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request }
+    choose: withhold
+    advice: 请先删去卢龙一道。 / Strike the Lulong circuit first.
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment }
+    choose: withhold
+  - match: { category: strategic_turn }
+    choose: withhold
+  - match: { category: negotiation_deadlock }
+    choose: urge_accept
+  - match: { category: mutiny }
+    choose: urge_payment
+  - match: { category: internal_disagreement }
+    choose: withhold
+  - match: { category: goal_conflict }
+    choose: withhold
+  - match: { category: risky_delay }
+    choose: withhold
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 6

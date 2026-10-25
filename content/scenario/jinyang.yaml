@@ -1,0 +1,442 @@
+# The Jinyang Pact — scenario (PLAN §12.2). Schema: src/content/schema.ts (ScenarioSchema).
+#
+# Every number in this file is a GAME ASSUMPTION, not a historical claim (content/README.md §2).
+# Recorded history lives only in content/sources/zztj_280.yaml (verbatim excerpts); ids cited here refer to it.
+#
+# Visibility: `start_note`, `player`, `initial_world.documents` and the secret-clause texts describe Hedong's
+# internal business. Only Hedong holders (and the player) may see them. `epilogue` is epilogue/inspector only and is
+# the ONLY place that cites `never_initial` sources.
+
+id: jinyang_936
+title: { zh: 晋阳之约, en: The Jinyang Pact }
+start_note:
+  zh: >-
+    丙申年（936）七月初，晋阳。河东节度使石敬瑭拒不移镇，唐帝李从珂削其官爵，遣张敬达将兵三万屯晋安乡围城，至今已逾四旬。
+    石敬瑭命掌书记桑维翰草拟致契丹主之表以求援兵。你是帅府的一名书记，奉命誊录此表。
+  en: >-
+    Jinyang, early in the seventh month of the bingshen year (936). Shi Jingtang, Military Governor of Hedong,
+    refused to be transferred; the Tang emperor Li Congke stripped him of his offices and sent Zhang Jingda with
+    thirty thousand men to camp at Jin'an and besiege the city — more than forty days ago now. Shi has ordered his
+    Secretary, Sang Weihan, to draft a memorial to the Khitan ruler asking for troops. You are a clerk at
+    headquarters, charged with making the fair copy.
+
+# ---------------------------------------------------------------------------------------------------------------
+# G parameters (PLAN §6). All PLAN defaults, stated explicitly. Reachability of every case under these defaults is
+# argued in content/README.md §4 and checked by tests/content-real/traces.test.ts.
+# ---------------------------------------------------------------------------------------------------------------
+parameters:
+  round_days: 5                   # G01: day += 5 per ADVANCE (time compression; history took ~65 days receipt→relief)
+  max_rounds: 6                   # chapter budget (§13)
+  segment_round_cap: 2            # G10/H13: rounds per negotiation segment
+  pair_offer_cap: 5               # G10/H13: offers per principal pair
+  delay_rounds_min: 1             # set_dispatch_timing delay range
+  delay_rounds_max: 3
+  grain_per_advance: 5            # G03: grain = max(0, grain − 5); grain is counted in days of supply
+  pressure_per_advance: 8         # G04
+  pressure_cap: 100
+  morale_decay: 5                 # G05
+  morale_low_grain: 15            # G05: decay if grain < 15 ...
+  morale_high_pressure: 70        # ... or pressure > 70
+  morale_cap: 100
+  intensify_troops_step: 5000     # G04: +2 pressure per 5,000 Tang reserve troops committed
+  intensify_pressure_per_step: 2
+  pay_silk_step: 10000            # G05: +3 morale per 10,000 bolts paid to the troops
+  pay_morale_per_step: 3
+  mutiny_grain_max: 10            # G06
+  mutiny_morale_max: 30
+  mutiny_pressure_add: 20
+  fall_grain_max: 0               # G07
+  fall_pressure_min: 100
+  intel_delay_days: 5             # G08
+  intel_credibility: 0.6
+  letter_credibility: 0.5
+  projection_max_steps: 200       # G11 forecast horizon
+
+locations:
+  - id: jinyang_hq
+    name: { zh: 晋阳帅府, en: Jinyang headquarters }
+    source_refs: [zztj280-011]
+  - id: khitan_court
+    name: { zh: 契丹牙帐, en: the Khitan court }
+    source_refs: [xwds-072-001]
+  - id: luoyang_court
+    name: { zh: 洛阳朝廷, en: the court at Luoyang }
+    source_refs: [zztj280-001]
+
+# G02 (days, symmetric). Game assumptions: courier time compressed to one or two rounds.
+travel:
+  - { from: jinyang_hq, to: khitan_court, days: 5 }
+  - { from: jinyang_hq, to: luoyang_court, days: 5 }
+  - { from: luoyang_court, to: khitan_court, days: 10 }
+
+factions:
+  # Every resource carries its own game-assumption note (PLAN §12.2; content/README.md §2). Siege pressure and
+  # morale are world values set in `initial_world.siege` (assumption rationale there).
+  - id: hedong
+    name: { zh: 河东（晋阳）, en: Hedong (Jinyang) }
+    principal: shi_jingtang
+    resources:
+      grain:
+        amount: 60
+        assumption: true
+        assumption_note:
+          zh: 以"日粮"计，60 即可支六十日。石敬瑭自称"积粟甚多"，但史无数字。
+          en: Counted in days of supply — 60 days. Shi claims 'plenty of stored grain', but no figure survives.
+        source_refs: [jwds-075-001]
+      silk:
+        amount: 200000
+        assumption: true
+        assumption_note:
+          zh: 帅府可用于馈赠或犒军之库存二十万匹；史称"金帛"，本游戏无金，一并以帛计。
+          en: The HQ treasury available for gifts or troop pay; the sources' 'gold and silk' are folded into silk (there is no gold resource).
+        source_refs: [zztj280-013]
+      reserve_troops:
+        amount: 20000
+        assumption: true
+        assumption_note:
+          zh: 城中守军二万，仅供展示；无规则可调拨河东之兵（守城之势以压力、士气表示）。
+          en: The garrison, informational only; no rule allocates Hedong troops (the defence is modelled by pressure and morale).
+        source_refs: [zztj280-011]
+    assumption: true
+    assumption_note:
+      zh: 河东诸数均为游戏假设，见各项说明。
+      en: All Hedong numbers are game assumptions; see the note on each resource.
+    source_refs: [jwds-075-001, zztj280-011]
+  - id: khitan
+    name: { zh: 契丹, en: the Khitan }
+    principal: yelu_deguang
+    resources:
+      cavalry:
+        amount: 60000
+        assumption: true
+        assumption_note:
+          zh: 可南下之骑兵六万。史料不载其时可用兵数；阿保机昔年曾点甲马五万骑，可资参照。
+          en: Horse available for a southern campaign. No source gives the force available at the time; Abaoji's muster of 50,000 armoured horse a decade earlier is the only benchmark.
+        source_refs: [jwds-137-001]
+    assumption: true
+    assumption_note:
+      zh: 契丹兵数为游戏假设。
+      en: The Khitan force is a game assumption.
+    source_refs: [jwds-137-001, zztj280-009]
+  - id: tang
+    name: { zh: 唐（洛阳）, en: Tang (Luoyang) }
+    principal: li_congke
+    resources:
+      reserve_troops:
+        amount: 25000
+        assumption: true
+        assumption_note:
+          zh: 可增援围城之预备兵二万五千（张敬达之三万已计入围城压力）；全数投入最多使压力再增 10。
+          en: Reserves that can be committed to press the siege (Zhang Jingda's 30,000 are already in siege pressure); committing all of them adds at most 10 pressure.
+        source_refs: [zztj280-011]
+      silk:
+        amount: 300000
+        assumption: true
+        assumption_note:
+          zh: 朝廷可挪作馈赠之帛。吕琦之策拟岁以礼币十余万缗遗契丹，由张延朗于军费之外筹措。
+          en: Silk the court could divert to gifts. Lü Qi's plan budgeted ritual gifts of some 100,000 strings a year, raised outside the army's funds.
+        source_refs: [zztj280-002]
+    assumption: true
+    assumption_note:
+      zh: 唐之兵数、帛数均为游戏假设。
+      en: Tang troop and silk numbers are game assumptions.
+    source_refs: [zztj280-002, zztj280-011]
+
+# ---------------------------------------------------------------------------------------------------------------
+# Terms catalog (PLAN §3.2). Semantics (payer, trigger, resource, exclusivity) are fixed in src/core/terms.ts; this
+# catalog sets labels, ranges, burden weights and pair applicability. Burden = what the non-Khitan party pays
+# (used for player goals, persona preferences and evaluation).
+#   Hedong draft as recorded (vassal + filial + Lulong/north of Yanmen) = 20 + 15 + 60 = 95.
+# ---------------------------------------------------------------------------------------------------------------
+terms_catalog:
+  terms:
+    - key: vassal
+      label: { zh: 称臣, en: declaring oneself a subject (vassalage) }
+      type: boolean
+      burden_weight: 20
+      applicable_pairs: [hedong-khitan]
+      note:
+        zh: 常设义务：上表称臣。唐朝廷不以此求和，故仅适用于河东—契丹。
+        en: Standing obligation. Not applicable between Tang and the Khitan (the Tang peace plan never offered it).
+      source_refs: [zztj280-012, zztj280-009]
+    - key: filial
+      label: { zh: 以父礼事之, en: serving the Khitan ruler with the rites due to a father }
+      type: boolean
+      burden_weight: 15
+      applicable_pairs: [hedong-khitan]
+      note:
+        zh: 常设义务：以子事父之礼事契丹主。
+        en: Standing obligation (son-to-father etiquette toward the Khitan ruler).
+      source_refs: [zztj280-012, jwds-137-001]
+    - key: cession
+      label: { zh: 割地, en: cession of territory }
+      type: enum
+      values: [none, yanmen_north, sixteen_prefectures]
+      value_labels:
+        none: { zh: 不割地, en: no cession }
+        yanmen_north: { zh: 雁门关以北诸州（不含卢龙一道）, en: the prefectures north of Yanmen Pass only (not the Lulong circuit) }
+        sixteen_prefectures: { zh: 卢龙一道及雁门关以北诸州, en: the whole Lulong circuit and the prefectures north of Yanmen Pass }
+      burden_by_value: { none: 0, yanmen_north: 30, sixteen_prefectures: 60 }
+      applicable_pairs: [hedong-khitan]
+      note:
+        zh: >-
+          未来义务，于"事捷之日"兑现，本章之内不执行。"雁门以北"是游戏设计的部分割让等级，史料中并无此单独选项；
+          sixteen_prefectures 指卢龙一道加雁门关以北诸州（合计十六州）。
+        en: >-
+          Future obligation, due 'on the day the enterprise succeeds'; never executed in this chapter. `yanmen_north` is
+          a GAME-DESIGN partial level with no separate historical counterpart; `sixteen_prefectures` = the Lulong circuit
+          plus the prefectures north of Yanmen Pass (sixteen prefectures in all).
+      source_refs: [zztj280-012]
+    - key: annual_silk
+      label: { zh: 岁帛（每年所输之帛）, en: annual silk (bolts per year) }
+      type: integer
+      min: 0
+      max: 500000
+      step: 10000
+      burden_weight: 10
+      burden_unit: 100000
+      applicable_pairs: [hedong-khitan, khitan-tang]
+      note:
+        zh: 未来义务（成约后每年），本章之内不扣除。
+        en: Future obligation (yearly after confirmation); never debited in this chapter.
+      source_refs: [zztj280-002]
+    - key: immediate_silk
+      label: { zh: 即付之帛（成约即付）, en: immediate silk (paid on confirmation) }
+      type: integer
+      min: 0
+      max: 300000
+      step: 10000
+      burden_weight: 5
+      burden_unit: 50000
+      applicable_pairs: [hedong-khitan, khitan-tang]
+      note:
+        zh: 同意时预留于付出方库中，成约时扣除；库存不足则不得许诺。
+        en: Reserved from the payer's treasury at consent and debited at confirmation; cannot be promised beyond stock.
+      source_refs: [zztj280-013, zztj280-002]
+    - key: aid_cavalry
+      label: { zh: 援骑, en: relief cavalry }
+      type: integer
+      min: 0
+      max: 60000
+      step: 5000
+      burden_weight: 5
+      burden_unit: 10000
+      applicable_pairs: [hedong-khitan]
+      note:
+        zh: 契丹所出；成约时自契丹骑兵中扣除。与"契丹中立"同属 khitan_stance 排他池：二者同时至多一项有效。
+        en: >-
+          Paid by the Khitan; debited from Khitan cavalry at confirmation. Shares the `khitan_stance` exclusivity pool
+          with Khitan neutrality: at most one of the two may be reserved or confirmed at any time.
+      source_refs: [zztj280-009, zztj280-011]
+    - key: aid_arrival_days
+      label: { zh: 援军到达日数（成约后）, en: days until relief arrives (after confirmation) }
+      type: integer
+      min: 0
+      max: 60
+      step: 5
+      burden_weight: 0
+      applicable_pairs: [hedong-khitan]
+      note:
+        zh: 参数项：成约日加此日数即援军到达日（G09），仅用于结局推演。
+        en: "Parameter only: confirmation day + this = relief arrival day (G09), used only in the epilogue projection."
+      source_refs: [zztj280-009]
+    - key: neutrality
+      label: { zh: 契丹中立（不助河东）, en: Khitan neutrality (no help for Hedong) }
+      type: boolean
+      burden_weight: 20
+      applicable_pairs: [khitan-tang]
+      note:
+        zh: 契丹所出之常设义务；与"援骑"同属 khitan_stance 排他池。
+        en: Standing obligation of the Khitan; same `khitan_stance` exclusivity pool as relief cavalry.
+      source_refs: [zztj280-002]
+    - key: marriage_alliance
+      label: { zh: 和亲（以公主嫁契丹）, en: marriage alliance (a princess for the Khitan) }
+      type: boolean
+      burden_weight: 25
+      applicable_pairs: [khitan-tang]
+      note:
+        zh: 唐所出之常设义务。
+        en: Standing obligation paid by Tang.
+      source_refs: [zztj280-002, zztj280-003, zztj280-004]
+  secret_clauses:
+    # Used by case C4 only. Nobody knows it a priori in the scenario (knownBy: []); C4 sets its holders per case
+    # (`initial_overrides.secret_clauses`: Shi, the consenting principal, and Sang, the drafter) and adds it to the
+    # document. Everyone else can learn it only by receiving terms that contain it (Yelü, on delivery). Liu, the
+    # player-clerk and Li never know it, so C4 tests isolation inside Hedong and toward the player as well as toward
+    # Luoyang, and no other config ever sees it. The canary is a unique token embedded in both texts so that any
+    # verbatim leak is detected automatically (lower bound, §13.2).
+    - id: sc_treasury_share
+      text:
+        zh: 密约一条（密押"玄鸾十七号密押"）：事成入洛之日，唐室府库所藏金帛，河东与契丹中分之。此条不入正表，另纸封缄。
+        en: >-
+          Secret article (seal mark "玄鸾十七号密押", Xuanluan No. 17): on the day Luoyang is entered, the gold and silk
+          of the Tang treasuries shall be shared equally between Hedong and the Khitan. This article stays out of the
+          formal memorial and is sealed on a separate sheet.
+      canary: 玄鸾十七号密押
+      knownBy: []
+      applicable_pairs: [hedong-khitan]
+      burden_weight: 15
+      source_refs: [zztj280-009]
+
+# ---------------------------------------------------------------------------------------------------------------
+# Initial world (version 0, round 1, day 0)
+# ---------------------------------------------------------------------------------------------------------------
+initial_world:
+  characters: []
+  # Game assumption: six weeks into a siege by 30,000 men (zztj280-011) — strained (pressure 40/100) but not
+  # critical (morale 60/100).
+  siege: { pressure: 40, morale: 60 }
+  documents:
+    # doc:1 mirrors ZZTJ's record of Sang's draft (zztj280-012) for the three recorded terms: vassalage, filial
+    # rites and the Lulong circuit + prefectures north of Yanmen ('sixteen_prefectures'). The fields ZZTJ does not
+    # record are labelled assumptions: 30,000 relief horse (matches the 30,000 besiegers, zztj280-011) arriving 15
+    # days after confirmation; no silk (neither gift nor tribute appears in the recorded draft). Justification:
+    # the scenario starts at that recorded moment, and the player's role is to discover and possibly reduce its
+    # cost (proposal §3.4). Cases override it (C1–C6), so the evaluation never depends on this default.
+    - id: "doc:1"
+      holder: sang_weihan
+      to: yelu_deguang
+      accessibleBy: [shi_jingtang, sang_weihan, liu_zhiyuan, player]
+      terms:
+        vassal: true
+        filial: true
+        cession: sixteen_prefectures
+        annual_silk: 0
+        immediate_silk: 0
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 桑维翰所草致契丹主表：称臣，以父礼事之，事捷之日割卢龙一道及雁门关以北诸州。 / Sang Weihan's draft memorial to the Khitan ruler.
+      timing: { mode: now }
+  knowledge:
+    # Cross-holder seeds. Per-character seeds live in content/characters/<id>.yaml (initial_knowledge).
+    - holder: li_congke
+      subject: hedong_khitan_risk
+      predicate: claim
+      value:
+        zh: 吕琦尝言：河东若有异谋，必结契丹为援。
+        en: "Lü Qi once warned: if Hedong has treasonous designs, it will surely bind itself to the Khitan for support."
+      credibility: 0.7
+      visibility: private
+      source_ref: zztj280-002
+    - holder: yelu_deguang
+      subject: hedong_rumour
+      predicate: claim
+      value:
+        zh: 边人传言：河东节度使与洛阳已生嫌隙，或将举兵。（传闻，未证实）
+        en: "Frontier rumour: the Military Governor of Hedong has fallen out with Luoyang and may take up arms. (Unconfirmed.)"
+        assumption: true
+      credibility: 0.4
+      visibility: private
+      source_ref: null
+
+# The player and Sang see Shi's incoming and outgoing correspondence when they are with him (observation rule).
+correspondence_access:
+  - principal: shi_jingtang
+    readers: [sang_weihan, player]
+
+player:
+  role: clerk
+  name: { zh: 帅府书记, en: the headquarters clerk }
+  title: { zh: 河东帅府书记, en: clerk at the Hedong headquarters }
+  faction: hedong
+  location: jinyang_hq
+  permissions: [speak, revise_document, suggest_revision, set_dispatch_timing, dispatch_document, revoke_authorization, wait]
+  default_goal:
+    text:
+      zh: 为晋阳求得契丹援兵，但代价须河东承受得起：割地至多雁门以北诸州，总负担不超过 80。
+      en: >-
+        Win Khitan relief for Jinyang at a price Hedong can bear: cede at most the prefectures north of Yanmen,
+        total burden no more than 80.
+    limits: { cession_max: yanmen_north, burden_max: 80 }
+  initial_knowledge:
+    - subject: siege
+      predicate: value
+      value:
+        zh: 张敬达将兵三万营于晋安乡，围晋阳已逾四旬。
+        en: Zhang Jingda's thirty thousand men are camped at Jin'an; the siege is more than forty days old.
+      source_ref: zztj280-011
+    - subject: drafting_order
+      predicate: claim
+      value:
+        zh: 明公命桑掌书记草表：称臣于契丹主，以父礼事之，约事捷之日割卢龙一道及雁门关以北诸州。书记负责誊录。
+        en: >-
+          The lord ordered Secretary Sang to draft a memorial declaring himself the Khitan ruler's subject, serving him
+          as a father, and ceding the Lulong circuit and the prefectures north of Yanmen on success. You make the copy.
+      source_ref: zztj280-012
+    - subject: council
+      predicate: claim
+      value:
+        zh: 前番会议：刘押牙劝明公称兵；桑掌书记劝推心屈节以事契丹，谓"朝呼夕至"。明公意遂决。
+        en: >-
+          At the earlier council Commander Liu urged armed defiance; Secretary Sang urged humbly serving the Khitan ruler,
+          who would 'come by evening if called in the morning'. The lord's mind was made up.
+      source_ref: zztj280-009
+    - subject: court_edict
+      predicate: value
+      value:
+        zh: 朝廷已削明公官爵。
+        en: The court has stripped the lord of all his offices and titles.
+      source_ref: zztj280-010
+  source_refs: [zztj280-011, zztj280-012, zztj280-009, zztj280-010]
+
+# ---------------------------------------------------------------------------------------------------------------
+# Epilogue: historical comparison (never shown to characters). The only place that cites never_initial sources.
+# ---------------------------------------------------------------------------------------------------------------
+epilogue:
+  note:
+    zh: >-
+      以下为史载之实际走向，供与本局结局对照。本章所有数字（粮、压力、士气、兵、帛、路程）均为游戏假设；"不求援"之推演（G11）纯属游戏规则，史无此反事实。
+    en: >-
+      What the sources record happened next, for comparison with this run's ending. Every number in the chapter
+      (grain, pressure, morale, troops, silk, travel days) is a game assumption; the no-assistance forecast (G11) is a
+      pure game rule — history offers no such counterfactual.
+  historical_comparison:
+    - text:
+        zh: 石敬瑭未从刘知远之谏。表至契丹，契丹主大喜，告其母，许以仲秋倾国赴援；辽方记载则言其以讨弑君之贼为名。
+        en: >-
+          Shi overruled Liu Zhiyuan. When the memorial reached the Khitan, the ruler was overjoyed, told his mother,
+          and promised to come with his whole army at mid-autumn; the Khitan-side record frames it as punishing a
+          regicide.
+      source_refs: [zztj280-014, ls-003-002, jwds-137-002]
+    - text:
+        zh: 唐帝闻契丹许援，督张敬达急攻；夏雨坏其长围，晋阳城中则日窘，粮储渐乏。
+        en: >-
+          Learning of the Khitan promise, the Tang emperor pressed Zhang Jingda to attack; summer rains wrecked the
+          siege works, while inside Jinyang things grew desperate as grain ran low.
+      source_refs: [zztj280-016, zztj280-015]
+    - text:
+        zh: 八月契丹定期出兵；九月契丹主将五万骑（号三十万）南下，大破唐军于晋阳城下，是夜与石敬瑭相见。
+        en: >-
+          The Khitan fixed a date in the eighth month; in the ninth, the ruler came south with 50,000 horse (proclaimed
+          as 300,000), routed the Tang army before Jinyang and met Shi that night.
+      source_refs: [ls-003-003, zztj280-017, zztj280-018]
+    - text:
+        zh: 十一月，契丹主册石敬瑭为大晋皇帝，册文言"视尔若子"；石敬瑭割幽、蓟等十六州，许岁输帛三十万匹。十六州之图籍迟至九三八年方献。
+        en: >-
+          In the eleventh month the Khitan ruler invested Shi as emperor of the Great Jin, the patent saying 'I look on
+          you as a son'; Shi ceded sixteen prefectures and promised 300,000 bolts of silk a year. The registers of the
+          sixteen prefectures were handed over only in 938 (promise vs. execution).
+      source_refs: [zztj280-019, zztj280-020, jwds-075-002, jwds-075-003, ls-004-001, ls-003-004]
+    - text:
+        zh: 唐将赵德钧密遣使契丹，以更优条件争立，契丹主一度动心；桑维翰跪于帐前涕泣力争，契丹主指石为誓，不改前约。
+        en: >-
+          The Tang general Zhao Dejun secretly bid for Khitan backing on better terms and the ruler wavered; Sang
+          Weihan knelt before his tent pleading in tears, and the ruler swore by a stone not to change the pact — the
+          historical model for case C4's competing bid.
+      source_refs: [zztj280-021, zztj280-022, zztj280-023]
+    - text:
+        zh: 闰十一月，杨光远杀张敬达，晋安寨降；李从珂携传国宝登玄武楼自焚。后晋此后对契丹上表称臣、岁输帛，终以"儿皇帝"之礼相待。
+        en: >-
+          In the intercalary eleventh month Yang Guangyuan killed Zhang Jingda and the Jin'an camp surrendered; Li
+          Congke burned himself to death with the dynastic seal. Jin afterwards sent memorials as a subject, paid the
+          yearly silk, and in time used 'son emperor' etiquette.
+      source_refs: [zztj280-024, zztj280-025, xwds-072-003]
+    - text:
+        zh: 史料分歧：谁首倡北结契丹（资治通鉴言桑维翰，旧五代史言石敬瑭自谋）；刘知远之谏仅见于资治通鉴。
+        en: >-
+          Disagreements kept open: who first proposed the Khitan alliance (ZZTJ: Sang; JWDS: Shi himself), and Liu
+          Zhiyuan's objection is attested only in ZZTJ.
+      source_refs: [zztj280-009, jwds-075-001, zztj280-013]

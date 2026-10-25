@@ -1,0 +1,42 @@
+id: FX1
+title: { zh: 合作（测试）, en: Cooperation (fixture) }
+purpose: { zh: 有效合作路径。, en: Valid cooperation path. }
+player_goal:
+  text: { zh: 尽快求得援军。, en: Get relief quickly. }
+  limits: { cession_max: yanmen_north, burden_max: 120 }
+script:
+  - round: 1
+    inputs:
+      - dialogue: { to: [shi_jingtang], text: 请速决。 }
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: now, rounds: null } }
+        when: { doc_status: { docId: "doc:1", status: draft } }
+  - round: 3
+    inputs:
+      - action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: "$current"
+            terms: { vassal: true, filial: false, cession: none, annual_silk: 0, immediate_silk: 200000, aid_cavalry: 30000, aid_arrival_days: 20, neutrality: false, marriage_alliance: false, secret_clauses: [] }
+            note: overdraft probe
+        when: { player_not_received: { kind: response, from: yelu_deguang } }
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true, actor: shi_jingtang, action_type: dispatch_document }
+    choose: endorse
+  - match: { category: major_commitment }
+    choose: delegate
+    authorization:
+      grantee: shi_jingtang
+      categories: [major_commitment]
+      limits: { burden_max: 150 }
+      expiresRound: 6
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: mutiny }
+    choose: let_it_happen
+expected_checkpoints:
+  - { type: dispatch_request, round: 1, object: "doc:1" }
+constraints:
+  - { id: fx1-terminal, kind: terminal_in, terminals: [pact_concluded] }
+valid_terminals: [pact_concluded, talks_failed]
+max_rounds: 6

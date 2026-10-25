@@ -1,0 +1,74 @@
+# P3 — pilot variant for live prompt tuning ONLY. Differs from every case: a bare-minimum draft, a stronger Tang
+# reserve (Li can add up to 16 pressure) and better morale. No reference trace.
+id: P3
+title: { zh: 薄约强唐, en: A lean offer against a stronger Tang }
+purpose:
+  zh: 调试用：只许称臣，唐有更多预备兵；观察契丹主拒约或还价、唐帝是否加兵急攻。
+  en: "Tuning only: vassalage alone, and a Tang court with more reserves; watch the Khitan ruler refuse or counter and whether Li presses the siege."
+
+initial_overrides:
+  resources: { tang: { reserve_troops: 40000 } }
+  siege: { pressure: 36, morale: 70 }
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: false
+        cession: none
+        annual_silk: 0
+        immediate_silk: 0
+        aid_cavalry: 20000
+        aid_arrival_days: 20
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 只许称臣。 / Vassalage only.
+
+player_goal:
+  text:
+    zh: 所许越少越好：不行父礼，总负担不过 60。
+    en: Give as little as possible — no filial rites, total burden at most 60.
+  limits:
+    filial: false
+    burden_max: 60
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, sang_weihan, liu_zhiyuan]
+          text:
+            zh: 仆以为只许称臣足矣，诸公以为如何？
+            en: I think vassalage alone is enough. What do you say, gentlemen?
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request }
+    choose: withhold
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment }
+    choose: withhold
+  - match: { category: strategic_turn }
+    choose: endorse
+  - match: { category: negotiation_deadlock }
+    choose: adjust_goal
+    goal_limits: { filial: false, burden_max: 75 }
+  - match: { category: mutiny }
+    choose: let_it_happen
+  - match: { category: internal_disagreement }
+    choose: endorse
+  - match: { category: goal_conflict }
+    choose: withhold
+  - match: { category: risky_delay }
+    choose: withhold
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 6

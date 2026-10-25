@@ -1,0 +1,30 @@
+case: FX1
+description: R1 approve+dispatch (endorsed) -> R2 Yelü confirms -> R3 PREPARE delivers the acceptance => pact_concluded.
+max_rounds: 6
+rounds:
+  - round: 1
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 请速决。 } }
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: now, rounds: null } }
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - ref: suggest
+        actor: sang_weihan
+        action:
+          type: suggest_revision
+          args:
+            target: { kind: document, id: "doc:1" }
+            terms: { vassal: null, filial: null, cession: null, annual_silk: 100000, immediate_silk: null, aid_cavalry: null, aid_arrival_days: null, neutrality: null, marriage_alliance: null, secret_clauses: null }
+            reason: 可加岁帛。
+        ask_player: { question: 是否加岁帛？ }
+      - { actor: liu_zhiyuan, action: { type: speak, args: { to: [shi_jingtang, player], text: 代价太重。 } } }
+      - { actor: li_congke, action: { type: wait, args: {} } }
+    decisions:
+      - { ref: dispatch, choose: endorse }
+      - { ref: suggest, choose: endorse }
+  - round: 2
+    proposals:
+      - { ref: confirm, actor: yelu_deguang, action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } } }
+      - { actor: li_congke, action: { type: send_letter, args: { to: shi_jingtang, text: 速降。 } } }
+expected: { terminal: pact_concluded, round: 3 }

@@ -1,0 +1,81 @@
+case: FX3
+description: >-
+  R1 dispatch (plus Li's competing bid and Sang's rejected on-behalf confirm) -> R2 Yelü counters (round 1) ->
+  R3 Shi counters (pause; round 2, segment exhausted) -> R4 Yelü's over-segment counter is rejected; he rejects
+  and confirms Li's neutrality bid -> R5 Shi learns: deadlock pause, urge_stop, regenerated batch ->
+  talks_failed at R5's ADVANCE.
+max_rounds: 6
+rounds:
+  - round: 1
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - ref: li_bid
+        actor: li_congke
+        action:
+          type: propose_terms
+          args:
+            to: yelu_deguang
+            note: null
+            terms: { vassal: false, filial: false, cession: none, annual_silk: 0, immediate_silk: 100000, aid_cavalry: 0, aid_arrival_days: 0, neutrality: true, marriage_alliance: true, secret_clauses: [] }
+      - ref: sang_on_behalf
+        actor: sang_weihan
+        action: { type: confirm_commitment, args: { commitmentId: "cmt:1", offerId: "offer:1", termsVersion: 1 } }
+        expect: { status: rejected, rule: H02 }
+    decisions:
+      - { ref: dispatch, choose: endorse }
+  - round: 2
+    proposals:
+      - ref: yelu_counter
+        actor: yelu_deguang
+        action:
+          type: respond_to_offer
+          args:
+            offerId: "offer:1"
+            response: counter
+            reason: 须割十六州。
+            counterTerms: { vassal: true, filial: true, cession: sixteen_prefectures, annual_silk: 300000, immediate_silk: 50000, aid_cavalry: 50000, aid_arrival_days: 15, neutrality: false, marriage_alliance: false, secret_clauses: [sc_private_tribute] }
+  - round: 3
+    proposals:
+      - ref: shi_counter
+        actor: shi_jingtang
+        action:
+          type: respond_to_offer
+          args:
+            offerId: "offer:3"
+            response: counter
+            reason: 只割雁门以北。
+            counterTerms: { vassal: true, filial: true, cession: yanmen_north, annual_silk: 200000, immediate_silk: 50000, aid_cavalry: 40000, aid_arrival_days: 15, neutrality: false, marriage_alliance: false, secret_clauses: [sc_private_tribute] }
+      - { ref: li_siege, actor: li_congke, action: { type: allocate_resources, args: { faction: tang, resource: reserve_troops, amount: 10000, purpose: intensify_siege } } }
+    decisions:
+      - { ref: shi_counter, choose: endorse }
+  - round: 4
+    proposals:
+      - ref: yelu_over_segment
+        actor: yelu_deguang
+        action:
+          type: respond_to_offer
+          args:
+            offerId: "offer:4"
+            response: counter
+            reason: 再议。
+            counterTerms: { vassal: true, filial: true, cession: sixteen_prefectures, annual_silk: 250000, immediate_silk: 50000, aid_cavalry: 40000, aid_arrival_days: 15, neutrality: false, marriage_alliance: false, secret_clauses: [sc_private_tribute] }
+        expect: { status: rejected, rule: H13 }
+      - { ref: yelu_reject, actor: yelu_deguang, action: { type: respond_to_offer, args: { offerId: "offer:4", response: reject, counterTerms: null, reason: 不足。 } } }
+      - { ref: yelu_li, actor: yelu_deguang, action: { type: confirm_commitment, args: { commitmentId: "cmt:2", offerId: "offer:2", termsVersion: 1 } } }
+  - round: 5
+    proposals:
+      - ref: shi_new_thread
+        actor: shi_jingtang
+        action:
+          type: propose_terms
+          args:
+            to: yelu_deguang
+            note: null
+            terms: { vassal: true, filial: true, cession: yanmen_north, annual_silk: 250000, immediate_silk: 50000, aid_cavalry: 40000, aid_arrival_days: 15, neutrality: false, marriage_alliance: false, secret_clauses: [] }
+    decisions:
+      - { category: negotiation_deadlock, choose: urge_stop }
+    regenerations:
+      - proposals:
+          - { actor: shi_jingtang, action: { type: speak, args: { to: [sang_weihan, liu_zhiyuan, player], text: 罢议。 } } }
+expected: { terminal: talks_failed, round: 5 }

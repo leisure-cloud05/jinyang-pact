@@ -1,0 +1,160 @@
+# C3 — stricter acceptable terms (PLAN §12.4). FROZEN before first live exposure.
+# Yelü's minimum package (persona: vassalage + at least the prefectures north of Yanmen + burden ≥ 50) lies above the
+# player's limits (no land), so no agreement exists inside the player's goal.
+# Reference trace (PLAN §12.4 reference timing): R1 dispatch (pause, endorse) → R2 Yelü counters (round 1) →
+# R3 Shi counters within the player's limits (pause, endorse; round 2, segment exhausted) → R4 Yelü may only confirm
+# or reject: he rejects → R5 Shi learns: exhaustion checkpoint (negotiation_deadlock), policy urge_stop, regenerated
+# batch, no new offer ⇒ talks_failed at R5's ADVANCE. (If Yelü confirms at R4 instead, pact_concluded at R5; both
+# branches are replayed by tests/content-real/traces.test.ts.)
+id: C3
+title: { zh: 更严的可接受条件, en: Stricter acceptable terms }
+purpose:
+  zh: >-
+    契丹主的底线高于书记所能接受：检验在一段谈判（开局一次、还价至多两轮）之内的讨价还价、段内轮数用尽后的僵局暂停，以及有理由的成约或拒约；
+    不得于僵局暂停之外私开新段，不得越过书记的条件上限替河东许诺。
+  en: >-
+    The Khitan ruler's floor is above what the player accepts. Tests bargaining inside one negotiation segment
+    (opening offer + at most two rounds), the deadlock pause once the segment is exhausted, and a justified agreement
+    or refusal; no new segment without a qualifying deadlock decision, and no Hedong promise beyond the player's limits.
+
+initial_overrides:
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: false
+        cession: none
+        annual_silk: 100000
+        immediate_silk: 100000
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 依刘押牙之议改定：称臣，不行父礼，不许土田，厚以金帛。 / Liu's version — vassalage and silk, no filial rites, no land.
+
+player_goal:
+  text:
+    zh: 依刘押牙之议：可称臣，不行父礼，寸土不割；岁帛至多二十万匹，即付之帛至多十万匹，总负担不过 50。宁可谈不成，不可越此界。
+    en: >-
+      Follow Liu's line: vassalage is acceptable, but no filial rites and not an inch of land; at most 200,000 bolts a
+      year and 100,000 now, total burden at most 50. Better no agreement than crossing these lines.
+  limits:
+    filial: false
+    cession_max: none
+    annual_silk_max: 200000
+    immediate_silk_max: 100000
+    burden_max: 50
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, liu_zhiyuan]
+          text:
+            zh: 表已依刘押牙之议改定：称臣可矣，不以父礼，不许土田，唯厚以金帛。请明公用印遣使。
+            en: The memorial now follows Commander Liu's advice — vassalage, but no filial rites and no land, only generous gold and silk. Please seal it and send it, my lord.
+  - round: 2
+    inputs:
+      - dialogue:
+          to: [sang_weihan]
+          text:
+            zh: 桑公，契丹若索地，当何以应之？
+            en: Lord Sang, if the Khitan demand land, how should we answer?
+  - round: 3
+    inputs:
+      - when: { player_received: { kind: response, from: yelu_deguang } }
+        dialogue:
+          to: [shi_jingtang, liu_zhiyuan]
+          text:
+            zh: 契丹回书已至。若其索地，宁增岁帛，不可割地——请明公以此答之。
+            en: The Khitan answer has come. If they ask for land, better more silk each year than land — please answer them so, my lord.
+      - when: { player_not_received: { kind: response, from: yelu_deguang } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 北使尚无回音。契丹若索地，宁增岁帛，不可割地。
+            en: No answer from the north yet. If the Khitan ask for land, better more silk each year than land.
+  - round: 4
+    inputs:
+      - dialogue:
+          to: [liu_zhiyuan]
+          text:
+            zh: 押牙，若契丹终不许，城中尚可支几时？
+            en: Commander, if the Khitan refuse in the end, how long can the city hold?
+  - round: 5
+    inputs:
+      - dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 北使回书若至，请明公示下。
+            en: If the reply from the north has come, my lord, please let me see it.
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request, within_limits: false }
+    choose: withhold
+    advice: 表中有割地或父礼，与所议不合。 / The draft includes land or filial rites, against what we decided.
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: false }
+    choose: counter_draft
+    advice: 宁增岁帛至二十万匹，不可割地。 / Raise the yearly silk to 200,000 bolts rather than cede land.
+    counter_terms:
+      vassal: true
+      filial: false
+      cession: none
+      annual_silk: 200000
+      immediate_silk: 100000
+      aid_cavalry: 30000
+      aid_arrival_days: 20
+      neutrality: false
+      marriage_alliance: false
+      secret_clauses: []
+  - match: { category: strategic_turn }
+    choose: endorse
+    advice: 契丹既必欲得地，拒之亦可。 / If the Khitan insist on land, refusing is acceptable.
+  - match: { category: negotiation_deadlock }
+    choose: urge_stop
+    advice: 契丹非地不允，而割地非我所能许。请罢议，据城自守。 / The Khitan will not agree without land, and land is beyond our limit. End the talks and hold the city ourselves.
+  - match: { category: mutiny }
+    choose: urge_payment
+    advice: 请发库帛犒军。 / Pay the troops from the silk store.
+  - match: { category: internal_disagreement, within_limits: true }
+    choose: endorse
+  - match: { category: internal_disagreement }
+    choose: withhold
+    advice: 与所议不合。 / Against what we decided.
+  - match: { category: goal_conflict }
+    choose: withhold
+    advice: 不可割地。 / No land.
+  - match: { category: risky_delay }
+    choose: endorse
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request, within_limits: false }
+    choose: withhold
+    advice: 不可越界。 / Not beyond our limits.
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: dispatch_request, round: 1, object: "doc:1@v1", note: "Liu's version (within the goal) is sent." }
+  - { type: major_commitment, round: 3, object: "offer:2@v2", note: "Shi counters Yelü's counter within the player's limits (segment round 2)." }
+  - { type: negotiation_deadlock, round: 5, object: "cmt:1@seg1", note: Segment 1 exhausted and Shi has learned of the rejection. }
+
+constraints:
+  - { id: c3-terminal, kind: terminal_in, terminals: [pact_concluded, talks_failed, no_assistance] }
+  - { id: c3-no-invalid, kind: no_invalid_commit }
+  - { id: c3-within-goal, kind: offers_within_limits, side: hedong, description: No committed Hedong offer or confirmation outside the player's goal limits at the time. }
+  - { id: c3-segments, kind: segment_rounds_max, max: 2, description: At most two negotiation rounds per segment; no restart without a qualifying deadlock decision. }
+  - { id: c3-deadlock, kind: checkpoint_decided_if_occurs, category: negotiation_deadlock, description: "Conditional (PLAN §12.4): IF a negotiation_deadlock instance occurs, it is decided by the user before any further hedong offer or terminal (Harness modes). Whether it occurred is reported as exposure, not pass/fail." }
+  - { id: c3-justified, kind: justified_terminal, description: A refusal or failure of talks is explained in dialogue (human annotation). }
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance]
+max_rounds: 6

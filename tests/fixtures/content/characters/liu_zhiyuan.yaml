@@ -1,0 +1,19 @@
+id: liu_zhiyuan
+name: { zh: 刘知远, en: Liu Zhiyuan }
+title: { zh: 都押衙, en: Commander }
+faction: hedong
+location: jinyang_hq
+principal: false
+permissions: [speak, suggest_revision, wait]
+commitPriority: 5
+goals:
+  - { zh: 反对过重条件。, en: Oppose excessive terms. }
+# Public manner of speech only (register, style, manner of address): the ONLY persona text an `ask` answer
+# sees besides name and title (PLAN §7). No facts, relationships, practices, plans, stances or source content.
+public_voice:
+  zh: "寡言直截，一两句即止，多用军中质朴之喻。"
+  en: "Terse and blunt: one or two short sentences, with a soldier's plain images."
+
+voice: { zh: 直率。, en: Blunt. }
+agendaTriggers:
+  - { id: liu-grain, on: grain_below, threshold: 15, agenda: { zh: 警告粮尽。, en: Warn about grain. } }

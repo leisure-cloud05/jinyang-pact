@@ -1,0 +1,35 @@
+id: D1
+title: { zh: 内部议事（测试）, en: Internal deliberation (fixture) }
+purpose: { zh: 内部议事。, en: Internal deliberation. }
+initial_overrides:
+  in_transit:
+    - kind: offer
+      from: yelu_deguang
+      to: shi_jingtang
+      terms: { vassal: true, filial: true, aid_cavalry: 20000, aid_arrival_days: 15 }
+      note: 契丹先遣使来
+      arrival_day: 5
+    - kind: letter
+      from: li_congke
+      to: shi_jingtang
+      text: 速降。
+      sent_day: -5
+      arrival_day: 0
+player_goal:
+  text: { zh: 听取众议。, en: Hear the council. }
+script:
+  - round: 1
+    inputs:
+      - action: { type: dispatch_document, args: { docId: "doc:1", docVersion: "$current" } }
+        probe: true
+decision_policy:
+  - match: { category: dispatch_request }
+    choose: withhold
+    advice: Not yet.
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 2
+interrupts:
+  - { round: 1, phase: generate, instruction: 先议条款。 }
+faults:
+  - { round: 1, kind: duplicate_request }
+  - { round: 2, kind: narration_failure, target: jinyang_hq }

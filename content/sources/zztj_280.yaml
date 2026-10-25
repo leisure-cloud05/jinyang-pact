@@ -1,0 +1,1533 @@
+# Historical source entries for "The Jinyang Pact" (936 CE, Jinyang). Schema: PLAN.md §10.1.
+# Provenance, licence, field semantics and the history-vs-assumption rule: content/sources/README.md
+# Raw Wikisource snapshots (fetched 2026-09-27) used for every original_zh: content/notes/raw/
+# learnable_by lists all six holders; characters' contexts may only use entries marked `initial`
+# for that holder. `never_initial` entries are for the epilogue / historical comparison only.
+# retrospective_note (optional) holds hindsight remarks: epilogue/inspector only, never sent to characters.
+# event_time: {year, month|null, leap, lunar, note}; 閏十一月 => month 11, leap true; undated sketches => month null.
+
+- id: zztj280-001
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）春正月癸丑"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "癸丑，唐主以千春節置酒，晉國長公主上壽畢，辭歸晉陽。帝醉，曰：「何不且留？遽歸，欲與石郎反邪！」石敬瑭聞之，益懼。"
+  gloss_en: >-
+    On the guichou day the Tang ruler [Li Congke] gave a banquet for his birthday, the Qianchun
+    Festival. When the Grand Princess of Jin [Shi Jingtang's wife, a daughter of Emperor Mingzong]
+    had offered her birthday toast and asked leave to return to Jinyang, the emperor, drunk, said:
+    'Why not stay a while? Hurrying back like this — do you mean to rebel together with Lord Shi?'
+    When Shi Jingtang heard of it he became even more afraid.
+  persons: [li_congke, princess_jinguo, shi_jingtang]
+  event_time:
+    year: 936
+    month: 1
+    leap: false
+    lunar: true
+    note: "正月癸丑 = day 23, ≈ 18 Feb 936 (Julian, computed); the Qianchun Festival was Li Congke's birthday."
+  location: luoyang_court
+  topics: [li_congke_suspicion]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Banquet remark. Shi himself quotes the same words to his staff in JWDS 卷75 (「爾歸心甚急，欲與石郎反耶？」, not
+    excerpted), so the gist is doubly attested; the wording is reconstructed. Hedong holders know it
+    because Shi repeats it in council (zztj280-007).
+
+- id: zztj280-002
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）三月（丁巳條之前）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "琦曰：「河東若有異謀，必結契丹為援。契丹母以贊華在中國，屢求和親，但求萴剌等未獲，故和未成耳。今誠歸萴刺等與之和，歲以禮幣約直十餘萬緡遺之，彼必歡然承命。如此，則河東雖欲陸梁，無能為矣。」崧曰：「此吾志也。然錢穀皆出三司，宜更與張相謀之。」遂告張延朗，延朗曰：「如學士計，不惟可以制河東，亦省邊費之什九，計無便於此者。若主上聽從，但責辦於老夫，請於軍財之外捃拾以供之，他夕，二人密言於帝，帝大喜，稱其忠，二人私草《遺契丹書》以俟命。"
+  gloss_en: >-
+    Lü Qi said [to Li Song]: 'If Hedong has treasonous designs it will certainly bind itself to the
+    Khitan for support. Because Zanhua [the exiled Khitan prince Yelü Bei] is in China, the Khitan
+    mother has repeatedly sought peace and a marriage alliance; peace has not been made only because
+    her request for the return of Cela and the other captives was never granted. If we now really
+    return Cela and the others and make peace, sending them every year ritual gifts worth some
+    100,000 strings of cash, they will gladly comply. Then, however much Hedong wants to run wild,
+    it can do nothing.' Li Song said: 'That is my own wish. But money and grain all come from the
+    Finance Commission; we should also consult Chief Minister Zhang.' They told Zhang Yanlang, who
+    said: 'The Academician's plan would not only hold Hedong in check but also save nine-tenths of
+    our frontier expenses — nothing could be more convenient. If His Majesty agrees, leave the
+    funding to this old man; I will scrape it together outside the army's funds.' One evening the
+    two men put the plan to the emperor in secret; he was delighted and praised their loyalty, and
+    they privately drafted a 'Letter to the Khitan' to await his command.
+  persons: [lu_qi, li_song, zhang_yanlang, li_congke, yelu_bei, empress_shulu]
+  event_time:
+    year: 936
+    month: 3
+    leap: false
+    lunar: true
+    note: "ZZTJ groups the episode under 三月; the plan preceded Lü Qi's demotion on 三月丁巳 (≈ 22 Apr 936) by some time ('久之' in zztj280-003)."
+  location: luoyang_court
+  topics: [tang_court_debate, peace_marriage_proposal, khitan_relations, gold_silk_gifts]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.65
+  credibility_note: >-
+    Secret deliberation at the Later Tang court, reported only by ZZTJ among the fetched texts (the
+    JWDS 卷48 annotation cites ZZTJ for it). Hedong and the Khitan could not know it. The
+    transcription writes the captive's name both 萴剌 and 萴刺 and lacks the closing quotation mark
+    after 「以供之」; kept verbatim.
+
+- id: zztj280-003
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）三月（丁巳條之前）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "久之，帝以其謀告樞密直學士薛文遇，文遇對曰：「以天子之尊，屈身奉夷狄，不亦辱乎！又，虜若循故事求尚公主，何以拒之？」因誦戎昱《昭君詩》曰：「安危托婦人。」帝意遂變。"
+  gloss_en: >-
+    Some time later the emperor told the plan to Xue Wenyu, Auxiliary Academician of the Bureau of
+    Military Affairs. Xue replied: 'For the Son of Heaven, in all his dignity, to bend himself to
+    serve barbarians — is that not a disgrace? Besides, if the caitiffs follow precedent and ask to
+    marry a princess, how could you refuse?' He then recited the line from Rong Yu's poem on Wang
+    Zhaojun: 'The safety of the realm entrusted to a woman.' The emperor changed his mind.
+  persons: [li_congke, xue_wenyu]
+  event_time:
+    year: 936
+    month: 3
+    leap: false
+    lunar: true
+    note: "Between the peace plan and Lü Qi's demotion on 三月丁巳 (≈ 22 Apr 936)."
+  location: luoyang_court
+  topics: [tang_court_debate, peace_marriage_proposal, khitan_relations]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.65
+  credibility_note: >-
+    Private advice to the emperor; ZZTJ only. The verse is given as Xue's quotation, not checked
+    against Rong Yu's collected poems.
+
+- id: zztj280-004
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）三月丁巳"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "一日，急召崧、琦至後樓，盛怒，責之曰：「卿輩皆知古今，欲佐人主致太平；今乃為謀如是！朕一女尚乳臭，卿欲棄之沙漠邪？且欲以養士之財輸之虜庭，其意安在？」二人懼，汗流浹背，曰：「臣等志在竭愚以報國，非為虜計也，願陛下察之。」拜謝無數，帝詬責不已。呂琦氣竭，拜少止，帝曰：「呂琦強項，肯視朕為人主邪！」琦曰：「臣等為謀不臧，願陛下治其罪，多拜可為！」帝怒稍解，止其拜，各賜卮酒罷之，自是群臣不敢復言和親之策。丁巳，以琦為御史中丞，蓋疏之也。"
+  gloss_en: >-
+    One day the emperor urgently summoned Li Song and Lü Qi to the rear tower and, in a towering
+    rage, rebuked them: 'You both know the past and the present and claim to help your sovereign
+    bring about peace — and this is the plan you devise! My only daughter still smells of her
+    mother's milk; would you cast her away into the desert? And you would ship the wealth meant to
+    feed our soldiers to the caitiffs' court — what do you mean by it?' The two, terrified and
+    drenched in sweat, said: 'Our aim was to use our poor wits to serve the state, not to scheme for
+    the caitiffs; may Your Majesty see this.' They kowtowed without number while the emperor went on
+    berating them. When Lü Qi, out of breath, slowed his bowing, the emperor said: 'Lü Qi is
+    stiff-necked — does he even regard me as his sovereign?' Lü Qi said: 'Our plan was unsound; let
+    Your Majesty punish us for it — what good is more bowing!' The emperor's anger eased a little;
+    he stopped their bowing, gave each a cup of wine and dismissed them. From then on no official
+    dared to mention the marriage-peace policy again. On the dingsi day Lü Qi was made Vice
+    Censor-in-Chief — in effect a way of keeping him at a distance.
+  persons: [li_congke, li_song, lu_qi]
+  event_time:
+    year: 936
+    month: 3
+    leap: false
+    lunar: true
+    note: "Rebuke undated; Lü Qi's demotion on 三月丁巳 = day 28, ≈ 22 Apr 936 (same date in JWDS 卷48)."
+  location: luoyang_court
+  topics: [tang_court_debate, peace_marriage_proposal, persona]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.6
+  credibility_note: >-
+    Vivid private scene with literary dialogue; the demotion and its date are corroborated by JWDS
+    卷48. Useful mainly as a grounded cue for Li Congke's temper.
+
+- id: zztj280-005
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月庚寅"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "五月，庚寅夜，李崧請急在外，薛文遇獨直，帝與之議河東事，文遇曰：「諺有之：『當道築室，三年不成。』茲事斷自聖志；群臣各為身謀，安肯盡言！以臣觀之，河東移亦反，不移亦反，在旦暮耳，不若先事圖之。」先是，術者言國家今年應得賢佐，出奇謀，定天下。帝意文遇當之，聞其言，大喜，曰：「卿言殊豁吾意，成敗吾決行之。」即為除目，付學士院使草制。"
+  gloss_en: >-
+    Fifth month, the night of gengyin. Li Song was away on urgent leave and Xue Wenyu alone was on
+    night duty, so the emperor discussed the Hedong question with him. Xue said: 'The proverb says,
+    "Build a house beside the road and in three years it is still unfinished" [too many passers-by
+    give advice]. This matter must be decided by Your Majesty's own will; the officials all look out
+    for themselves — which of them will speak frankly? As I see it, Hedong will rebel if transferred
+    and rebel if not — it is only a matter of days. Better to strike first.' Earlier, a diviner had
+    said that this year the state would gain a wise adviser who would devise a brilliant plan and
+    settle the realm. The emperor thought Xue was that man and, hearing him, was overjoyed: 'Your
+    words open my mind. Success or failure, I am resolved to do it.' He at once wrote out the
+    appointment list and sent it to the Academy to have the edict drafted.
+  persons: [li_congke, xue_wenyu, li_song]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "五月庚寅 = day 2, ≈ 25 May 936 (the 五月 start is estimated, but the sexagenary day fixes the date)."
+  location: luoyang_court
+  topics: [li_congke_suspicion, tianping_transfer, persona]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    JWDS 卷48 has a parallel (薛文遇: 「除亦叛，不除亦叛」, and the prophecy of a 'wise adviser'), so the core
+    advice is doubly attested; wording differs. A night conversation Hedong could not know.
+
+- id: zztj280-006
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月辛卯、甲午"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "辛卯，以敬瑭為天平節度使，以馬軍都指揮使、河陽節度使宋審虔為河東節度使。製出，兩班聞呼敬瑭名，相顧失色。甲午，以建雄節使張敬達為西北蕃漢馬步都部署，趣敬瑭之鄆州。"
+  gloss_en: >-
+    On xinmao Shi Jingtang was appointed Military Governor of Tianping, and Song Shenqian, Commander
+    of the Cavalry and Military Governor of Heyang, was made Military Governor of Hedong. When the
+    edict was proclaimed and the two ranks of officials heard Shi's name called, they looked at one
+    another aghast. On jiawu Zhang Jingda, Military Governor of Jianxiong, was made Chief Commander
+    of the Chinese and Tribal Cavalry and Infantry of the Northwest, to hurry Shi on his way to
+    Yunzhou [seat of the Tianping command].
+  persons: [li_congke, shi_jingtang, song_shenqian, zhang_jingda]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "辛卯 ≈ 26 May 936; 甲午 ≈ 29 May 936."
+  location: luoyang_court
+  topics: [tianping_transfer, siege]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.9
+  credibility_note: >-
+    Official appointments; the dates 辛卯 and 甲午 match JWDS 卷48. The transcription reads 建雄節使,
+    probably missing 度 (建雄節度使).
+
+- id: zztj280-007
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月（甲午條之後）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "敬瑭疑懼，謀於將佐曰：「吾之再來河東也，主上面許終身不除代；今忽有是命，得非如今年千春節與公主所言乎？我不興亂，朝廷發之，安能束手死於道路乎！今且發表稱疾以觀其意，若其寬我，我當事之；若加兵於我，我則改圖耳。」"
+  gloss_en: >-
+    Shi Jingtang, suspicious and afraid, took counsel with his generals and staff: 'When I came back
+    to Hedong, His Majesty promised me to my face that I would never be replaced as long as I lived.
+    Now this sudden order — is it not just what he said to the princess at this year's Qianchun
+    Festival? I am not the one stirring up trouble; the court is. How can I fold my hands and die on
+    the road? For now I will send a memorial pleading illness and see what he intends. If he is
+    lenient with me, I will serve him; if he sends troops against me, then I will change my plans.'
+  persons: [shi_jingtang, princess_jinguo, li_congke]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "After 甲午 (≈ 29 May 936) and before the revolt was reported on 戊戌 (≈ 2 Jun 936)."
+  location: jinyang_hq
+  topics: [hedong_council, revolt, tianping_transfer, persona]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: [jwds-075-001]
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    Condensed from the same council speech that JWDS 卷75 gives at length (jwds-075-001, the earlier
+    text), so not independent evidence. ZZTJ drops Shi's own threat to ally with the northern enemy.
+
+- id: zztj280-008
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月（甲午條之後）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "幕僚段希堯極言拒之，敬瑭以其樸直，不責也。節度使判官華陰趙瑩勸敬瑭赴鄆州；觀察判官平遙薛融曰：「融書生，不習軍旅。」都押牙劉知遠曰：「明公久將兵，得士卒心；今據形勝之地，士馬精強，若稱兵傳檄，帝業可成，奈何以一紙制書自投虎口乎！」"
+  gloss_en: >-
+    Duan Xiyao, one of his staff, argued vehemently against it [against defying the court]; Shi,
+    regarding him as simple and honest, did not blame him. Zhao Ying of Huayin, the Military
+    Governor's Administrative Assistant, urged Shi to go to Yunzhou [i.e. to obey]; Xue Rong of
+    Pingyao, the Surveillance Administrative Assistant, said: 'I am a scholar and do not understand
+    military matters.' The Chief of the Headquarters Guard (du yaya) Liu Zhiyuan said: 'Your
+    Excellency has long commanded troops and has won the soldiers' hearts. You now hold a
+    strategically advantageous position with strong men and horses. If you raise troops and
+    circulate proclamations, an imperial enterprise can be achieved. Why deliver yourself into the
+    tiger's mouth for the sake of a single sheet of edict?'
+  persons: [duan_xiyao, zhao_ying, xue_rong, liu_zhiyuan, shi_jingtang]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "Same council as zztj280-007 (between ≈ 29 May 936 and ≈ 2 Jun 936)."
+  location: jinyang_hq
+  topics: [hedong_council, revolt, persona]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.65
+  credibility_note: >-
+    Liu Zhiyuan's words appear only in ZZTJ; JWDS 卷75 and XWDS say only that Liu and Sang supported
+    the plan. 「段希堯極言拒之」 is ambiguous; we read it as arguing against resistance, since Shi 'did not
+    blame him'.
+
+- id: zztj280-009
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月（甲午條之後）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "掌書記洛陽桑維翰曰：「主上初即位，明公入朝，主上豈不知蛟龍不可縱之深淵邪？然卒以河東復授公，引乃天意假公以利器。明宗遺愛在人，主上以庶孽代之，群情不附。公明宗之愛婿，今主上以反逆見待，此非首謝可免，但力為自全之計。契丹主素與明宗約為兄弟，今部落近在雲、應，公誠能推心屈節事之，萬一有急，朝呼夕至，何患無成。」敬瑭意遂決。"
+  gloss_en: >-
+    The Secretary (zhang shuji) Sang Weihan of Luoyang said: 'When His Majesty had just taken the
+    throne and Your Excellency came to court, did he not know that a dragon must not be let loose
+    into the deep? Yet in the end he gave Hedong back to you — this is Heaven lending you a sharp
+    weapon. Emperor Mingzong's kindness is still remembered by the people, and His Majesty, a son of
+    a lesser line, has taken the place of his house; popular feeling is not with him. You are
+    Mingzong's beloved son-in-law, yet His Majesty now treats you as a rebel; that cannot be escaped
+    by confessing and apologising — you must put all your strength into preserving yourself. The
+    Khitan ruler long ago swore brotherhood with Mingzong, and his tribes are now close by at Yun
+    and Ying. If you can truly open your heart, humble yourself and serve him, then in an emergency
+    he will come in the evening if called in the morning — why worry about failure?' With that,
+    Shi's mind was made up.
+  persons: [sang_weihan, shi_jingtang, li_congke, li_siyuan, yelu_deguang]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "Same council as zztj280-007 (between ≈ 29 May 936 and ≈ 2 Jun 936)."
+  location: jinyang_hq
+  topics: [hedong_council, revolt, legitimacy, khitan_relations, assistance_request, vassal]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: [jwds-075-001]
+  credibility: 0.65
+  credibility_note: >-
+    ZZTJ credits Sang with proposing the Khitan alliance; JWDS 卷75 (jwds-075-001) has Shi himself
+    threaten to 'ally with the strong enemy in the north', and XWDS 卷8 also gives the idea to Shi
+    (not excerpted). The transcription reads 引乃天意, probably for 此乃天意.
+
+- id: zztj280-010
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月戊戌、壬寅"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "戊戌，昭義節度使皇甫立奏敬瑭反。敬瑭表：「帝，養子，不應承祀，請傳位許王。」帝手裂其表抵地，以詔答之曰：「卿於鄂王固非疏遠，衛州之事，天下皆知；許王之言，何人肯信！」壬寅，制削奪敬瑭官爵。"
+  gloss_en: >-
+    On wuxu Huangfu Li, Military Governor of Zhaoyi, reported that Shi Jingtang had rebelled. Shi's
+    memorial said: 'The emperor is an adopted son and should not carry on the ancestral sacrifices;
+    I request that the throne be passed to the Prince of Xu [Li Congyi, Mingzong's youngest son].'
+    The emperor tore up the memorial with his own hands, threw it to the ground and answered by
+    edict: 'You were hardly a stranger to the Prince of E [the deposed emperor Li Conghou] — what
+    you did at Weizhou the whole realm knows. Who will believe your words about the Prince of Xu?'
+    On renyin an edict stripped Shi of all his offices and titles.
+  persons: [shi_jingtang, li_congke, huangfu_li, li_congyi, li_conghou]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "戊戌 ≈ 2 Jun 936; 壬寅 ≈ 6 Jun 936."
+  location: luoyang_court
+  topics: [revolt, legitimacy]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.85
+  credibility_note: >-
+    Memorial and imperial reply are also given, at greater length, in JWDS 卷48 with the same dates.
+    The reply edict and the stripping of offices were public; the tearing of the memorial happened
+    at court.
+
+- id: zztj280-011
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）五月戊申"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "張敬達將後三萬營於晉安鄉，戊申，敬達奏西北先鋒馬軍都指揮使安審信叛奔晉陽。"
+  gloss_en: >-
+    Zhang Jingda led thirty thousand men and encamped at Jin'an township [outside Jinyang]. On
+    wushen Zhang reported that An Shenxin, cavalry commander of the northwest vanguard, had defected
+    and fled to Jinyang.
+  persons: [zhang_jingda, an_shenxin]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "戊申 ≈ 12 Jun 936; the camp at Jin'an was set up shortly before."
+  location: "other:jin_an_camp"
+  topics: [siege]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    Troop figure from ZZTJ only; 將後三萬 is probably a transcription corruption (e.g. 將兵三萬),
+    unverified. An Shenxin's defection is corroborated by JWDS 卷48 (戊申). The siege force size is
+    visible to both sides.
+
+- id: zztj280-012
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）七月（丙辰條之後，不繫日；摘自句中）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "令桑維翰草表稱臣於契丹主，且請以父禮事之，約事捷之日，割盧龍一道及雁門關以北諸州與之。"
+  gloss_en: >-
+    [Shi Jingtang] ordered Sang Weihan to draft a memorial in which he declared himself a subject of
+    the Khitan ruler and also asked to serve him with the rites due to a father, promising that on
+    the day the enterprise succeeded he would cede to him the whole Lulong circuit and the
+    prefectures north of Yanmen Pass.
+  persons: [shi_jingtang, sang_weihan, yelu_deguang]
+  event_time:
+    year: 936
+    month: 7
+    leap: false
+    lunar: true
+    note: "Drafting of the request, i.e. the scenario start; ZZTJ narrates it under 七月 without giving a day."
+  location: jinyang_hq
+  topics: [assistance_request, terms, vassal, filial, cession]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.85
+  credibility_note: >-
+    Core record of the terms Sang was ordered to draft; the excerpt begins mid-sentence. The
+    memorial's actual wording is not preserved in any fetched source.
+  retrospective_note: >-
+    The excerpt deliberately starts after 「石敬瑭遣間使求救於契丹，」 so that sending the envoy (a player
+    decision in the game) is not part of anyone's initial knowledge. JWDS 卷137 summarises the offer
+    as 「願為臣子」 (jwds-137-002). Dating: Drafting of the request, i.e. the scenario start. ZZTJ
+    narrates it under 七月 without a day, after 丙辰 (≈ 19 Aug 936); 遼史 has the Khitan court receiving
+    the plea on 七月丙申 (≈ 30 Jul 936, ls-003-002) and JWDS 卷75 puts the mission right after the siege
+    began, so the drafting most likely fell in 六月 or early 七月 (late June to late July 936).
+
+- id: zztj280-013
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）七月（丙辰條之後，不繫日）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "劉知遠諫曰：「稱臣可矣，以父事之太過。厚以金帛賂之，自足致其兵，不必許以土田，恐異日大為中國之患，悔之無及。」"
+  gloss_en: >-
+    Liu Zhiyuan remonstrated: 'Calling yourself his subject is acceptable, but serving him as a
+    father goes too far. Bribe him generously with gold and silk and that alone will be enough to
+    bring his troops; there is no need to promise him land. I fear it will one day be a great
+    calamity for the Central Plain, and then it will be too late for regret.'
+  persons: [liu_zhiyuan, shi_jingtang]
+  event_time:
+    year: 936
+    month: 7
+    leap: false
+    lunar: true
+    note: "Same moment as zztj280-012 (the drafting; scenario start)."
+  location: jinyang_hq
+  topics: [assistance_request, terms, vassal, filial, cession, gold_silk_gifts]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.6
+  credibility_note: >-
+    Single source: neither JWDS 卷99 nor XWDS 卷10 records this objection; both say only that Liu
+    supported the plan. Only Liu holds it at the start; the others learn it when he voices it in
+    play.
+  retrospective_note: >-
+    It may derive from records compiled under Liu's later Han dynasty and be coloured by hindsight
+    (our conjecture). Shi's decision (「敬瑭不從」) is kept out of this entry and opens zztj280-014.
+
+- id: zztj280-014
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）七月（不繫日）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "敬瑭不從。表至契丹，契丹主大喜，白其母曰：「兒比夢石郎遣使來，今果然，此天意也。」乃為復書，許俟仲秋傾國赴援。"
+  gloss_en: >-
+    Shi did not follow [Liu's advice]. When the memorial reached the Khitan, the Khitan ruler was
+    overjoyed and told his mother: 'Your son dreamt recently that Lord Shi sent an envoy, and now it
+    has come true — this is Heaven's will.' He then wrote a reply promising to come to the rescue
+    with the whole strength of his state when mid-autumn came.
+  persons: [shi_jingtang, yelu_deguang, empress_shulu]
+  event_time:
+    year: 936
+    month: 7
+    leap: false
+    lunar: true
+    note: "Narrated under 七月. The promised 'mid-autumn' is the eighth lunar month (仲秋, ≈ 20 Aug 936 to about 18 Sep 936); 遼史 dates the Khitan announcement of the campaign date to 八月己未 (≈ 22 Aug 936, ls-003-003)."
+  location: khitan_court
+  topics: [khitan_response, dream_omen, mother_consultation, assistance_request]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: [jwds-137-002]
+  conflicts_with: [ls-003-002]
+  credibility: 0.7
+  credibility_note: >-
+    Outcome of the request: never initial knowledge. The dream line derives from JWDS 卷137
+    (jwds-137-002, near-identical wording), so not independent. 遼史 gives a different envoy and a
+    regicide motive (ls-003-002). The timing 'mid-autumn' matches JWDS 卷75 (「約以中秋赴義」).
+
+- id: zztj280-015
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）八月（癸亥條）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "石敬瑭以劉知遠為馬步都指揮使，安重榮、張萬迪降兵皆隸焉。知遠用法無私，撫之如一，由是人無貳心。敬瑭親乘城，坐臥矢石下，知遠曰：「觀敬達輩高壘深塹，欲為持久之計，無他奇策，不足慮也。願明公四出間使，經略外事。守城至易，知遠獨能辦之。」敬瑭執知遠手，撫其背而賞之。"
+  gloss_en: >-
+    Shi Jingtang made Liu Zhiyuan Commander of the Cavalry and Infantry, and the troops who had come
+    over with An Chongrong and Zhang Wandi were all placed under him. Liu enforced the rules
+    impartially and treated everyone alike, so no one wavered in loyalty. Shi himself went up on the
+    walls, sitting and lying amid the arrows and stones. Liu said: 'I observe that Zhang Jingda and
+    his like are building high ramparts and deep trenches, planning for a long siege. They have no
+    clever stratagem and are not worth worrying about. I hope Your Excellency will send secret
+    envoys out in every direction and manage affairs outside. Holding the city is very easy; I,
+    Zhiyuan, can see to it alone.' Shi took Liu's hand, patted his back and praised him.
+  persons: [liu_zhiyuan, shi_jingtang, an_chongrong, zhang_wandi, zhang_jingda]
+  event_time:
+    year: 936
+    month: 8
+    leap: false
+    lunar: true
+    note: "八月, from 癸亥 (≈ 26 Aug 936) on — after the request had gone."
+  location: jinyang_hq
+  topics: [siege, supplies, persona]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    ZZTJ only. Later than the scenario start, so never initial; it is later evidence of a stance
+    consistent with Liu's objection and can inform his persona, not his knowledge.
+
+- id: zztj280-016
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）八月（戊寅條之後）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "唐主使端明殿學士呂琦至河東行營犒軍，楊光遠謂琦曰：「願附奏陛下，幸寬宵旰。賊若無援，旦夕當平；若引契丹，當縱之令入，可一戰破也。」帝甚悅。帝聞契丹許石敬瑭以仲秋赴援，屢督張敬達急攻晉陽，不能下。每有營構，多值風雨，長圍夏為水潦所壞，竟不能合，晉陽城中日窘，糧儲浸乏。"
+  gloss_en: >-
+    The Tang ruler sent Lü Qi, Academician of the Duanming Hall, to reward the troops at the Hedong
+    field headquarters. Yang Guangyuan told Lü: 'Please report to His Majesty that he may rest
+    easier. If the rebels get no help they will be crushed any day now; if they bring in the Khitan,
+    we should let them come in and can destroy them in a single battle.' The emperor was delighted.
+    When he heard that the Khitan had promised Shi Jingtang to come to his rescue in mid-autumn, he
+    repeatedly urged Zhang Jingda to take Jinyang quickly, but it could not be taken. Whenever siege
+    works were built they were mostly struck by wind and rain; the encircling wall was washed away
+    by the summer floods and could never be closed. Meanwhile the city of Jinyang grew more
+    straitened by the day and its grain stores gradually ran short.
+  persons: [li_congke, lu_qi, yang_guangyuan, zhang_jingda, shi_jingtang, yelu_deguang]
+  event_time:
+    year: 936
+    month: 8
+    leap: false
+    lunar: true
+    note: "After 八月戊寅 (≈ 10 Sep 936); the last sentences summarise the summer siege."
+  location: "other:tang_siege_camp"
+  topics: [siege, supplies, khitan_response]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Li Congke learns of the Khitan promise here, after the scenario start. Yang Guangyuan's words
+    are literary; the failure of the siege wall in the summer rains is also in JWDS 卷75 (not
+    excerpted).
+
+- id: zztj280-017
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）九月"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "九月，契丹主將五萬騎，號三十萬，自揚武谷而南，旌旗不絕五十餘里。"
+  gloss_en: >-
+    In the ninth month the Khitan ruler led fifty thousand horsemen — proclaimed as three hundred
+    thousand — south from Yangwu Valley, their banners stretching unbroken for more than fifty li.
+  persons: [yelu_deguang]
+  event_time:
+    year: 936
+    month: 9
+    leap: false
+    lunar: true
+    note: "遼史 has the Khitan army entering Yanmen on 九月丁酉 (≈ 29 Sep 936) and reaching Taiyuan on 己亥 (≈ 1 Oct 936)."
+  location: "other:yangwu_valley"
+  topics: [khitan_arrival]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    Outcome (Khitan relief): never initial. 50,000 actual vs 300,000 claimed; JWDS 卷137 also gives
+    50,000 horsemen (not excerpted).
+
+- id: zztj280-018
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）九月辛丑"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "契丹縱兵乘之，唐兵大敗，步兵死者近萬人，騎兵獨全。敬達等收餘眾保晉安，契丹亦引兵歸虎北口。敬瑭得唐降兵千餘人，劉知遠勸敬瑭盡殺之。是夕，敬瑭出北門見契丹主，契丹主執敬瑭手，恨相見之晚。"
+  gloss_en: >-
+    The Khitan let loose their troops to press the advantage; the Tang army was routed, nearly ten
+    thousand infantry were killed and only the cavalry escaped intact. Zhang Jingda and the others
+    gathered the survivors and held Jin'an, while the Khitan withdrew to Hubeikou. Shi Jingtang took
+    more than a thousand Tang prisoners; Liu Zhiyuan urged him to kill them all. That evening Shi
+    went out of the north gate to meet the Khitan ruler, who took his hand and regretted that they
+    had not met sooner.
+  persons: [yelu_deguang, zhang_jingda, shi_jingtang, liu_zhiyuan]
+  event_time:
+    year: 936
+    month: 9
+    leap: false
+    lunar: true
+    note: "九月辛丑 = day 15, ≈ 3 Oct 936 (JWDS 卷48: 'the 15th of this month'); 遼史 dates the battle 庚子, one day earlier."
+  location: "other:jinyang_battlefield"
+  topics: [battle]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Outcome: never initial. Infantry losses (~10,000) agree with JWDS 卷75 (「死者萬人」); 遼史 claims tens
+    of thousands beheaded (not excerpted). Liu's advice to kill the prisoners also appears in JWDS
+    卷99.
+
+- id: zztj280-019
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）十一月（丁酉條之後、己亥條之前）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "契丹主謂石敬瑭曰：「吾三千里赴難，必有成功。觀汝氣貌識量，真中原之主也。吾欲立汝為天子。」敬瑭辭讓數四，將吏復勸進，乃許之。契丹主作冊書，命敬瑭為大晉皇帝，自解衣冠授之，築壇於柳林。是日，即皇帝位。"
+  gloss_en: >-
+    The Khitan ruler said to Shi Jingtang: 'I came three thousand li to rescue you and must
+    accomplish something. Looking at your bearing, insight and capacity, you are truly a ruler for
+    the Central Plain. I wish to make you Son of Heaven.' Shi declined several times, but when his
+    generals and officials urged him again he accepted. The Khitan ruler composed a patent of
+    investiture naming Shi Emperor of the Great Jin, took off his own robe and cap and gave them to
+    him, and had an altar built at Liulin. That same day Shi ascended the imperial throne.
+  persons: [yelu_deguang, shi_jingtang]
+  event_time:
+    year: 936
+    month: 11
+    leap: false
+    lunar: true
+    note: "十一月丁酉 = day 12, ≈ 28 Nov 936 (date from the JWDS patent heading and XWDS 卷8; ZZTJ narrates it between 丁酉 and 己亥). JWDS 卷48 alone gives 閏月丁卯 (not excerpted)."
+  location: "other:khitan_camp_liulin"
+  topics: [investiture]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [ls-003-004]
+  credibility: 0.8
+  credibility_note: >-
+    Outcome: never initial. Parallel speech in JWDS 卷75 (not excerpted). 遼史 places the Khitan offer
+    in 十月 and the altar at Jinyang (ls-003-004); JWDS 卷75 has the altar south of Jinyang city.
+
+- id: zztj280-020
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）十一月（即位之日）"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "割幽、薊、瀛、莫、涿、檀、順、新、媯、儒、武、雲、應、寰、朔、蔚十六州以與契丹，仍許歲輸帛三十萬匹。"
+  gloss_en: >-
+    Sixteen prefectures — You, Ji, Ying (瀛), Mo, Zhuo, Tan, Shun, Xin, Gui, Ru, Wu, Yun, Ying (應),
+    Huan, Shuo and Yu (蔚) — were ceded to the Khitan, and in addition 300,000 bolts of silk were
+    promised every year.
+  persons: [shi_jingtang, yelu_deguang]
+  event_time:
+    year: 936
+    month: 11
+    leap: false
+    lunar: true
+    note: "Same day as the investiture in ZZTJ's narrative (十一月丁酉, ≈ 28 Nov 936)."
+  location: "other:khitan_camp_liulin"
+  topics: [cession, annual_silk, terms]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [ls-004-001]
+  credibility: 0.8
+  credibility_note: >-
+    Outcome: never initial. Same sixteen names (different order) in XWDS 卷8 and 遼史 卷4. ZZTJ presents
+    the cession as done on the investiture day, whereas 遼史 records the handover of the prefectures
+    with maps and registers only in 938 (ls-004-001); the game should treat the 936 cession as a
+    promise, not a completed transfer.
+
+- id: zztj280-021
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）閏十一月"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "閏月，趙延壽獻契丹主所賜詔及甲馬弓劍，詐雲德鈞遣使致書於契丹主，為唐結好，說令引兵歸國；其實別為密書，厚以金帛賂契丹主，云：「若立己為帝，請即以見兵南平洛陽，與契丹為兄弟之國；仍許石氏常鎮河東。」契丹主自以深入敵境，晉安未下，德鈞兵尚強，范延光在其東，又恐山北諸州邀其歸路，欲許德鈞之請。"
+  gloss_en: >-
+    In the intercalary month Zhao Yanshou presented [to the Tang ruler] an edict, armour, horses,
+    bows and swords given by the Khitan ruler, falsely claiming that Zhao Dejun had sent envoys with
+    a letter to the Khitan ruler to make peace on Tang's behalf and to persuade him to take his
+    troops home. In reality Zhao Dejun had written a separate secret letter bribing the Khitan ruler
+    generously with gold and silk and saying: 'If you make me emperor, I will at once take my
+    present army south to pacify Luoyang, and we will be brother states with the Khitan; I will also
+    let the Shi family hold Hedong permanently.' The Khitan ruler, considering that he had advanced
+    deep into enemy territory, that Jin'an had not yet fallen, that Zhao Dejun's army was still
+    strong and Fan Yanguang was to his east, and fearing too that the prefectures north of the
+    mountains might cut off his way home, was inclined to grant Zhao Dejun's request.
+  persons: [zhao_yanshou, zhao_dejun, yelu_deguang, li_congke, fan_yanguang, shi_jingtang]
+  event_time:
+    year: 936
+    month: 11
+    leap: true
+    lunar: true
+    note: "Intercalary eleventh month (閏十一月, ≈ 17 Dec 936 to about 14 Jan 937), encoded as month 11. ZZTJ places Zhao Yanshou's report at the start of the month, before 甲子 (≈ 25 Dec 936); the secret approach itself was earlier, and 遼史 has a Zhao Dejun envoy at the Khitan court already in 七月 (ls-003-002)."
+  location: "other:khitan_camp_liulin"
+  topics: [rival_bid, khitan_relations]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [ls-003-002]
+  credibility: 0.7
+  credibility_note: >-
+    Zhao Dejun's later bid: never initial. The transcription reads 詐雲 (= 詐云).
+
+- id: zztj280-022
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）閏十一月"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "帝聞之，大懼，亟使桑維翰見契丹主，說之曰：「大國舉義兵以救孤危，一戰而唐兵瓦解，退守一柵，食盡力窮。趙北平父子不忠不信，畏大國之強，且素蓄異志，按兵觀變，非以死徇國之人，何足可畏，而信其誕亡之辭，貪豪末之利，棄垂成之功乎！且使晉得天下，將竭中國之財以奉大國，豈此小利之比乎！」"
+  gloss_en: >-
+    The emperor [Shi, by now emperor of Jin] was greatly alarmed when he heard of it and hurriedly
+    sent Sang Weihan to see the Khitan ruler. Sang argued: 'Your great state raised a righteous army
+    to rescue the isolated and imperilled, and in a single battle the Tang army fell apart; it has
+    retreated into one stockade, its food gone and its strength spent. Zhao of Beiping and his son
+    are neither loyal nor trustworthy; they fear your great state's power, have long nursed
+    ambitions of their own and are holding back their troops to see which way things go — they are
+    not men who would die for their country. What is there to fear from them? Would you believe
+    their preposterous words, covet a hair's breadth of gain and throw away an achievement on the
+    verge of completion? Moreover, if Jin gains the realm it will exhaust the wealth of the Central
+    Plain to serve your great state — how can this petty gain compare with that?'
+  persons: [sang_weihan, yelu_deguang, zhao_dejun, zhao_yanshou, shi_jingtang]
+  event_time:
+    year: 936
+    month: 11
+    leap: true
+    lunar: true
+    note: "Intercalary eleventh month, before the fall of Jin'an on 甲子 (≈ 25 Dec 936) in ZZTJ's narrative."
+  location: "other:khitan_camp_liulin"
+  topics: [persuasion, rival_bid]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.6
+  credibility_note: >-
+    Never initial. JWDS 卷89 and XWDS 卷29 only summarise Sang's mission; the full speech is ZZTJ's
+    literary reconstruction. The transcription reads 誕亡/豪末 where the ZZTJ quotation in the JWDS 卷89
+    annotation has 誕妄/毫末.
+
+- id: zztj280-023
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）閏十一月"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "契丹主曰：「爾見捕鼠者乎，不備之，猶或嚙傷其手，況大敵乎！」對曰：「今大國已扼其喉，安能嚙人乎！」契丹主曰：「吾非有渝前約也，但兵家權謀不得不爾。」對曰：「皇帝以信義救人之急，四海之人俱屬耳目，奈何一旦二三其命，使大義不終！臣竊為皇帝不取也。」跪於帳前，自旦至暮，涕泣爭之。契丹主乃從之，指帳前石謂德鈞使者曰：「我已許石郎，此石爛，可改矣！」"
+  gloss_en: >-
+    The Khitan ruler said: 'Have you ever watched someone catch a rat? If he is careless it can
+    still bite his hand — how much more a great enemy!' Sang replied: 'Your great state already has
+    it by the throat; how could it bite anyone?' The Khitan ruler said: 'It is not that I am going
+    back on my earlier pledge; military expediency simply requires it.' Sang replied: 'Your Majesty
+    came to the rescue of a man in distress out of good faith and righteousness, and the whole world
+    is watching. How can you suddenly waver in your commitment and leave the great cause unfinished?
+    I humbly think Your Majesty should not do this.' He knelt before the tent from dawn to dusk,
+    arguing with tears. At last the Khitan ruler agreed and, pointing to a stone in front of the
+    tent, told Zhao Dejun's envoy: 'I have already promised Lord Shi. When this stone rots away, it
+    may be changed!'
+  persons: [yelu_deguang, sang_weihan, zhao_dejun, shi_jingtang]
+  event_time:
+    year: 936
+    month: 11
+    leap: true
+    lunar: true
+    note: "Intercalary eleventh month (continuation of zztj280-022)."
+  location: "other:khitan_camp_liulin"
+  topics: [persuasion, rival_bid, stone_oath, persona]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    Never initial. The stone oath is also reported in JWDS 卷137 and XWDS 卷72 (not excerpted), with
+    slightly different wording; the dialogue is literary but a good grounded cue for both speakers'
+    styles.
+
+- id: zztj280-024
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）閏十一月甲子"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "諸將每旦集於招討使營，甲子，高行周、符彥卿未至，光遠乘其無備，斬敬達首，帥諸將上表降於契丹。契丹主素聞諸將名，皆慰勞，賜以裘帽，因戲之曰：「汝輩亦大惡漢，不用鹽酪啖戰馬萬匹！」光遠等大慚。契丹主嘉張敬達之忠，命收葬而祭之，謂其下及晉諸將曰：「汝曹為人臣，當效敬達也。」"
+  gloss_en: >-
+    The generals gathered every morning at the camp of the Pacification Commissioner [Zhang Jingda].
+    On jiazi, before Gao Xingzhou and Fu Yanqing had arrived, Yang Guangyuan caught Zhang off guard,
+    cut off his head and led the generals in submitting a memorial of surrender to the Khitan. The
+    Khitan ruler, who had long known these generals by name, comforted them all and gave them fur
+    coats and caps, joking: 'You are real villains too — eating ten thousand war-horses without even
+    salt or cheese!' Yang and the others were deeply ashamed. The Khitan ruler, admiring Zhang
+    Jingda's loyalty, had him buried with sacrifices and said to his own men and the Jin generals:
+    'As subjects, you should all follow Jingda's example.'
+  persons: [yang_guangyuan, zhang_jingda, gao_xingzhou, fu_yanqing, yelu_deguang]
+  event_time:
+    year: 936
+    month: 11
+    leap: true
+    lunar: true
+    note: "閏十一月甲子 = day 9 of the intercalary month, ≈ 25 Dec 936 (same date in JWDS 卷48 and 遼史 卷3)."
+  location: "other:jin_an_camp"
+  topics: [surrender, zhang_jingda_death, persona]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.8
+  credibility_note: >-
+    Never initial. 遼史 names An Shenqi as well as Yang Guangyuan as the killers (not excerpted),
+    whereas ZZTJ says An could not bring himself to it. Deguang's remarks are a grounded cue for his
+    humour and his regard for loyalty.
+
+- id: zztj280-025
+  work: "資治通鑑 (Zizhi Tongjian)"
+  volume: 280
+  locator: "卷二百八十 丙申（936）閏十一月辛巳"
+  url: "https://zh.wikisource.org/wiki/資治通鑑/卷280"
+  original_zh: "辛巳，唐主與曹太后、劉皇后、雍王重美及宋審虔等攜傳國寶登玄武樓自焚，皇后積薪欲燒宮室，重美諫曰：「新天子至，必不露居，他日重勞民力；死而遺怨，將安用之！」乃止。"
+  gloss_en: >-
+    On xinsi the Tang ruler, with Empress Dowager Cao, Empress Liu, his son Chongmei the Prince of
+    Yong, Song Shenqian and others, carried the imperial seal up the Xuanwu Tower and burned
+    themselves to death. The empress had firewood piled up to burn the palace as well, but Chongmei
+    remonstrated: 'When the new Son of Heaven arrives he will not live in the open; later the people
+    would have to be burdened again [to rebuild]. What use is it to leave resentment behind us in
+    death?' So she desisted.
+  persons: [li_congke, empress_dowager_cao, empress_liu, li_chongmei, song_shenqian]
+  event_time:
+    year: 936
+    month: 11
+    leap: true
+    lunar: true
+    note: "閏十一月辛巳 = day 26 of the intercalary month, ≈ 11 Jan 937 (Julian); still 天福元年 in the Chinese calendar."
+  location: luoyang_court
+  topics: [li_congke_end]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.85
+  credibility_note: >-
+    Li Congke's end: never initial. The date agrees with JWDS 卷48 and 遼史 卷3; 遼史 adds that Li Congke
+    had Yelü Bei killed when Bei refused to die with him (not excerpted).
+
+- id: jwds-075-001
+  work: "舊五代史 (Jiu Wudai shi)"
+  volume: 75
+  locator: "卷七十五 清泰三年（936）五月（移鎮鄆州之後，石敬瑭召僚佐議）"
+  url: "https://zh.wikisource.org/wiki/舊五代史/卷75"
+  original_zh: "今我無異志，朝廷自啟禍機，不可安然死於道路。況太原險固之地，積粟甚多，若且寬我，我當奉之。必若加兵，我則外告鄰方，北構強敵，興亡之數，皎皎在天。"
+  gloss_en: >-
+    [Shi Jingtang to his staff:] 'Now, I have no disloyal intentions; it is the court itself that
+    has set off the trigger of disaster, and I cannot meekly die on the road. Moreover, Taiyuan is a
+    strong, defensible place with plenty of stored grain. If [the court] is lenient with me for now,
+    I will serve it; but if it must send troops, then I will appeal to the neighbouring powers
+    abroad and form an alliance with the strong enemy in the north — rise or fall, the outcome is
+    plainly written in Heaven.'
+  persons: [shi_jingtang, li_congke]
+  event_time:
+    year: 936
+    month: 5
+    leap: false
+    lunar: true
+    note: "After the transfer order of 五月辛卯 (≈ 26 May 936); same council as zztj280-007."
+  location: jinyang_hq
+  topics: [hedong_council, revolt, assistance_request, supplies]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: [zztj280-009]
+  credibility: 0.7
+  credibility_note: >-
+    Shi himself names the northern alliance here, whereas ZZTJ gives the idea to Sang (zztj280-009).
+    JWDS then says Sang and Liu 'supported the secret plan' (not excerpted).
+  retrospective_note: >-
+    The extant JWDS is an 18th-century reconstruction assembled mainly from Yongle Encyclopedia
+    quotations; the excerpt is main text, not the Qing editors' annotations.
+
+- id: jwds-075-002
+  work: "舊五代史 (Jiu Wudai shi)"
+  volume: 75
+  locator: "卷七十五 晉書一 高祖紀一 清泰三年（936）十一月 契丹冊文"
+  url: "https://zh.wikisource.org/wiki/舊五代史/卷75"
+  original_zh: "猥以眇躬，奄有北土，暨明宗之享國也，與我先哲王保奉明契，所期子孫順承，患難相濟。丹書未泯，白日難欺，顧予纂承，匪敢失墜。爾惟近戚，實系本枝，所以余視爾若子，爾待予猶父也。"
+  gloss_en: >-
+    [From the Khitan emperor's patent investing Shi Jingtang:] 'I, unworthy as I am, came to rule
+    the northern lands. When Mingzong reigned, he and our late wise king [Abaoji] kept a bright
+    covenant, hoping that their descendants would honour it and help one another in adversity. The
+    vermilion oath is not yet faded and the bright sun cannot be deceived; having succeeded to the
+    throne, I dare not let it lapse. You are a close relative [of Mingzong], truly of the main stem;
+    therefore I look on you as a son, and you treat me as a father.'
+  persons: [yelu_deguang, shi_jingtang, li_siyuan, yelu_abaoji]
+  event_time:
+    year: 936
+    month: 11
+    leap: false
+    lunar: true
+    note: "The patent is headed 「十一月丙戌朔，十二日丁酉」 = ≈ 28 Nov 936; its year 天顯九年 is an error for 天顯十一年."
+  location: "other:khitan_camp_liulin"
+  topics: [investiture, filial, khitan_relations]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Outcome document: never initial. Text of the Khitan patent of investiture as transmitted in
+    JWDS; the cyclical year 丙申 and the day 丁酉 fit 936, so '天顯九年' in the heading is a slip. The
+    claimed covenant between Mingzong and Abaoji echoes Sang Weihan's argument (zztj280-009).
+
+- id: jwds-075-003
+  work: "舊五代史 (Jiu Wudai shi)"
+  volume: 75
+  locator: "卷七十五 晉書一 高祖紀一 清泰三年（936）十一月（冊禮之日）"
+  url: "https://zh.wikisource.org/wiki/舊五代史/卷75"
+  original_zh: "是日，帝言於契丹主，願以雁門已北及幽州之地為戎王壽，仍約歲輸帛三十萬，戎王許之。"
+  gloss_en: >-
+    That day the emperor [Shi] told the Khitan ruler that he wished to present the lands north of
+    Yanmen and the territory of Youzhou to the barbarian king as a congratulatory offering, and he
+    further agreed to deliver 300,000 bolts of silk every year; the barbarian king accepted.
+  persons: [shi_jingtang, yelu_deguang]
+  event_time:
+    year: 936
+    month: 11
+    leap: false
+    lunar: true
+    note: "'That day' = the investiture day, 十一月丁酉 (≈ 28 Nov 936)."
+  location: "other:khitan_camp_liulin"
+  topics: [cession, annual_silk, terms]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Outcome: never initial. Agrees in substance with zztj280-020 but frames the cession as Shi's own
+    offer and describes it as 'north of Yanmen and the land of Youzhou' — the same scope as the
+    original request (zztj280-012).
+
+- id: jwds-137-001
+  work: "舊五代史 (Jiu Wudai shi)"
+  volume: 137
+  locator: "卷一百三十七 外國列傳一 契丹 天成元年（926）"
+  url: "https://zh.wikisource.org/wiki/舊五代史/卷137"
+  original_zh: "阿保機號咷，聲淚俱發，曰：「我與河東先世約為兄弟，河南天子吾兒也。近聞漢地兵亂，點得甲馬五萬騎，比欲自往洛陽救助我兒，又緣渤海未下，我兒果致如此，冤哉！」泣下不能已。"
+  gloss_en: >-
+    Abaoji wailed, his voice and tears bursting out together, and said: 'The former lord of Hedong
+    [Li Keyong] and I swore to be brothers, so the Son of Heaven in Henan [Zhuangzong] is my son.
+    Recently, hearing of the fighting in the Chinese lands, I mustered fifty thousand armoured
+    horsemen and meant to go to Luoyang myself to save my son, but because Bohai had not yet been
+    subdued [I could not]; and now my son has indeed come to this — what an injustice!' He wept
+    without stopping.
+  persons: [yelu_abaoji, li_keyong, li_cunxu]
+  event_time:
+    year: 926
+    month: 7
+    leap: false
+    lunar: true
+    note: "天成元年七月 (926): the Tang envoy Yao Kun's audience, days before Abaoji's death on the 27th of that month (JWDS)."
+  location: "other:shenzhou_bohai"
+  topics: [khitan_relations, filial]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.6
+  credibility_note: >-
+    Reported speech from the envoy Yao Kun's account; XWDS 卷72 has a parallel (not excerpted). Shows
+    that the Khitan cast Tang rulers as brothers and sons before 936. Plausible court knowledge for
+    the Khitan emperor and for senior Tang figures (Sang cites the Khitan–Tang covenant in
+    zztj280-009); not for Liu or the clerk.
+
+- id: jwds-137-002
+  work: "舊五代史 (Jiu Wudai shi)"
+  volume: 137
+  locator: "卷一百三十七 外國列傳一 契丹 清泰三年（936）；接「{{YL|清泰三年}}，」之後"
+  url: "https://zh.wikisource.org/wiki/舊五代史/卷137"
+  original_zh: "晉高祖為張敬達等攻圍甚急，遣指揮使何福賫表乞師，願為臣子。德光白其母曰：「兒昨夢太原石郎發使到國，今果至矣，事符天意，必須赴之。」"
+  gloss_en: >-
+    [In the third year of Qingtai, 936,] when Jin Gaozu [Shi Jingtang] was hard pressed under siege
+    by Zhang Jingda and others, he sent the commander He Fu with a memorial begging for troops and
+    offering to become [the Khitan ruler's] subject and son (臣子). Deguang told his mother: 'Your son
+    dreamt the other day that Lord Shi of Taiyuan sent an envoy to our country, and now he has
+    indeed arrived. The matter accords with Heaven's will; we must go to his aid.'
+  persons: [shi_jingtang, he_fu, yelu_deguang, empress_shulu, zhang_jingda]
+  event_time:
+    year: 936
+    month: null
+    leap: false
+    lunar: true
+    note: "清泰三年 (936); month not stated."
+  location: khitan_court
+  topics: [assistance_request, envoy, dream_omen, mother_consultation, vassal, filial]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [ls-003-002]
+  credibility: 0.7
+  credibility_note: >-
+    Reception of the request: never initial. The earliest of the fetched versions of the dream
+    remark; ZZTJ's (zztj280-014) derives from it. The envoy He Fu (also named in JWDS 卷75) conflicts
+    with 遼史's Zhao Ying and Sang Weihan (ls-003-002); several envoys may have been sent.
+
+- id: xwds-010-001
+  work: "新五代史 (Xin Wudai shi)"
+  volume: 10
+  locator: "卷十 卷首（劉知遠少時）"
+  url: "https://zh.wikisource.org/wiki/新五代史/卷10"
+  original_zh: "知遠弱不好弄，嚴重寡言，面紫色，目多白睛，凜如也。"
+  gloss_en: >-
+    Even as a boy Zhiyuan did not care for games; he was grave and spoke little, with a purplish
+    complexion and eyes showing much white — a stern, imposing figure.
+  persons: [liu_zhiyuan]
+  event_time:
+    year: 936
+    month: null
+    leap: false
+    lunar: true
+    note: "Undated character sketch."
+  location: jinyang_hq
+  topics: [persona]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.6
+  credibility_note: >-
+    Conventional physiognomic sketch; JWDS 卷99 has nearly the same wording (「嚴重寡言，面紫色，目睛多白」). Use
+    for demeanour and voice only. Anyone in the Hedong headquarters would know Liu's manner.
+
+- id: xwds-029-001
+  work: "新五代史 (Xin Wudai shi)"
+  volume: 29
+  locator: "卷二十九 桑維翰傳首"
+  url: "https://zh.wikisource.org/wiki/新五代史/卷29"
+  original_zh: "為人醜怪，身短而面長，常臨鑑以自奇曰：「七尺之身，不如一尺之面。」慨然有志於公輔。"
+  gloss_en: >-
+    He was ugly and strange-looking, short in body with a long face. He often looked in the mirror
+    and marvelled at himself, saying: 'A body of seven chi is no match for a face of one chi.' He
+    was full of the ambition to become a chief minister.
+  persons: [sang_weihan]
+  event_time:
+    year: 936
+    month: null
+    leap: false
+    lunar: true
+    note: "Undated character sketch."
+  location: jinyang_hq
+  topics: [persona]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: sang_weihan, when: initial }
+    - { holder: liu_zhiyuan, when: initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.55
+  credibility_note: >-
+    Anecdote; JWDS 卷89 has 「身短面廣」 and 「安如一尺之面」 (a minor variant). Use for self-image and ambition,
+    not as evidence about 936 decisions.
+
+- id: xwds-072-001
+  work: "新五代史 (Xin Wudai shi)"
+  volume: 72
+  locator: "卷七十二 四夷附錄第一 契丹（耶律德光）"
+  url: "https://zh.wikisource.org/wiki/新五代史/卷72"
+  original_zh: "德光事其母甚謹，常侍立其側，國事必告而後行。"
+  gloss_en: >-
+    Deguang served his mother with great deference, often standing in attendance at her side; on
+    affairs of state he always informed her before acting.
+  persons: [yelu_deguang, empress_shulu]
+  event_time:
+    year: 936
+    month: null
+    leap: false
+    lunar: true
+    note: "Undated character trait."
+  location: khitan_court
+  topics: [persona, mother_consultation]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.65
+  credibility_note: >-
+    General characterisation of Deguang by a later historian; undated.
+  retrospective_note: >-
+    Consistent with the reports that Deguang told his mother before accepting Shi's request
+    (zztj280-014, jwds-137-002, ls-003-002); XWDS narrates the trait just before the 936 request.
+
+- id: xwds-072-002
+  work: "新五代史 (Xin Wudai shi)"
+  volume: 72
+  locator: "卷七十二 四夷附錄第一 契丹（明宗長興年間以後）"
+  url: "https://zh.wikisource.org/wiki/新五代史/卷72"
+  original_zh: "契丹自阿保機時侵滅諸國，稱雄北方。及救王都，為王晏球所敗，喪其萬騎，又失赫邈等，皆名將，而述律尤思念突欲，由是卑辭厚幣數遣使聘中國，因求歸赫邈、萴剌等，唐輒斬其使而不報。當此之時，中國之威幾振。"
+  gloss_en: >-
+    From Abaoji's time the Khitan had destroyed many states and dominated the north. But when they
+    went to rescue Wang Du they were defeated by Wang Yanqiu, losing ten thousand horsemen as well
+    as Hemiao and others, all famous generals; and Shulü longed especially for Tuyu [her eldest son,
+    who had fled to Tang]. So they repeatedly sent envoys to China with humble words and rich gifts,
+    asking for the return of Hemiao, Cela and the others; each time the Tang beheaded the envoys and
+    sent no reply. At that time China's prestige was nearly restored.
+  persons: [empress_shulu, yelu_bei]
+  event_time:
+    year: 936
+    month: null
+    leap: false
+    lunar: true
+    note: "Undated summary of Khitan embassies after the Wang Du campaign (928–929); ZZTJ shows the demand still unresolved in 三月 936 (zztj280-002)."
+  location: luoyang_court
+  topics: [khitan_relations, peace_marriage_proposal]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.6
+  credibility_note: >-
+    Undated summary; ZZTJ (zztj280-002) confirms that the return of Khitan captives was still an
+    open demand in 936. Known to both courts; not to Hedong.
+
+- id: xwds-072-003
+  work: "新五代史 (Xin Wudai shi)"
+  volume: 72
+  locator: "卷七十二 四夷附錄第一 契丹（晉高祖即位之後）"
+  url: "https://zh.wikisource.org/wiki/新五代史/卷72"
+  original_zh: "晉高祖每遣使聘問，奉表稱臣，歲輸絹三十萬匹，其餘寶玉珍異，下至中國飲食諸物，使者相屬於道，無虛日。德光約高祖不稱臣，更表為書，稱「兒皇帝」，如家人禮。"
+  gloss_en: >-
+    Whenever Jin Gaozu [Shi Jingtang] sent envoys to pay his respects, he submitted memorials in
+    which he called himself a subject; he delivered 300,000 bolts of silk a year, besides jewels and
+    rarities and even Chinese foods and other goods; his envoys followed one another on the road
+    without a day's gap. Deguang agreed with Gaozu that he need not call himself a subject: instead
+    of memorials he would write letters and style himself 'son emperor', with the etiquette of a
+    family.
+  persons: [shi_jingtang, yelu_deguang]
+  event_time:
+    year: 938
+    month: null
+    leap: false
+    lunar: true
+    note: "Undated; describes practice after the investiture. JWDS 卷137 places the 'son emperor' arrangement in 天福三年 (938)."
+  location: khitan_court
+  topics: [implementation, vassal, filial, annual_silk]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.7
+  credibility_note: >-
+    Post-chapter practice: never initial; for the epilogue. Note 絹 here versus 帛 in ZZTJ for the
+    annual silk.
+
+- id: ls-003-001
+  work: "遼史 (Liao shi)"
+  volume: 3
+  locator: "卷三 本紀第三 天顯九年（934）夏四月"
+  url: "https://zh.wikisource.org/wiki/遼史/卷3"
+  original_zh: "夏四月，唐李從珂弒其主自立。人皇王倍自唐上書請討。"
+  gloss_en: >-
+    Summer, fourth month [of Tianxian 9 = 934]: Li Congke of Tang murdered his sovereign and set
+    himself up. The Renhuang Prince, Bei [Yelü Bei, Deguang's elder brother, then living in Tang],
+    sent a letter from Tang asking for a punitive expedition.
+  persons: [li_congke, yelu_bei, li_conghou]
+  event_time:
+    year: 934
+    month: 4
+    leap: false
+    lunar: true
+    note: "天顯九年四月 (934), when Li Congke took the Tang throne."
+  location: khitan_court
+  topics: [legitimacy, khitan_relations]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Khitan-side annal, compiled much later from Khitan court records. 'Murdered his sovereign' is
+    the Khitan framing: the deposed emperor Li Conghou was killed after Li Congke's accession. Bei's
+    letter was addressed to the Khitan emperor, so it is his knowledge, not Li Congke's.
+  retrospective_note: >-
+    遼史 was compiled in 1344 (Yuan) from Liao-era records.
+
+- id: ls-003-002
+  work: "遼史 (Liao shi)"
+  volume: 3
+  locator: "卷三 本紀第三 太宗上 天顯十一年（936）秋七月丙申"
+  url: "https://zh.wikisource.org/wiki/遼史/卷3"
+  original_zh: "丙申，唐河東節度使石敬瑭為其主所討，遣趙瑩因西南路招討盧不姑求救，上白太后曰：「李從珂弒君自立，神人共怒，宜行天討。」時趙德鈞亦遣使至，河東復遣桑維翰來告急，遂許興師。"
+  gloss_en: >-
+    On bingshen [seventh month of Tianxian 11 = 936]: Shi Jingtang, the Tang Military Governor of
+    Hedong, being attacked by his sovereign, sent Zhao Ying through Lubugu, Pacification
+    Commissioner of the Southwest Route, to ask for help. The emperor [Deguang] told the empress
+    dowager: 'Li Congke murdered his lord and made himself ruler; gods and men alike are outraged.
+    It is right to carry out Heaven's punishment.' At that time Zhao Dejun had also sent an envoy,
+    and Hedong sent Sang Weihan as well to report its emergency; so [the emperor] agreed to raise an
+    army.
+  persons: [shi_jingtang, zhao_ying, lubugu, yelu_deguang, empress_shulu, li_congke, zhao_dejun, sang_weihan]
+  event_time:
+    year: 936
+    month: 7
+    leap: false
+    lunar: true
+    note: "天顯十一年七月丙申 = day 9 of 七月, ≈ 30 Jul 936 (Julian, computed; Liao and Later Tang calendars assumed to agree)."
+  location: khitan_court
+  topics: [assistance_request, envoy, khitan_response, rival_bid, mother_consultation, legitimacy]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [zztj280-014, jwds-137-002, zztj280-021]
+  credibility: 0.65
+  credibility_note: >-
+    Reception of the request: never initial. Names Zhao Ying and then Sang Weihan as Shi's envoys
+    and gives a regicide rationale instead of a dream; conflicts with jwds-137-002 (envoy He Fu),
+    zztj280-014 (motive) and zztj280-021 (Zhao Dejun's approach dated 閏十一月).
+
+- id: ls-003-003
+  work: "遼史 (Liao shi)"
+  volume: 3
+  locator: "卷三 本紀第三 太宗上 天顯十一年（936）八月"
+  url: "https://zh.wikisource.org/wiki/遼史/卷3"
+  original_zh: "八月己未，遣蕭轄里報河東師期。丙寅，吐谷渾來貢。庚午，自將以援敬瑭。"
+  gloss_en: >-
+    Eighth month, jiwei: [the emperor] sent Xiao Xiali to tell Hedong the date of the expedition.
+    Bingyin: the Tuyuhun brought tribute. Gengwu: [the emperor] set out in person to relieve Shi
+    Jingtang.
+  persons: [yelu_deguang, xiao_xiali, shi_jingtang]
+  event_time:
+    year: 936
+    month: 8
+    leap: false
+    lunar: true
+    note: "己未 ≈ 22 Aug 936; 庚午 ≈ 2 Sep 936."
+  location: khitan_court
+  topics: [khitan_response, khitan_arrival, dating]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.75
+  credibility_note: >-
+    Never initial. Liao annal dates: the expedition set out about a month after the plea arrived
+    (ls-003-002) and reached Taiyuan about a month later (九月己亥 per 遼史). Useful for grounding the
+    game's travel and arrival parameters.
+
+- id: ls-003-004
+  work: "遼史 (Liao shi)"
+  volume: 3
+  locator: "卷三 本紀第三 太宗上 天顯十一年（936）冬十月丁卯"
+  url: "https://zh.wikisource.org/wiki/遼史/卷3"
+  original_zh: "丁卯，召敬瑭至行在所，賜坐。上從容語之曰：「吾三千里舉兵而來，一戰而勝，殆天意也。觀汝雄偉弘大，宜受茲南土，世為我藩輔。」遂命有司設壇晉陽，備禮冊命。"
+  gloss_en: >-
+    On dingmao [tenth month] he summoned Shi Jingtang to his travelling headquarters and gave him a
+    seat. The emperor said to him at ease: 'I raised troops and came three thousand li, and won in a
+    single battle — surely this is Heaven's will. Seeing how imposing and large-minded you are, you
+    should receive these southern lands and be my bulwark-vassal for generations.' He then ordered
+    his officials to set up an altar at Jinyang and prepare the rites for the investiture.
+  persons: [yelu_deguang, shi_jingtang]
+  event_time:
+    year: 936
+    month: 10
+    leap: false
+    lunar: true
+    note: "十月丁卯 = day 12, ≈ 29 Oct 936."
+  location: "other:khitan_camp_liulin"
+  topics: [investiture, vassal]
+  kind: speech
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [zztj280-019]
+  credibility: 0.65
+  credibility_note: >-
+    Never initial. Liao framing of the relationship as a hereditary 'bulwark-vassal' (藩輔). 遼史 places
+    this offer in 十月 and the altar at Jinyang, while ZZTJ has the offer and ceremony in 十一月 at
+    Liulin (zztj280-019).
+
+- id: ls-004-001
+  work: "遼史 (Liao shi)"
+  volume: 4
+  locator: "卷四 本紀第四 太宗下 會同元年（938）十一月"
+  url: "https://zh.wikisource.org/wiki/遼史/卷4"
+  original_zh: "是月，晉復遣趙瑩奉表來賀，以幽、薊、瀛、莫、涿、檀、順、媯、儒、新、武、雲、應、朔、寰、蔚十六州並圖籍來獻。"
+  gloss_en: >-
+    In that month [the eleventh month of Huitong 1 = 938] Jin again sent Zhao Ying with a memorial
+    of congratulation, presenting the sixteen prefectures of You, Ji, Ying (瀛), Mo, Zhuo, Tan, Shun,
+    Gui, Ru, Xin, Wu, Yun, Ying (應), Shuo, Huan and Yu (蔚) together with their maps and registers.
+  persons: [zhao_ying, shi_jingtang, yelu_deguang]
+  event_time:
+    year: 938
+    month: 11
+    leap: false
+    lunar: true
+    note: "會同元年十一月 (938); no day given."
+  location: khitan_court
+  topics: [cession, implementation]
+  kind: record
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+    - { holder: sang_weihan, when: never_initial }
+    - { holder: liu_zhiyuan, when: never_initial }
+    - { holder: yelu_deguang, when: never_initial }
+    - { holder: li_congke, when: never_initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: [zztj280-020]
+  credibility: 0.8
+  credibility_note: >-
+    Post-chapter: never initial. Formal handover of the sixteen prefectures with their maps and
+    registers in 938; the list matches ZZTJ's (different order). Some prefectures resisted the
+    transfer for months, e.g. Yunzhou under Wu Luan (XWDS 卷29, not excerpted).

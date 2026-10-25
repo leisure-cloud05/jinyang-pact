@@ -1,0 +1,57 @@
+# Three synthetic entries in the §12.1 shape (not real quotations).
+- id: fx-src-001
+  work: "Fixture Annals"
+  volume: 1
+  locator: "fixture 1"
+  url: "https://example.invalid/fixture/1"
+  original_zh: "測試文本甲。"
+  gloss_en: "Fixture text A."
+  persons: [li_congke, shi_jingtang]
+  event_time: { year: 936, month: 1, leap: false, lunar: true, note: "fixture" }
+  location: luoyang_court
+  topics: [suspicion]
+  kind: narrative
+  learnable_by:
+    - { holder: shi_jingtang, when: initial }
+    - { holder: li_congke, when: initial }
+    - { holder: player, when: never_initial }
+  derived_from: []
+  conflicts_with: []
+  credibility: 0.8
+  credibility_note: "fixture"
+- id: fx-src-002
+  work: "Fixture Annals"
+  volume: 1
+  locator: "fixture 2"
+  url: "https://example.invalid/fixture/2"
+  original_zh: "測試文本乙。"
+  gloss_en: "Fixture text B."
+  persons: [shi_jingtang, sang_weihan]
+  event_time: { year: 936, month: 11, leap: true, lunar: true, note: "intercalary month" }
+  location: jinyang_hq
+  topics: [aid_request]
+  kind: memorial
+  learnable_by:
+    - { holder: sang_weihan, when: initial }
+  derived_from: [fx-src-001]
+  conflicts_with: [fx-src-003]
+  credibility: 0.7
+  credibility_note: "fixture"
+  retrospective_note: "extra archival metadata is accepted"
+- id: fx-src-003
+  work: "Fixture Annals"
+  volume: 2
+  locator: "fixture 3"
+  url: "https://example.invalid/fixture/3"
+  original_zh: "測試文本丙。"
+  gloss_en: "Fixture text C."
+  persons: []
+  event_time: { year: 937, month: null, leap: false, lunar: true, note: "undated" }
+  location: null
+  topics: [epilogue]
+  kind: narrative
+  learnable_by:
+    - { holder: shi_jingtang, when: never_initial }
+  derived_from: null
+  conflicts_with: [fx-src-002]
+  credibility: 0.6

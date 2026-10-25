@@ -1,0 +1,61 @@
+id: FX3
+title: { zh: 讨价还价（测试）, en: Counter-offers (fixture) }
+purpose: { zh: 还价、段内轮数用尽、僵局暂停、拒绝。, en: "Counters, exhausted segment, deadlock pause, refusal." }
+initial_overrides:
+  documents:
+    - id: "doc:1"
+      terms: { filial: true, secret_clauses: [sc_private_tribute] }
+      note: 附密约
+  secret_clauses:
+    - { id: sc_border_hostage, knownBy: [shi_jingtang] }
+    - id: sc_fx3_only
+      text: { zh: 事成另议。, en: Further matters are settled afterwards. }
+      canary: JYP-CANARY-D4E6
+      knownBy: [shi_jingtang, sang_weihan]
+      applicable_pairs: [hedong-khitan]
+  characters:
+    yelu_deguang:
+      goals:
+        - { zh: 必得十六州。, en: Obtain the Sixteen Prefectures. }
+      reservation: { filial: true, cession_min: sixteen_prefectures }
+  knowledge:
+    - holder: sang_weihan
+      subject: khitan
+      predicate: claim
+      value: { wants: land }
+      source_ref: fx-src-002
+player_goal:
+  text: { zh: 不割十六州。, en: No cession of the Sixteen Prefectures. }
+  limits: { cession_max: yanmen_north, burden_max: 120 }
+decision_policy:
+  - match: { category: dispatch_request }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: false }
+    choose: counter_draft
+    advice: Stay within the goal.
+    counter_terms:
+      vassal: true
+      filial: true
+      cession: yanmen_north
+      annual_silk: 200000
+      immediate_silk: 50000
+      aid_cavalry: 40000
+      aid_arrival_days: 15
+      neutrality: false
+      marriage_alliance: false
+      secret_clauses: [sc_private_tribute]
+  - match: { category: negotiation_deadlock }
+    choose: urge_stop
+    advice: Stop negotiating.
+  - match: { category: mutiny }
+    choose: let_it_happen
+expected_checkpoints:
+  - { type: dispatch_request, round: 1 }
+  - { type: major_commitment, round: 3 }
+  - { type: negotiation_deadlock, round: 5 }
+constraints:
+  - { id: fx3-canary, kind: no_canary_leak, canary: JYP-CANARY-7F3A }
+valid_terminals: [pact_concluded, talks_failed]
+max_rounds: 6

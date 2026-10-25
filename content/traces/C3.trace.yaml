@@ -1,0 +1,95 @@
+# Reference trace for C3 — follows the PLAN §12.4 reference timing exactly. See C1.trace.yaml for conventions.
+case: C3
+description: >-
+  R1 Shi dispatches Liu's version (burden 40, no land; dispatch_request pause, endorsed; opening offer of segment 1)
+  -> R2 Yelü counters with land and more silk (burden 80; segment round 1) -> R3 Shi counters within the player's
+  limits: no land, 200,000 bolts a year (burden 50; major_commitment pause, endorsed; round 2 — segment exhausted)
+  -> R4 Yelü may only confirm or reject; without land he rejects -> R5 PREPARE delivers the rejection; Shi has
+  learned the closure, so the exhaustion checkpoint raises a negotiation_deadlock pause; the C3 policy chooses
+  urge_stop (regenerating decision: new segment opened, batch regenerated) and no new offer is sent
+  => talks_failed at R5's ADVANCE.
+max_rounds: 6
+rounds:
+  - round: 1
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, liu_zhiyuan], text: 表已依刘押牙之议改定：称臣可矣，不以父礼，不许土田，唯厚以金帛。请明公用印遣使。 } }
+    proposals:
+      - { ref: approve, actor: shi_jingtang, action: { type: approve_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: dispatch, actor: shi_jingtang, action: { type: dispatch_document, args: { docId: "doc:1", docVersion: 1 } } }
+      - { ref: liu_speak, actor: liu_zhiyuan, action: { type: speak, args: { to: [shi_jingtang, player], text: 如此则无后患。 } } }
+    decisions:
+      - { ref: dispatch, category: dispatch_request, choose: endorse }
+  - round: 2
+    note: Yelü is a pending responder (tier 1). His counter is segment round 1.
+    player:
+      - action: { type: speak, args: { to: [sang_weihan], text: 桑公，契丹若索地，当何以应之？ } }
+    proposals:
+      - ref: yelu_counter
+        actor: yelu_deguang
+        action:
+          type: respond_to_offer
+          args:
+            offerId: "offer:1"
+            response: counter
+            reason: 称臣而不献地，何以酬大国之师？须割雁门关以北诸州，并增岁帛。
+            counterTerms:
+              vassal: true
+              filial: false
+              cession: yanmen_north
+              annual_silk: 200000
+              immediate_silk: 100000
+              aid_cavalry: 30000
+              aid_arrival_days: 20
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+  - round: 3
+    note: Shi holds the delivered counter (tier 1). His counter within the player's limits uses the segment's second round.
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang, liu_zhiyuan], text: 契丹回书已至。若其索地，宁增岁帛，不可割地——请明公以此答之。 } }
+    proposals:
+      - ref: shi_counter
+        actor: shi_jingtang
+        action:
+          type: respond_to_offer
+          args:
+            offerId: "offer:2"
+            response: counter
+            reason: 土田祖宗所传，不可轻许；愿岁输帛二十万匹，另即奉帛十万匹。
+            counterTerms:
+              vassal: true
+              filial: false
+              cession: none
+              annual_silk: 200000
+              immediate_silk: 100000
+              aid_cavalry: 30000
+              aid_arrival_days: 20
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+    decisions:
+      - { ref: shi_counter, category: major_commitment, choose: endorse }
+  - round: 4
+    note: Segment exhausted — Yelü may only confirm or reject (no deadlock pause while the counterparty is to move).
+    player:
+      - action: { type: speak, args: { to: [liu_zhiyuan], text: 押牙，若契丹终不许，城中尚可支几时？ } }
+    proposals:
+      - ref: yelu_reject
+        actor: yelu_deguang
+        action: { type: respond_to_offer, args: { offerId: "offer:3", response: reject, counterTerms: null, reason: 无地则无兵。 } }
+  - round: 5
+    note: >-
+      Shi received the rejection this round (tier 1b). The deadlock control pause is raised before his proposal can
+      commit; urge_stop regenerates the batch.
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 北使回书若至，请明公示下。 } }
+    proposals:
+      - { ref: shi_wait, actor: shi_jingtang, action: { type: wait, args: {} } }
+    decisions:
+      - category: negotiation_deadlock
+        choose: urge_stop
+        advice: 契丹非地不允，而割地非我所能许。请罢议，据城自守。 / The Khitan will not agree without land, and land is beyond our limit. End the talks and hold the city ourselves.
+    regenerations:
+      - proposals:
+          - { ref: shi_stop, actor: shi_jingtang, action: { type: speak, args: { to: [sang_weihan, liu_zhiyuan, player], text: 契丹非地不允，此约不可成。自今罢议，诸君与我共守此城。 } } }
+expected: { terminal: talks_failed, round: 5 }

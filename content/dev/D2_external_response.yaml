@@ -1,0 +1,102 @@
+# D2 — one external response cycle (PLAN §12.4). Dev/tuning config (never the frozen cases).
+# "Letter pre-dispatched": the schema cannot seed an approved or in-transit document, so the script has Shi approve
+# and send in round 1 without deliberation; Sang adds a covering letter. The tuning focus is the Khitan side.
+# Reference trace (content/traces/D2.trace.yaml): R1 dispatch (pause, endorse) + Sang's letter → R2 Yelü counters
+# (adds 100,000 bolts a year) and answers Sang's letter → R3 Shi confirms the counter (major_commitment pause,
+# endorse) ⇒ pact_concluded at once (Shi's own confirmation is his evidence).
+id: D2
+title: { zh: 北使往返, en: One exchange with the Khitan court }
+purpose:
+  zh: 表一发即至契丹，契丹主还价，石敬瑭允之；兼有桑维翰私书与契丹主回书。检验收表方能作答、还价之往返与私信只作"传言"。
+  en: >-
+    The request goes straight to the Khitan court, the ruler counters and Shi accepts; Sang's covering letter and the
+    ruler's reply travel alongside. Checks that answers follow delivery, the counter-offer round trip, and that
+    letters are only claims.
+
+initial_overrides:
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: true
+        cession: yanmen_north
+        annual_silk: 0
+        immediate_silk: 0
+        aid_cavalry: 25000
+        aid_arrival_days: 20
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 称臣，父礼，事捷之日割雁门关以北诸州。 / Vassalage, filial rites, Yanmen north.
+
+player_goal:
+  text:
+    zh: 速发此表；割地至多雁门关以北诸州，岁帛至多十万匹，总负担不过 80。
+    en: Send the memorial now; cede at most the prefectures north of Yanmen, at most 100,000 bolts a year, total burden at most 80.
+  limits:
+    cession_max: yanmen_north
+    annual_silk_max: 100000
+    burden_max: 80
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, sang_weihan]
+          text:
+            zh: 表已具，请明公即遣使。桑公可附私书致契丹主，以通款曲。
+            en: The memorial is ready — please send it now, my lord. Lord Sang might add a private letter to the Khitan ruler to smooth the way.
+  - round: 3
+    inputs:
+      - when: { player_received: { kind: response, from: yelu_deguang } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 契丹回书已至。若其所索在所许之内（岁帛至多十万匹），请明公允之。
+            en: The Khitan answer has come. If what they ask is within our limits (at most 100,000 bolts a year), please accept it, my lord.
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request }
+    choose: withhold
+    advice: 所许超出所议。 / Beyond our limits.
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment }
+    choose: withhold
+    advice: 所索过多。 / They ask too much.
+  - match: { category: strategic_turn }
+    choose: withhold
+  - match: { category: negotiation_deadlock }
+    choose: urge_accept
+  - match: { category: mutiny }
+    choose: urge_payment
+  - match: { category: internal_disagreement }
+    choose: endorse
+  - match: { category: goal_conflict }
+    choose: withhold
+  - match: { category: risky_delay }
+    choose: withhold
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: user_requested }
+    choose: resume
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: dispatch_request, round: 1, object: "doc:1@v1" }
+  - { type: major_commitment, round: 3, object: "offer:2@v2", note: "Shi confirms Yelü's counter." }
+constraints:
+  - { id: d2-no-invalid, kind: no_invalid_commit }
+  - { id: d2-delivery, kind: answer_after_delivery, description: No answer to an offer before it is delivered (H08). }
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 3
+interrupts: []
+faults: []

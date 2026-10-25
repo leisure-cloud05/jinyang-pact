@@ -1,0 +1,91 @@
+# P2 — pilot variant for live prompt tuning ONLY. Differs from every case: a rich treasury and a silk-for-land
+# offer (Liu's line taken further). No reference trace.
+id: P2
+title: { zh: 以帛代地, en: Silk instead of land }
+purpose:
+  zh: 调试用：府库充盈，以重帛代割地；观察契丹主如何还价、石敬瑭在段内几轮如何应对。
+  en: "Tuning only: a full treasury offers heavy silk instead of land; watch how the Khitan ruler counters and how Shi handles the rounds of a segment."
+
+initial_overrides:
+  resources: { hedong: { silk: 350000 } }
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: false
+        cession: none
+        annual_silk: 300000
+        immediate_silk: 200000
+        aid_cavalry: 25000
+        aid_arrival_days: 10
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 称臣，不行父礼，不割地，岁帛三十万匹，即奉帛二十万匹。 / Silk instead of land.
+
+player_goal:
+  text:
+    zh: 宁出重帛，不割寸土；总负担不过 80。
+    en: Pay heavily in silk rather than cede an inch; total burden at most 80.
+  limits:
+    cession_max: none
+    burden_max: 80
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, sang_weihan]
+          text:
+            zh: 府库尚丰，以帛代地，契丹或可许之。请明公用印遣使。
+            en: The treasury is still full; silk in place of land may satisfy the Khitan. Please seal and send it, my lord.
+  - round: 3
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, liu_zhiyuan]
+          text:
+            zh: 契丹若必索地，当如何？
+            en: What if the Khitan insist on land?
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request }
+    choose: withhold
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment }
+    choose: counter_draft
+    advice: 仍以帛代地答之。 / Answer again with silk instead of land.
+    counter_terms:
+      vassal: true
+      filial: false
+      cession: none
+      annual_silk: 300000
+      immediate_silk: 200000
+      aid_cavalry: 25000
+      aid_arrival_days: 10
+      neutrality: false
+      marriage_alliance: false
+      secret_clauses: []
+  - match: { category: strategic_turn }
+    choose: endorse
+  - match: { category: negotiation_deadlock }
+    choose: urge_stop
+  - match: { category: mutiny }
+    choose: urge_payment
+  - match: { category: internal_disagreement }
+    choose: endorse
+  - match: { category: goal_conflict }
+    choose: withhold
+  - match: { category: risky_delay }
+    choose: withhold
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance, jinyang_falls]
+max_rounds: 6

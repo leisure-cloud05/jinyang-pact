@@ -1,0 +1,164 @@
+# Test fixture scenario (small but exercises every schema feature). Not the real chapter content.
+id: jinyang_fixture
+title: { zh: 晋阳之约（测试）, en: The Jinyang Pact (fixture) }
+start_note: { zh: 测试用开场。, en: Fixture opening note. }
+
+parameters:
+  # Defaults from PLAN §6 apply to every omitted key; a few are restated explicitly.
+  round_days: 5
+  segment_round_cap: 2
+  pair_offer_cap: 5
+  grain_per_advance: 5
+
+locations:
+  - { id: jinyang_hq, name: { zh: 晋阳帅府, en: Jinyang HQ }, source_refs: [fx-src-001] }
+  - { id: khitan_court, name: { zh: 契丹牙帐, en: Khitan court } }
+  - { id: luoyang_court, name: { zh: 洛阳朝廷, en: Luoyang court } }
+
+travel:
+  - { from: jinyang_hq, to: khitan_court, days: 5 }
+  - { from: jinyang_hq, to: luoyang_court, days: 5 }
+  - { from: luoyang_court, to: khitan_court, days: 10 }
+
+factions:
+  - id: hedong
+    name: { zh: 河东, en: Hedong }
+    principal: shi_jingtang
+    resources:
+      grain: { amount: 40, assumption_note: { zh: 约四十日之粮。, en: About forty days of grain. }, source_refs: [fx-src-001] }
+      silk: 120000
+    assumption: true
+    assumption_note: { zh: 数值为游戏假设。, en: Numbers are game assumptions. }
+  - id: khitan
+    name: { zh: 契丹, en: Khitan }
+    principal: yelu_deguang
+    resources: { cavalry: 50000 }
+    assumption: true
+  - id: tang
+    name: { zh: 后唐, en: Later Tang }
+    principal: li_congke
+    resources: { reserve_troops: 30000, silk: 200000 }
+    assumption: true
+
+terms_catalog:
+  terms:
+    - key: vassal
+      label: { zh: 称臣, en: vassalage }
+      type: boolean
+      burden_weight: 30
+      applicable_pairs: [hedong-khitan, khitan-tang]
+      source_refs: [fx-src-001]
+    - key: filial
+      label: { zh: 以父礼事之, en: filial deference }
+      type: boolean
+      burden_weight: 20
+      applicable_pairs: [hedong-khitan]
+    - key: cession
+      label: { zh: 割地, en: territorial cession }
+      type: enum
+      values: [none, yanmen_north, sixteen_prefectures]
+      value_labels:
+        none: { zh: 不割地, en: no cession }
+        yanmen_north: { zh: 雁门以北, en: north of Yanmen }
+        sixteen_prefectures: { zh: 幽云十六州, en: the Sixteen Prefectures }
+      burden_by_value: { none: 0, yanmen_north: 25, sixteen_prefectures: 60 }
+      applicable_pairs: [hedong-khitan]
+      note: { zh: 雁门以北为游戏设计的部分割让等级。, en: yanmen_north is a game-design partial level. }
+    - key: annual_silk
+      label: { zh: 岁帛, en: annual silk }
+      type: integer
+      min: 0
+      max: 1000000
+      step: 10000
+      burden_weight: 10
+      burden_unit: 100000
+      applicable_pairs: [hedong-khitan, khitan-tang]
+    - key: immediate_silk
+      label: { zh: 即付帛, en: immediate silk }
+      type: integer
+      min: 0
+      max: 500000
+      step: 10000
+      burden_weight: 5
+      burden_unit: 50000
+      applicable_pairs: [hedong-khitan, khitan-tang]
+    - key: aid_cavalry
+      label: { zh: 援骑, en: relief cavalry }
+      type: integer
+      min: 0
+      max: 60000
+      step: 5000
+      applicable_pairs: [hedong-khitan]
+    - key: aid_arrival_days
+      label: { zh: 援军到达日数, en: days until relief arrives }
+      type: integer
+      min: 0
+      max: 60
+      step: 5
+      applicable_pairs: [hedong-khitan]
+    - key: neutrality
+      label: { zh: 契丹中立, en: Khitan neutrality }
+      type: boolean
+      applicable_pairs: [khitan-tang]
+    - key: marriage_alliance
+      label: { zh: 和亲, en: marriage alliance }
+      type: boolean
+      burden_weight: 10
+      applicable_pairs: [khitan-tang]
+  secret_clauses:
+    - id: sc_private_tribute
+      text: { zh: 另以私帛十万奉可汗。, en: "A further private gift of 100,000 bolts to the khan." }
+      canary: JYP-CANARY-7F3A
+      knownBy: [shi_jingtang, sang_weihan]
+      applicable_pairs: [hedong-khitan]
+      burden_weight: 10
+    - id: sc_border_hostage
+      text: { zh: 以子为质。, en: A son is sent as a hostage. }
+      canary: JYP-CANARY-C3D5
+      # Holders are set per case (initial_overrides.secret_clauses); nobody knows it a priori.
+      applicable_pairs: [hedong-khitan]
+      burden_weight: 5
+
+initial_world:
+  characters: []
+  siege: { pressure: 40, morale: 60 }
+  documents:
+    - id: "doc:1"
+      holder: shi_jingtang
+      to: yelu_deguang
+      accessibleBy: [shi_jingtang, sang_weihan, liu_zhiyuan, player]
+      terms: { vassal: true, immediate_silk: 50000, aid_cavalry: 30000, aid_arrival_days: 20 }
+      note: 求援书初稿
+      timing: { mode: now }
+  knowledge:
+    - holder: li_congke
+      subject: hedong
+      predicate: claim
+      value: { loyalty: doubtful }
+      credibility: 0.8
+      source_ref: fx-src-001
+
+correspondence_access:
+  - principal: shi_jingtang
+    readers: [sang_weihan, liu_zhiyuan, player]
+
+player:
+  role: clerk
+  name: { zh: 书记, en: the clerk }
+  title: { zh: 帅府书记, en: HQ clerk }
+  faction: hedong
+  location: jinyang_hq
+  permissions: [speak, revise_document, suggest_revision, set_dispatch_timing, dispatch_document, revoke_authorization, wait]
+  default_goal:
+    text: { zh: 以可承受之代价求得援军。, en: Secure relief at a bearable price. }
+    limits: { cession_max: yanmen_north, burden_max: 120 }
+  initial_knowledge:
+    - subject: siege
+      predicate: value
+      value: { note: the city is besieged }
+
+epilogue:
+  note: { zh: 历史对照。, en: Historical comparison. }
+  historical_comparison:
+    - text: { zh: 史载后晋代唐。, en: Historically Later Jin replaced Later Tang. }
+      source_refs: [fx-src-003]

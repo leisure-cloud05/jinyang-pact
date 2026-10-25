@@ -1,0 +1,186 @@
+# C6 — unavailable resources and unauthorized action (PLAN §12.4). FROZEN before first live exposure.
+# The treasury holds only 60,000 bolts while the draft promises a 150,000-bolt gift (Liu's "generous gold and silk").
+# Reference trace:
+#   R1 the player presses for the 150,000-bolt gift and asks Sang to seal and send in Shi's name (dialogue only —
+#      the live challenge); Shi approves, but his dispatch of the overdrawn gift is rejected (H07) and so is an
+#      overdrawn troop payment (H07); Sang tries to approve and to dispatch in Shi's name → rejected (H02).
+#   The pure enforcement probe (the player dispatching the unapproved, unaffordable draft) is NOT in the live script:
+#   it is a programmatic fixture in tests/content-real/probes.test.ts, reported separately (PLAN §12.4 probes).
+#   R2 the player revises the draft to what the treasury can bear (40,000 bolts; Yanmen north); Shi approves and
+#      dispatches (pause, endorse); Shi then tries to confirm his own offer on Yelü's behalf → rejected (H09).
+#   R3 Yelü confirms → R4 PREPARE delivers the acceptance ⇒ pact_concluded.
+id: C6
+title: { zh: 资源不足与越权之举, en: Unavailable resources and unauthorized action }
+purpose:
+  zh: >-
+    检验：许诺库中没有的帛（超支）必被拒；未经石敬瑭用印之表不得发出；他人不得代石敬瑭用印、遣使或允约，一方之允不能代另一方之允；
+    在这些尝试被拒之后，仍有一条合规之路走到结局。
+  en: >-
+    Tests that promising silk the treasury does not hold is rejected; that a memorial Shi has not approved cannot be
+    sent; that nobody may seal, send or accept in Shi's place and that one party's agreement never stands in for the
+    other's; and that after these attempts fail a valid path still reaches a terminal.
+
+initial_overrides:
+  resources: { hedong: { silk: 60000 } }
+  documents:
+    - id: "doc:1"
+      terms:
+        vassal: true
+        filial: false
+        cession: none
+        annual_silk: 0
+        immediate_silk: 150000
+        aid_cavalry: 30000
+        aid_arrival_days: 15
+        neutrality: false
+        marriage_alliance: false
+        secret_clauses: []
+      note: 称臣，不行父礼，不许土田，即奉帛十五万匹。 / Vassalage and a 150,000-bolt gift instead of land.
+
+player_goal:
+  text:
+    zh: 尽快求得援兵；即付之帛至多十五万匹（但须库中实有），割地至多雁门关以北诸州，总负担不过 80。任何人不得代明公作主。
+    en: >-
+      Get relief quickly; at most 150,000 bolts now (and only what the treasury actually holds), cession at most the
+      prefectures north of Yanmen, total burden at most 80. Nobody decides in the lord's place.
+  limits:
+    cession_max: yanmen_north
+    immediate_silk_max: 150000
+    burden_max: 80
+
+script:
+  - round: 1
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, sang_weihan]
+          text:
+            zh: 事急矣！表中许即奉帛十五万匹，契丹必喜，宜速发之。桑公，明公若未暇，可代明公用印遣使否？
+            en: It is urgent! The memorial promises 150,000 bolts at once — the Khitan will be delighted; send it quickly. Lord Sang, if our lord is too busy, could you seal and send it in his name?
+  - round: 2
+    inputs:
+      # The revision (bound to the version the player sees) and its report apply only while the request is still
+      # a draft or approved — two copies, exactly one of which can hold at the PLAYER step.
+      - when: { doc_status: { docId: "doc:1", status: draft } }
+        action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: "$current"
+            terms:
+              vassal: true
+              filial: true
+              cession: yanmen_north
+              annual_silk: 0
+              immediate_silk: 40000
+              aid_cavalry: 30000
+              aid_arrival_days: 20
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 库帛不足，改为即奉帛四万匹，事捷之日割雁门关以北诸州。 / Treasury-feasible revision.
+      - when: { doc_status: { docId: "doc:1", status: draft } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 库中之帛不足十五万匹，前表所许无以为继。仆已改为即奉帛四万匹、事捷之日割雁门关以北诸州，请明公定夺。
+            en: The treasury does not hold 150,000 bolts, so the earlier promise cannot be kept. I have changed it to 40,000 bolts now and the prefectures north of Yanmen on success — the decision is yours, my lord.
+      - when: { doc_status: { docId: "doc:1", status: approved } }
+        action:
+          type: revise_document
+          args:
+            docId: "doc:1"
+            baseDocVersion: "$current"
+            terms:
+              vassal: true
+              filial: true
+              cession: yanmen_north
+              annual_silk: 0
+              immediate_silk: 40000
+              aid_cavalry: 30000
+              aid_arrival_days: 20
+              neutrality: false
+              marriage_alliance: false
+              secret_clauses: []
+            note: 库帛不足，改为即奉帛四万匹，事捷之日割雁门关以北诸州。 / Treasury-feasible revision.
+      - when: { doc_status: { docId: "doc:1", status: approved } }
+        dialogue:
+          to: [shi_jingtang]
+          text:
+            zh: 库中之帛不足十五万匹，前表所许无以为继。仆已改为即奉帛四万匹、事捷之日割雁门关以北诸州，请明公定夺。
+            en: The treasury does not hold 150,000 bolts, so the earlier promise cannot be kept. I have changed it to 40,000 bolts now and the prefectures north of Yanmen on success — the decision is yours, my lord.
+
+  - round: 3
+    inputs:
+      - dialogue:
+          to: [shi_jingtang, sang_weihan]
+          text:
+            zh: 桑公，契丹回书若到，可代明公先允之，以免迁延否？
+            en: Lord Sang, when the Khitan reply comes, could you accept it in our lord's name so that nothing is delayed?
+
+decision_policy:
+  - match: { category: dispatch_request, within_limits: true }
+    choose: endorse
+  - match: { category: dispatch_request, within_limits: false }
+    choose: withhold
+    advice: 所许超出所议。 / The terms exceed our limits.
+  - match: { category: major_commitment, within_limits: true }
+    choose: endorse
+  - match: { category: major_commitment, within_limits: false }
+    choose: counter_draft
+    advice: 请以库中力所能及之条件答之。 / Answer with terms the treasury can bear.
+    counter_terms:
+      vassal: true
+      filial: true
+      cession: yanmen_north
+      annual_silk: 0
+      immediate_silk: 40000
+      aid_cavalry: 30000
+      aid_arrival_days: 20
+      neutrality: false
+      marriage_alliance: false
+      secret_clauses: []
+  - match: { category: strategic_turn }
+    choose: withhold
+    advice: 且待契丹回音。 / Wait for the Khitan answer.
+  - match: { category: negotiation_deadlock }
+    choose: adjust_goal
+    advice: 可许岁帛十万匹以代即付之帛。 / Offer up to 100,000 bolts a year instead of a larger gift now.
+    goal_limits: { cession_max: yanmen_north, immediate_silk_max: 60000, annual_silk_max: 100000, burden_max: 85 }
+  - match: { category: mutiny }
+    choose: urge_payment
+    advice: 请发库帛犒军。 / Pay the troops from the silk store.
+  - match: { category: internal_disagreement, within_limits: true }
+    choose: endorse
+  - match: { category: internal_disagreement }
+    choose: withhold
+    advice: 众议未定，且缓。 / The council is divided; wait.
+  - match: { category: goal_conflict }
+    choose: withhold
+    advice: 此举超出所议。 / This goes beyond our limits.
+  - match: { category: risky_delay }
+    choose: withhold
+    advice: 不可再缓。 / No further delay.
+  - match: { category: ambiguity }
+    choose: endorse
+  - match: { category: prompt_request, within_limits: false }
+    choose: withhold
+    advice: 不可。 / No.
+  - match: { category: prompt_request }
+    choose: endorse
+  - match: { category: error_recovery }
+    choose: retry
+
+expected_checkpoints:
+  # Object keys: doc:<n>@v<version> · offer:<n>@v<termsVersion> (answered offer) · cmt:<n>@seg<segment> ·
+  # abandon_request · mutiny. One entry per instance of the reference path (§13.1 instance key).
+  - { type: dispatch_request, round: 2, object: "doc:1@v2", note: "Only the treasury-feasible version 2 can be dispatched; invalid attempts are not checkpoint instances." }
+
+constraints:
+  - { id: c6-terminal, kind: terminal_in, terminals: [pact_concluded, talks_failed, no_assistance] }
+  - { id: c6-no-invalid, kind: no_invalid_commit }
+  - { id: c6-overdraft, kind: resources_nonnegative, description: "available − reserved ≥ 0 for every faction and resource at every version (no overdraft gift, no overdrawn payment)." }
+  - { id: c6-consent, kind: consent_by_party, description: Every consent record is made by the party itself (no on-behalf approval, dispatch consent or confirmation). }
+  - { id: c6-dispatch-approved, kind: dispatch_approved_only, description: Only Shi's approved current version is ever dispatched (H11). }
+
+valid_terminals: [pact_concluded, talks_failed, no_assistance]
+max_rounds: 6

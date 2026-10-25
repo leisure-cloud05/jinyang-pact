@@ -1,0 +1,43 @@
+# Reference trace for C5. See C1.trace.yaml for the conventions.
+# Siege numbers (grain / pressure / morale) after each ADVANCE: R1 17/58/40, R2 12/66/35, R3 7/74/30 (mutiny due).
+case: C5
+description: >-
+  R1 the player puts the memorial on hold; Liu agrees -> R2 Sang reports the stores -> R3 after the ADVANCE grain is 7
+  and morale 30: the G06 mutiny outcome is staged and paused; the C5 policy urges payment (outbreak averted for now)
+  -> R4 Shi pays the troops 50,000 bolts (morale 45) and formally abandons the request (strategic_turn pause,
+  endorsed) => no_assistance in round 4, with the G11 projection (grain 7 -> 2 -> 0: projected fall on day 25).
+max_rounds: 6
+rounds:
+  - round: 1
+    player:
+      - action: { type: set_dispatch_timing, args: { docId: "doc:1", mode: hold, rounds: null } }
+      - action: { type: speak, args: { to: [shi_jingtang, liu_zhiyuan], text: 此表所许太重：称臣、父事、割地，皆贻后患。仆以为不如据城自守——请暂封存此表。 } }
+    proposals:
+      - { ref: liu_speak, actor: liu_zhiyuan, action: { type: speak, args: { to: [shi_jingtang, player], text: 书记所言是也。许地则异日大患，城中之力尚可一战。 } } }
+      - { ref: shi_wait, actor: shi_jingtang, action: { type: wait, args: {} } }
+  - round: 2
+    player:
+      - action: { type: speak, args: { to: [liu_zhiyuan, sang_weihan], text: 仓中之粮尚可支几日？城中还能撑多久？ } }
+    proposals:
+      - { ref: sang_speak, actor: sang_weihan, action: { type: speak, args: { to: [liu_zhiyuan, player], text: 仓粮不过旬日之用。不求外援，恐难久持。 } } }
+  - round: 3
+    note: The mutiny outcome is staged after this round's ADVANCE (grain 7 <= 10, morale 30 <= 30, city standing).
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 粮将尽，军中已有怨言。宜发库帛犒军，以安众心。 } }
+    proposals:
+      - { ref: shi_speak, actor: shi_jingtang, action: { type: speak, args: { to: [player], text: 且观军情，再作计较。 } } }
+    mutiny: urge_payment
+  - round: 4
+    note: Shi is addressed (tier 2). Abandoning with nothing ever sent ends the chapter at once (no_assistance).
+    player:
+      - action: { type: speak, args: { to: [shi_jingtang], text: 请明公发帛犒军，并明告诸将：不复求援于契丹，与城存亡。 } }
+    proposals:
+      - ref: pay
+        actor: shi_jingtang
+        action: { type: allocate_resources, args: { faction: hedong, resource: silk, amount: 50000, purpose: pay_troops } }
+      - ref: abandon
+        actor: shi_jingtang
+        action: { type: abandon_request, args: { reason: 不复求援于契丹，据城自守。 } }
+    decisions:
+      - { ref: abandon, category: strategic_turn, choose: endorse }
+expected: { terminal: no_assistance, round: 4 }
