@@ -1,14 +1,18 @@
 /** Display helpers: bilingual text, category/option labels, number formatting. */
-import type { L10n, Lang } from '../../src/server/api-types';
+import type { L10n, Lang } from '../../src/server/api-types.js';
 
 export function t(text: L10n | null | undefined, lang: Lang): string {
   if (!text) return '';
   return lang === 'zh' ? text.zh : text.en;
 }
 
-/** Name as "中文 · English" (the other language small). */
-export function both(text: L10n): string {
-  return text.zh === text.en ? text.zh : `${text.zh} · ${text.en}`;
+/** Some legacy notes store Chinese and English in one field, separated by ` / `. Show the English half in the web UI. */
+export function englishDisplay(text: string): string {
+  const split = text.lastIndexOf(' / ');
+  if (split < 0) return text;
+  const first = text.slice(0, split);
+  const second = text.slice(split + 3);
+  return /[\u3400-\u9fff]/u.test(first) && /[A-Za-z]/u.test(second) ? second : text;
 }
 
 export function fmt(n: number | null | undefined): string {
@@ -86,4 +90,32 @@ export const CONTROL_LABELS: Record<string, string> = {
   stopped: 'Stopped',
   error: 'Error',
   unavailable: 'Read-only (needs a live server)',
+};
+
+/** Player-facing names for action ids; ids remain unchanged in audit records and API calls. */
+export const ACTION_LABELS: Record<string, string> = {
+  speak: 'Speak',
+  send_letter: 'Send a letter',
+  revise_document: 'Revise the draft',
+  suggest_revision: 'Suggest a revision',
+  approve_document: 'Approve the draft',
+  set_dispatch_timing: 'Set dispatch timing',
+  dispatch_document: 'Dispatch the request',
+  propose_terms: 'Propose terms',
+  respond_to_offer: 'Respond to an offer',
+  withdraw_offer: 'Withdraw an offer',
+  confirm_commitment: 'Confirm a commitment',
+  allocate_resources: 'Allocate resources',
+  abandon_request: 'Abandon the request',
+  revoke_authorization: 'Revoke authorization',
+  wait: 'Wait',
+};
+
+export const PAUSE_KIND_LABELS: Record<string, string> = {
+  mandatory: 'Required approval',
+  semantic: 'Review',
+  prompt: 'Character question',
+  control: 'Control check',
+  user: 'Player pause',
+  error: 'Error recovery',
 };

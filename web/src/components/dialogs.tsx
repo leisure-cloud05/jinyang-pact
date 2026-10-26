@@ -9,9 +9,8 @@ import { Dialog, ErrorNote } from './ui';
 export function NewSessionDialog({ config, onCreated, onCancel }: { config: ServerConfigView; onCreated: (id: string) => void; onCancel: (() => void) | null }) {
   const [caseId, setCaseId] = useState(config.configs.find((c) => c.id === 'C1')?.id ?? config.configs[0]?.id ?? 'FREE');
   const [mode, setMode] = useState('full');
-  const [lang, setLang] = useState<Lang>(config.defaultLang);
+  const lang: Lang = 'en';
   const [llm, setLlm] = useState<'mock' | 'live'>(config.liveAvailable ? 'live' : 'mock');
-  const [script, setScript] = useState(false);
   const [director, setDirector] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +25,7 @@ export function NewSessionDialog({ config, onCreated, onCancel }: { config: Serv
     setBusy(true);
     setError(null);
     try {
-      const r = await postJson<{ sessionId: string }>('/api/sessions', { caseId, mode, lang, llm, script, director, wait: 5000 }, 'create');
+      const r = await postJson<{ sessionId: string }>('/api/sessions', { caseId, mode, lang, llm, script: false, director, wait: 5000 }, 'create');
       onCreated(r.sessionId);
     } catch (err) {
       setError(errorText(err));
@@ -40,11 +39,11 @@ export function NewSessionDialog({ config, onCreated, onCancel }: { config: Serv
         {config.configs.some((c) => c.id === 'D1') ? (
           <div className="demo-callout">
             <div>
-              <strong>{lang === 'zh' ? '第一次来？先看一场帅府议事。' : 'New here? Start with a council scene.'}</strong>
-              <p>{lang === 'zh' ? 'D1 会安排书记的示范台词；离线模拟角色回应，不花费模型费用。进入后点“结束回合”即可开始。' : 'D1 adds the clerk’s sample lines. Mock characters answer offline at no model cost. Begin, then end your turn.'}</p>
+              <strong>New here? Start with a council scene.</strong>
+              <p>Meet the council with offline mock characters at no model cost. Begin, then end your turn to hear them deliberate.</p>
             </div>
-            <button type="button" className="btn-secondary" onClick={() => { setCaseId('D1'); setMode('full'); setLang('zh'); setLlm('mock'); setScript(true); }}>
-              {lang === 'zh' ? '选用离线示范' : 'Use offline demo'}
+            <button type="button" className="btn-secondary" onClick={() => { setCaseId('D1'); setMode('full'); setLlm('mock'); }}>
+              Use offline demo
             </button>
           </div>
         ) : null}
@@ -82,15 +81,6 @@ export function NewSessionDialog({ config, onCreated, onCancel }: { config: Serv
           ))}
         </fieldset>
         <fieldset className="field-group">
-          <legend>Narrative language</legend>
-          <label className="check">
-            <input type="radio" name="lang" checked={lang === 'zh'} onChange={() => setLang('zh')} /> 中文
-          </label>
-          <label className="check">
-            <input type="radio" name="lang" checked={lang === 'en'} onChange={() => setLang('en')} /> English
-          </label>
-        </fieldset>
-        <fieldset className="field-group">
           <legend>Model</legend>
           <label className="check">
             <input type="radio" name="llm" checked={llm === 'mock'} onChange={() => setLlm('mock')} /> Offline mock personas (no network)
@@ -100,11 +90,6 @@ export function NewSessionDialog({ config, onCreated, onCancel }: { config: Serv
           </label>
           {!config.liveAvailable ? <p className="hint">{config.liveProblem}</p> : null}
         </fieldset>
-        {chosen?.hasScript ? (
-          <label className="check">
-            <input type="checkbox" checked={script} onChange={(e) => setScript(e.target.checked)} /> Add the case’s scripted clerk lines at the end of each of your turns
-          </label>
-        ) : null}
         <label className="check">
           <input type="checkbox" checked={director} onChange={(e) => setDirector(e.target.checked)} /> Unlock the director view from the start (the session is labelled accordingly)
         </label>
@@ -150,7 +135,7 @@ export function TransmitDialog({ sessionId, state, lang, onDone, onCancel }: { s
   return (
     <Dialog title="Transmit the request?" onEscape={onCancel} tone="confirm">
       <p>
-        You are about to send version {doc.version}, sealed by Shi Jingtang, to {doc.toName.zh} ({doc.toName.en}). This is your own decision (player-initiated): no pause follows, and a
+        You are about to send version {doc.version}, sealed by Shi Jingtang, to {doc.toName.en}. This is your own decision (player-initiated): no pause follows, and a
         dispatched request cannot be recalled by you.
       </p>
       <TermsTable terms={doc.terms} catalog={state.catalog} lang={lang} compact />

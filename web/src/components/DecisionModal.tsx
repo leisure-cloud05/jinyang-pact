@@ -6,7 +6,7 @@
 import { useMemo, useState } from 'react';
 import type { Lang, PauseView, StateView, TermLimitsView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
-import { CATEGORY_LABELS, OPTION_LABELS, t } from '../labels';
+import { ACTION_LABELS, CATEGORY_LABELS, OPTION_LABELS, PAUSE_KIND_LABELS, t } from '../labels';
 import { LimitsEditor, TermsEditor, TermsTable, toDraft, type TermsDraft } from './terms';
 import { Badge, Dialog, ErrorNote } from './ui';
 
@@ -87,7 +87,7 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
       onEscape={onHide}
       title={
         <>
-          <span className="kicker">Decision needed · {pause.kind}</span>
+          <span className="kicker">Decision needed · {PAUSE_KIND_LABELS[pause.kind] ?? pause.kind}</span>
           {CATEGORY_LABELS[pause.category] ?? pause.category}
         </>
       }
@@ -106,8 +106,8 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
           {pause.proposals.map((p) => (
             <div key={p.proposalId} className="proposal-card">
               <div className="row">
-                <strong lang="zh">{p.actorName.zh}</strong>
-                <span className="muted">{p.type}</span>
+                <strong>{p.actorName.en}</strong>
+                <span className="muted">{ACTION_LABELS[p.type] ?? p.type.replaceAll('_', ' ')}</span>
               </div>
               <p lang={lang}>{t(p.summary, lang)}</p>
               {p.terms ? <TermsTable terms={p.terms} catalog={catalog} lang={lang} compact /> : null}
@@ -195,7 +195,7 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
                 <select id="grantee" value={grantee} onChange={(e) => setGrantee(e.target.value)}>
                   {grantees.map((g) => (
                     <option key={g} value={g}>
-                      {state.characters.find((c) => c.id === g)?.name.zh ?? g}
+                      {state.characters.find((c) => c.id === g)?.name.en ?? g}
                     </option>
                   ))}
                 </select>

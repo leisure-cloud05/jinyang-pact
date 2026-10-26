@@ -108,10 +108,9 @@ export function CouncilPanel({
       <ul className="cast" aria-label="Present at headquarters">
         {present.map((c) => (
           <li key={c.id} className="person">
-            <span className="person-name" lang="zh">
-              {c.name.zh}
+            <span className="person-name">
+              {c.name.en}
             </span>
-            <span className="person-en">{c.name.en}</span>
             <span className="person-title">{t(c.title, lang)}</span>
             {c.status !== 'alive' ? <Badge tone="bad">{c.status}</Badge> : null}
           </li>
@@ -122,7 +121,7 @@ export function CouncilPanel({
         {away.map((c, i) => (
           <span key={c.id}>
             {i > 0 ? '; ' : ''}
-            <span lang="zh">{c.name.zh}</span> {c.name.en} ({t(c.locationName, lang)})
+            {c.name.en} ({t(c.locationName, lang)})
           </span>
         ))}
       </p>
@@ -141,7 +140,7 @@ export function CouncilPanel({
             <legend className="sr-only">Listeners</legend>
             {present.map((c) => (
               <label key={c.id} className="check">
-                <input type="checkbox" checked={to.includes(c.id)} onChange={(e) => setTo(e.target.checked ? [...to, c.id] : to.filter((x) => x !== c.id))} /> {c.name.zh}
+                <input type="checkbox" checked={to.includes(c.id)} onChange={(e) => setTo(e.target.checked ? [...to, c.id] : to.filter((x) => x !== c.id))} /> {c.name.en}
               </label>
             ))}
           </fieldset>
@@ -156,7 +155,7 @@ export function CouncilPanel({
           rows={3}
           value={text}
           disabled={!yourTurn || busy}
-          placeholder={yourTurn ? (mode === 'speak' ? '明公，表已誊毕…' : 'e.g. 岁帛改为十万匹 / delay the dispatch') : 'You can speak during your turn.'}
+          placeholder={yourTurn ? (mode === 'speak' ? 'My lord, the draft is ready for your review…' : 'e.g. Reduce the annual silk tribute / delay the dispatch') : 'You can speak during your turn.'}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void send();
@@ -182,7 +181,7 @@ export function CouncilPanel({
             {yourTurn ? 'Queued for this turn.' : 'Stops the current deliberation; the round restarts with your instruction.'}
           </label>
           <div className="row">
-            <input id="instr" type="text" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="且慢…" />
+            <input id="instr" type="text" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="Wait—consider this first…" />
             <button type="button" className="btn-secondary" disabled={busy || !instruction.trim()} onClick={() => void interrupt()}>
               Interrupt
             </button>
@@ -195,11 +194,11 @@ export function CouncilPanel({
           {rows.map((r) => (
             <li key={r.seq} className={`line line-${r.kind} ${r.speaker === 'player' ? 'mine' : ''}`}>
               <div className="line-head">
-                <span className="speaker" lang="zh">
-                  {r.speakerName.zh}
+                <span className="speaker">
+                  {r.speakerName.en}
                 </span>
                 {r.kind !== 'speech' ? <Badge tone={r.kind === 'advice' ? 'warn' : 'info'}>{r.kind}</Badge> : null}
-                <span className="to">→ {r.listenerNames.map((n) => n.zh).join('、')}</span>
+                <span className="to">→ {r.listenerNames.map((n) => n.en).join(', ')}</span>
                 <span className="round-tag">R{r.round}</span>
               </div>
               <p className="line-text">{r.text}</p>

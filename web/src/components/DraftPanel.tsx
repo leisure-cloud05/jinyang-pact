@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import type { InputResult, Lang, StateView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
-import { fmt, t } from '../labels';
+import { englishDisplay, fmt, t } from '../labels';
 import { TermsEditor, TermsTable, burdenOf, limitsSummary, toDraft, type TermsDraft } from './terms';
 import { Badge, Empty, ErrorNote, Section } from './ui';
 
@@ -81,7 +81,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
     <section className="panel draft" aria-labelledby="draft-title">
       <div className="panel-head">
         <h2 id="draft-title">
-          Request for assistance <span className="muted">→ {doc.toName.zh}</span>
+          Request for assistance <span className="muted">→ {doc.toName.en}</span>
         </h2>
         <div className="badges">
           <Badge tone="info">v{doc.version}</Badge>
@@ -109,7 +109,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
           </div>
           <div className="field">
             <label htmlFor="sug-reason">Reason (for a suggestion)</label>
-            <input id="sug-reason" type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="减轻岁输，以免后患" />
+            <input id="sug-reason" type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reduce annual tribute to avoid future hardship" />
           </div>
           <p className="hint">Revising creates version {doc.version + 1} and voids Shi’s approval; it never creates anyone’s consent. A suggestion is non-binding advice to the council.</p>
           <div className="row">
@@ -127,7 +127,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
       ) : (
         <>
           <TermsTable terms={doc.terms} catalog={catalog} lang={lang} />
-          {doc.note ? <p className="doc-note">{doc.note}</p> : null}
+          {doc.note ? <p className="doc-note">{englishDisplay(doc.note)}</p> : null}
           <div className="row">
             <button type="button" className="btn-secondary" disabled={!yourTurn || doc.status === 'sent'} onClick={() => setEditing(true)}>
               Edit terms
@@ -199,7 +199,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
                 <tr key={o.offerId}>
                   <td>{o.offerId}</td>
                   <td>
-                    {o.fromName.zh} → {o.toName.zh}
+                    {o.fromName.en} → {o.toName.en}
                   </td>
                   <td>{o.termsVersion}</td>
                   <td>{o.believedStatus ?? 'unknown'}</td>
@@ -221,12 +221,12 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
           <ul className="plain">
             {doc.suggestions.map((s) => (
               <li key={s.id}>
-                <strong lang="zh">{s.byName.zh}</strong> on v{s.targetVersion} (R{s.round}):{' '}
+                <strong>{s.byName.en}</strong> on v{s.targetVersion} (R{s.round}):{' '}
                 {Object.entries(s.terms)
                   .filter(([, v]) => v !== null)
                   .map(([k, v]) => `${t(catalog.terms.find((e) => e.key === k)?.label ?? { zh: k, en: k }, lang)} ${termValue(k, v, catalog, lang)}`)
                   .join('; ') || '—'}
-                <span className="hint"> — {s.reason}</span>
+                <span className="hint"> — {englishDisplay(s.reason)}</span>
               </li>
             ))}
           </ul>
@@ -240,7 +240,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
           <ul className="plain">
             {state.world.authorizations.map((a) => (
               <li key={a.id}>
-                <Badge tone={a.revoked ? 'muted' : 'ok'}>{a.id}</Badge> {a.granteeName.zh} may decide {a.categories.join(', ')} within {limitsSummary(a.limits, catalog, lang)}
+                <Badge tone={a.revoked ? 'muted' : 'ok'}>{a.id}</Badge> {a.granteeName.en} may decide {a.categories.join(', ')} within {limitsSummary(a.limits, catalog, lang)}
                 {a.expiresRound !== null ? ` until round ${a.expiresRound}` : ''}{' '}
                 {!a.revoked ? (
                   <button type="button" className="btn-small" disabled={!yourTurn || busy} onClick={() => void act({ type: 'revoke_authorization', args: { authId: a.id } })}>
@@ -260,7 +260,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
         <ul className="plain">
           {doc.history.map((h) => (
             <li key={h.version}>
-              v{h.version} by {h.byName.zh} (R{h.round})
+              v{h.version} by {h.byName.en} (R{h.round})
             </li>
           ))}
         </ul>

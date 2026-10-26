@@ -10,7 +10,7 @@ import { useResource } from '../hooks';
 import { TERMINAL_LABELS, t } from '../labels';
 import { Badge, Empty, ErrorNote } from './ui';
 
-export function StoryPanel({ sessionId, state, view, tick, lang, onLang, startNote }: { sessionId: string; state: StateView; view: ViewMode; tick: number; lang: Lang; onLang: (l: Lang) => void; startNote: { zh: string; en: string } | null }) {
+export function StoryPanel({ sessionId, state, view, tick, lang, startNote }: { sessionId: string; state: StateView; view: ViewMode; tick: number; lang: Lang; startNote: { zh: string; en: string } | null }) {
   const story = useResource<StoryView>(sessionUrl(sessionId, 'narration', { view: viewParam(view), lang }), tick);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,19 +40,11 @@ export function StoryPanel({ sessionId, state, view, tick, lang, onLang, startNo
       <div className="panel-head">
         <div>
           <h2 id="story-title" className="scene-title">
-            <span lang="zh">{w.locationName.zh}</span>
+            <span>{w.locationName.en}</span>
             <span className="scene-meta">
-              {w.locationName.en} · day {w.day} · round {w.round}
+              Day {w.day} · round {w.round}
             </span>
           </h2>
-        </div>
-        <div className="seg" role="group" aria-label="Narrative language">
-          <button type="button" aria-pressed={lang === 'zh'} onClick={() => onLang('zh')}>
-            中文
-          </button>
-          <button type="button" aria-pressed={lang === 'en'} onClick={() => onLang('en')}>
-            English
-          </button>
         </div>
       </div>
       <div ref={box} className="story-scroll" aria-live="polite">
@@ -66,7 +58,7 @@ export function StoryPanel({ sessionId, state, view, tick, lang, onLang, startNo
         {story.data?.items.map((item, i) => <Item key={i} item={item} lang={lang} view={view} onRegenerate={regenerate} busy={busy} />)}
         {w.terminal ? (
           <div className="ending" role="status">
-            <p className="ending-kicker">{lang === 'zh' ? '本章终' : 'End of the chapter'}</p>
+            <p className="ending-kicker">End of the chapter</p>
             <p className="ending-title" lang={lang}>
               {t(TERMINAL_LABELS[w.terminal.kind] ?? { zh: w.terminal.kind, en: w.terminal.kind }, lang)}
             </p>
@@ -85,7 +77,7 @@ function Item({ item, lang, view, onRegenerate, busy }: { item: StoryItem; lang:
     return (
       <h3 className="round-divider">
         <span>
-          {lang === 'zh' ? `第${item.round}回合 · 第${item.day}日` : `Round ${item.round} · day ${item.day}`}
+          Round {item.round} · day {item.day}
         </span>
       </h3>
     );
@@ -96,7 +88,7 @@ function Item({ item, lang, view, onRegenerate, busy }: { item: StoryItem; lang:
       <div className={`facts ${item.inherited ? 'inherited' : ''}`}>
         <div className="facts-label">
           {where}
-          <span>{item.batchKind === 'player' ? (lang === 'zh' ? '你的行动' : 'Your actions') : item.batchKind === 'system_prepare' ? (lang === 'zh' ? '驿报' : 'Couriers') : item.batchKind === 'system_advance' ? (lang === 'zh' ? '时日' : 'Time passes') : lang === 'zh' ? '纪事' : 'Record'}</span>
+          <span>{item.batchKind === 'player' ? 'Your actions' : item.batchKind === 'system_prepare' ? 'Couriers' : item.batchKind === 'system_advance' ? 'Time passes' : 'Record'}</span>
         </div>
         <ul lang={lang}>
           {item.lines.map((l, i) => (
@@ -111,7 +103,7 @@ function Item({ item, lang, view, onRegenerate, busy }: { item: StoryItem; lang:
       <div className="fact-header" aria-label="Fact header (deterministic)">
         <div className="facts-label">
           {where}
-          <span>{lang === 'zh' ? '实录' : 'What happened'}</span>
+          <span>What happened</span>
           {item.status !== 'ok' ? (
             <Badge tone="muted" title={`The model's prose was not shown (${item.fallbackReason ?? item.status}); a template narration is shown instead.`}>
               {item.status === 'failed' ? 'narration pending' : 'template narration'}
@@ -127,7 +119,7 @@ function Item({ item, lang, view, onRegenerate, busy }: { item: StoryItem; lang:
       <p className="prose" lang={item.proseLang}>
         {item.prose}
       </p>
-      {item.proseLang !== lang ? <p className="hint">Prose shown in the session language ({item.proseLang === 'zh' ? '中文' : 'English'}).</p> : null}
+      {item.proseLang !== lang ? <p className="hint">This narration was recorded in {item.proseLang === 'zh' ? 'Chinese' : 'English'}.</p> : null}
       {item.status === 'failed' ? (
         <button type="button" className="btn-small" disabled={busy === item.batchId} onClick={() => onRegenerate(item)}>
           {busy === item.batchId ? 'Regenerating…' : 'Regenerate narration'}

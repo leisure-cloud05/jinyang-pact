@@ -404,16 +404,11 @@ input[type='number'] {
   font-size: 24px;
   box-shadow: 2px 2px 0 color-mix(in srgb, var(--gold) 60%, transparent);
 }
-.brand-zh {
-  font-family: var(--serif);
-  font-size: 1.32rem;
-  line-height: 1.1;
-  letter-spacing: 0.1em;
-}
 .brand-en {
-  font-size: 0.68rem;
+  font-family: var(--serif);
+  font-size: 1.15rem;
   color: color-mix(in srgb, var(--header-ink) 72%, transparent);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.04em;
 }
 .session-pick {
   display: flex;
@@ -815,10 +810,6 @@ details > summary {
   font-size: 1.13rem;
   color: var(--accent);
 }
-.person-en {
-  color: var(--ink-2);
-  font-size: 0.85rem;
-}
 .person-title {
   grid-column: 1 / -1;
   color: var(--muted);
@@ -1207,10 +1198,6 @@ details > summary {
 .welcome h1 {
   font-family: var(--serif);
   font-size: clamp(2rem, 4vw, 3rem);
-}
-.welcome-en {
-  color: var(--muted);
-  margin-top: 0;
 }
 @media (max-width: 640px) {
   .demo-callout { flex-direction: column; align-items: stretch; }

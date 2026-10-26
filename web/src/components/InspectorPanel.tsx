@@ -59,7 +59,7 @@ function Events({ sessionId, view, tick, lang }: { sessionId: string; view: View
             {e.version !== null ? <Badge tone="info">v{e.version}</Badge> : null}
             <strong>{e.kind}</strong>
             <span className="muted">
-              R{e.round} · day {e.day} · {e.actorName.zh}
+              R{e.round} · day {e.day} · {e.actorName.en}
             </span>
             {e.rulesApplied.map((rule) => (
               <Badge key={rule} tone="muted">
@@ -148,7 +148,7 @@ function Proposals({ sessionId, view, tick, lang }: { sessionId: string; view: V
                   R{p.round}
                   <span className="muted">.e{p.epoch}</span>
                 </td>
-                <td lang="zh">{p.actorName.zh}</td>
+                <td>{p.actorName.en}</td>
                 <td>
                   <span lang={lang}>{t(p.summary, lang)}</span>
                   {p.probe ? <Badge tone="warn">probe</Badge> : null}
