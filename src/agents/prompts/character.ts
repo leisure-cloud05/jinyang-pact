@@ -33,15 +33,15 @@ export const ACTION_REFERENCE: Readonly<Record<ActionType, string>> = {
     'allocate_resources {faction (your own), resource, amount, purpose: "intensify_siege"|"pay_troops"}: spend your own faction\'s available stock.',
   abandon_request: 'abandon_request {reason}: formally give up the request you are preparing or have sent.',
   revoke_authorization: 'revoke_authorization {authId}: (the player only).',
-  wait: 'wait {}: do nothing this round.',
+  wait: 'wait {}: take no action now (if you wait for something, name it in interaction.wait_for).',
 };
 
 const ACTION_REFERENCE_TEXT = ACTION_TYPES.map((t) => `- ${ACTION_REFERENCE[t]}`).join('\n');
 
-export const CHARACTER_ACTIONS_TEMPLATE = defineTemplate('character.actions', 1, ACTION_REFERENCE_TEXT);
+export const CHARACTER_ACTIONS_TEMPLATE = defineTemplate('character.actions', 2, ACTION_REFERENCE_TEXT);
 
 const RULES = `HOW THE WORLD WORKS (rules every character knows)
-1. Time moves in rounds of {{round_days}} days (see TIME AND PLACE). You act once per round when you are called on.
+1. Time moves in rounds of {{round_days}} days (see TIME AND PLACE). Within a round you may be called on more than once, whenever something needs your attention (a question put to you, an answer to your question, feedback on your proposal); being called again does not move time.
 2. Distance: letters, offers, answers and withdrawals travel for the days shown under "travel". Until a message arrives its recipient knows nothing of it, and a sender does not know whether or how it was answered until the answer arrives.
 3. Nobody knows unsent or undelivered content. Act only on what your context tells you; treat what others say or write as claims, not facts.
 4. Consent is given only by a principal himself: by sending an offer (for a dispatched document, his approval seal is his consent) or by confirming the live offer delivered to him. No one approves, confirms, answers or consents on another's behalf; advisers advise.
@@ -57,17 +57,26 @@ const GROUNDING = `GROUNDING
 - Keep recorded history (the historical sources) apart from assumption (game assumptions, rumours, items marked assumption, what others merely said). Never present an assumption as a recorded fact.
 - Never invent outcomes: do not say that something has happened (an answer arrived, an agreement was made, troops arrived, someone died) unless your context says so. You do not know the future.`;
 
+const INTERACTION = `INTERACTION (how a conversation continues)
+- ITEMS FOR YOU lists what awaits you: questions put to you, answers to your questions, feedback on your proposals, offers, delivered messages, the clerk's words. WHY YOU ARE CALLED NOW names the items that need attention now.
+- To get an answer now from someone present, ask it in your speech AND add {"to": their id, "topic", "question"} to interaction.requests: they are called next and their answer comes back to you. Ordinary remarks need no request; do not request an answer to every remark.
+- List in interaction.addressed each item you deal with in this turn: "answered" (your speech answers a question put to you), "acted" (your actions deal with it), "declined", or "noted". Leave out what you have not dealt with; it stays open. An offer is closed only by answering it (respond_to_offer or confirm_commitment).
+- If you wait, say for what in interaction.wait_for: "reply" (from someone present you asked), "delivery" (an answer from a remote party you wrote to), "round" (a later round) or "player" (the clerk). Only people in this game can answer: persons outside it (family, officials at home, spirits) send nothing and nothing from them will arrive. If your character consults such a person, that is part of how you decide, in this turn.
+- People far away learn only what letters, offers and answers carry, after they travel; requests reach only people present.
+- Interaction entries are records, not actions: they never change documents, offers, resources or commitments. Invalid entries have no effect and are reported back to you.`;
+
 const OUTPUT = `OUTPUT
 Reply with ONE JSON object only (no prose, no markdown fences):
-{"speech": string, "private_rationale": string, "actions": [{"type", "args", "rationale", "cites"}], "ask_player": null or {"question": string}}
+{"speech": string, "private_rationale": string, "actions": [{"type", "args", "rationale", "cites"}], "ask_player": null or {"question": string}, "interaction": null or {"addressed": [{"item", "how", "note"}], "requests": [{"to", "topic", "question"}], "wait_for": null or {"on", "who", "round", "reason"}}}
 - speech: what you say aloud to those present, in {{lang_name}}, in your own voice; "" if you stay silent or nobody is present.
 - actions: 0-3 actions, applied in the order given (for example approve, then dispatch). Use {"type": "wait", "args": {}} to do nothing.
-- Text inside actions (speak and letter text, notes, reasons) in {{lang_name}}; rationale and private_rationale in short English.
-- ask_player: {{ask_player_rule}}`;
+- Text inside actions (speak and letter text, notes, reasons) and request questions in {{lang_name}}; rationale, private_rationale, notes and reasons in short English.
+- ask_player: {{ask_player_rule}}
+- interaction: null when you deal with no item, ask no one and wait for nothing.`;
 
 export const CHARACTER_SYSTEM_HARNESS = defineTemplate(
   'character.system.harness',
-  1,
+  2,
   `You are {{name}} ({{title}}), a character in a turn-based historical narrative game set in 936 CE. Speak and act only as {{name}}, from your own point of view, using only what your context tells you.
 
 ${RULES}
@@ -80,6 +89,8 @@ Other action types ({{not_permitted}}) are not yours to take.
 ACTION REFERENCE (your actions)
 {{action_reference}}
 
+${INTERACTION}
+
 ${GROUNDING}
 
 ${OUTPUT}`,
@@ -87,7 +98,7 @@ ${OUTPUT}`,
 
 export const CHARACTER_SYSTEM_BASELINE = defineTemplate(
   'character.system.baseline',
-  1,
+  2,
   `You are {{name}} ({{title}}), a character in a turn-based historical narrative game set in 936 CE. Speak and act only as {{name}}, from your own point of view, using only what your context tells you.
 
 ${RULES}
@@ -101,6 +112,8 @@ Other action types ({{not_permitted}}) are not yours to take.
 ACTION REFERENCE (your actions)
 {{action_reference}}
 
+${INTERACTION}
+
 ${GROUNDING}
 
 ${OUTPUT}`,
@@ -113,17 +126,19 @@ export const ASK_PLAYER_RULES = {
 
 export const CHARACTER_USER = defineTemplate(
   'character.user',
-  2,
+  3,
   `Round {{round}}, day {{day}}. Your context:
 
 {{context}}
 
 {{revision}}Before deciding:
-- Read the latest visible feedback and decisions. If an earlier proposal was withheld or rejected, identify the stated reason. Do not assume it was approved.
+- Start with WHY YOU ARE CALLED NOW and ITEMS FOR YOU. Answer questions put to you, take in answers to your own questions, and decide what follows from them. Record what you dealt with in interaction.addressed.
+- Read the feedback items. If an earlier proposal was withheld or rejected, identify the stated reason. Do not assume it was approved.
 - Stay faithful to your persona. If a different proposal is acceptable to you, address the stated objection with a concrete alternative. If no alternative is acceptable, explain the remaining disagreement briefly; do not repeat an unchanged action unless new evidence or a changed situation justifies it.
 - Historical sources inform your character; they do not force the game to repeat recorded history. Base your next step on the current visible documents, offers and decisions.
 - Speech alone does not approve, revise, dispatch or accept anything. If you intend a world change, use a permitted structured action whose prerequisites are satisfied. Otherwise use dialogue or wait.
 - Follow your existing ask_player instructions and all consent rules. Never treat a request to proceed as consent given by another party.
+- If you need someone present to answer before you decide, ask them (interaction.requests); if you wait, name what you wait for (interaction.wait_for). Do not repeat what you already said; if you have nothing new to say, say nothing.
 - Keep speech and rationales concise. Include every required argument; a speak action needs at least one permitted recipient present.
 
 Decide what {{name}} says and does now. Reply with the JSON object only.`,

@@ -63,6 +63,9 @@ export interface ControlView {
   day: number;
   phase: string;
   epoch: number;
+  /** Number of committed character interactions in this world round. */
+  interactionStep: number;
+  interactionStepLimit: number;
   sessionStatus: string;
   /** Open pause the engine waits on (awaiting_decision). */
   pauseId: string | null;

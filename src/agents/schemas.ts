@@ -37,6 +37,58 @@ export type CharacterActionItem = z.infer<typeof CharacterActionItemSchema>;
 
 export const MAX_CHARACTER_ACTIONS = 3;
 
+/**
+ * Interaction metadata (PLAN §10.4): control records only — they never change world state. Recipients and item ids
+ * are free strings on purpose: an invalid reference is answered with explicit feedback (and a bounded chance to
+ * correct it), not with a schema failure.
+ */
+export const ADDRESS_HOW = ['answered', 'acted', 'declined', 'noted'] as const;
+export type AddressHow = (typeof ADDRESS_HOW)[number];
+export const WAIT_ON = ['reply', 'delivery', 'round', 'player'] as const;
+export type WaitOn = (typeof WAIT_ON)[number];
+export const MAX_ADDRESSED = 8;
+export const MAX_REQUESTS = 2;
+
+export const InteractionSchema = z
+  .object({
+    addressed: z
+      .array(
+        z
+          .object({
+            item: z.string().describe('an item id from ITEMS FOR YOU (e.g. "i7")'),
+            how: z.enum(ADDRESS_HOW).describe('answered (your speech answers it) | acted (your actions deal with it) | declined | noted'),
+            note: z.string().describe('a few words, in short English'),
+          })
+          .strict(),
+      )
+      .max(MAX_ADDRESSED)
+      .describe('items you deal with in this turn; leave out items you have not dealt with'),
+    requests: z
+      .array(
+        z
+          .object({
+            to: z.string().describe('character id of someone present who should answer you'),
+            topic: z.string().describe('2-6 word topic label'),
+            question: z.string().describe('the question or request, as said in your speech'),
+          })
+          .strict(),
+      )
+      .max(MAX_REQUESTS)
+      .describe('ask someone present to respond now (only when you need their answer); [] otherwise'),
+    wait_for: z
+      .object({
+        on: z.enum(WAIT_ON).describe('reply (from someone you asked) | delivery (a message from a remote party) | round | player'),
+        who: z.string().nullable().describe('character id for reply/delivery, else null'),
+        round: z.number().int().nullable().describe('round number for "round", else null'),
+        reason: z.string().describe('short English reason'),
+      })
+      .strict()
+      .nullable()
+      .describe('what you are waiting for before you act, or null'),
+  })
+  .strict();
+export type InteractionOutput = z.infer<typeof InteractionSchema>;
+
 export const CharacterOutputSchema = z
   .object({
     speech: z.string().describe('what you say aloud to everyone present this turn, in character; "" if nothing'),
@@ -47,6 +99,7 @@ export const CharacterOutputSchema = z
       .strict()
       .nullable()
       .describe('a question for the clerk (the player) before your consequential action proceeds, or null'),
+    interaction: InteractionSchema.nullable().default(null).describe('items you dealt with, requests to people present, what you wait for; null if none'),
   })
   .strict();
 export type CharacterOutput = z.infer<typeof CharacterOutputSchema>;

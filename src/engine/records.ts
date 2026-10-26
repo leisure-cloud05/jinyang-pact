@@ -102,6 +102,50 @@ CREATE TABLE IF NOT EXISTS engine_checkpoints (
   created_at_ms INTEGER NOT NULL,
   PRIMARY KEY (session_id, name)
 );
+CREATE TABLE IF NOT EXISTS engine_steps (
+  session_id TEXT NOT NULL,
+  batch_id TEXT NOT NULL,
+  step_id TEXT NOT NULL,
+  round INTEGER NOT NULL,
+  step INTEGER NOT NULL,
+  epoch INTEGER NOT NULL,
+  select_id TEXT NOT NULL,
+  PRIMARY KEY (session_id, batch_id)
+);
+CREATE TABLE IF NOT EXISTS engine_turns (
+  session_id TEXT NOT NULL,
+  turn_id TEXT NOT NULL,
+  batch_id TEXT NOT NULL,
+  round INTEGER NOT NULL,
+  step INTEGER NOT NULL,
+  epoch INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  status TEXT NOT NULL,
+  call_tag TEXT NOT NULL,
+  supplied_json TEXT NOT NULL,
+  interaction_json TEXT NOT NULL,
+  speech TEXT NOT NULL,
+  raw TEXT,
+  proposal_ids_json TEXT NOT NULL,
+  PRIMARY KEY (session_id, turn_id)
+);
+CREATE TABLE IF NOT EXISTS engine_items (
+  session_id TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  responsible TEXT NOT NULL,
+  status TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  item_json TEXT NOT NULL,
+  PRIMARY KEY (session_id, item_id)
+);
+CREATE TABLE IF NOT EXISTS engine_ledger (
+  session_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('base','current')),
+  ledger_json TEXT NOT NULL,
+  PRIMARY KEY (session_id, kind)
+);
 `;
 
 export interface RunRecord {
@@ -174,6 +218,39 @@ export interface RevisionRecord {
   links: { replacedBy?: string[]; replaces?: string[]; proposalId?: string | null };
   /** originals: revising → replaced | revision_failed; replacements: pending_reassessment → final. */
   status: 'revising' | 'replaced' | 'revision_failed' | 'pending_reassessment' | 'final';
+}
+
+/** One interaction step's character batch (PLAN §10.1): `r<round>.s<step>`, with the epoch it was generated in. */
+export interface StepRecord {
+  sessionId: string;
+  batchId: string;
+  stepId: string;
+  round: number;
+  step: number;
+  epoch: number;
+  selectId: string;
+}
+
+/**
+ * One character call of a step (the recorded model output): status, the item ids its context showed, the
+ * interaction metadata, speech and raw text as received (redacted), and the proposals it produced. Turns of a batch
+ * that did not commit are kept for the audit and have no ledger effect.
+ */
+export interface TurnRecord {
+  sessionId: string;
+  turnId: string;
+  batchId: string;
+  round: number;
+  step: number;
+  epoch: number;
+  actor: CharId;
+  status: 'ok' | 'format_error' | 'error' | 'skipped';
+  callTag: string;
+  supplied: string[];
+  interaction: unknown;
+  speech: string;
+  raw: string | null;
+  proposalIds: string[];
 }
 
 type Row = Record<string, unknown>;
@@ -458,6 +535,100 @@ export class EngineRecords {
     }));
   }
 
+  // --- interaction steps, turns and the item ledger (PLAN §10.4) -------------------------------------------------
+
+  insertStep(s: StepRecord): void {
+    this.db
+      .prepare('INSERT OR IGNORE INTO engine_steps (session_id, batch_id, step_id, round, step, epoch, select_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(s.sessionId, s.batchId, s.stepId, s.round, s.step, s.epoch, s.selectId);
+  }
+
+  steps(sessionId: string): StepRecord[] {
+    return (this.db.prepare('SELECT * FROM engine_steps WHERE session_id = ? ORDER BY round, step, epoch, batch_id').all(sessionId) as Row[]).map((r) => ({
+      sessionId: str(r.session_id),
+      batchId: str(r.batch_id),
+      stepId: str(r.step_id),
+      round: num(r.round),
+      step: num(r.step),
+      epoch: num(r.epoch),
+      selectId: str(r.select_id),
+    }));
+  }
+
+  insertTurn(t: TurnRecord): void {
+    this.db
+      .prepare(
+        `INSERT OR IGNORE INTO engine_turns (session_id, turn_id, batch_id, round, step, epoch, actor, status, call_tag, supplied_json,
+          interaction_json, speech, raw, proposal_ids_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        t.sessionId,
+        t.turnId,
+        t.batchId,
+        t.round,
+        t.step,
+        t.epoch,
+        t.actor,
+        t.status,
+        t.callTag,
+        canonicalJson(t.supplied),
+        red(t.interaction),
+        redactSecrets(t.speech),
+        t.raw === null ? null : redactSecrets(t.raw),
+        canonicalJson(t.proposalIds),
+      );
+  }
+
+  turns(sessionId: string, filter: { batchId?: string } = {}): TurnRecord[] {
+    const rows = (
+      filter.batchId === undefined
+        ? this.db.prepare('SELECT * FROM engine_turns WHERE session_id = ? ORDER BY round, step, epoch, batch_id, turn_id').all(sessionId)
+        : this.db.prepare('SELECT * FROM engine_turns WHERE session_id = ? AND batch_id = ? ORDER BY turn_id').all(sessionId, filter.batchId)
+    ) as Row[];
+    return rows.map((r) => ({
+      sessionId: str(r.session_id),
+      turnId: str(r.turn_id),
+      batchId: str(r.batch_id),
+      round: num(r.round),
+      step: num(r.step),
+      epoch: num(r.epoch),
+      actor: str(r.actor) as CharId,
+      status: str(r.status) as TurnRecord['status'],
+      callTag: str(r.call_tag),
+      supplied: JSON.parse(str(r.supplied_json)) as string[],
+      interaction: JSON.parse(str(r.interaction_json)) as unknown,
+      speech: str(r.speech),
+      raw: optStr(r.raw),
+      proposalIds: JSON.parse(str(r.proposal_ids_json)) as string[],
+    }));
+  }
+
+  /** Writes the materialized ledger (items + the full ledger document) — callers wrap it in a transaction. */
+  saveLedger(sessionId: string, kind: 'base' | 'current', ledger: { items: Array<{ itemId: string; seq: number; kind: string; responsible: string; status: string; sourceKey: string }> }): void {
+    this.db.prepare('INSERT OR REPLACE INTO engine_ledger (session_id, kind, ledger_json) VALUES (?, ?, ?)').run(sessionId, kind, red(ledger));
+    if (kind !== 'current') return;
+    const stmt = this.db.prepare(
+      'INSERT OR REPLACE INTO engine_items (session_id, item_id, seq, kind, responsible, status, source_key, item_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    for (const it of ledger.items) stmt.run(sessionId, it.itemId, it.seq, it.kind, it.responsible, it.status, it.sourceKey, red(it));
+  }
+
+  /** The stored ledger document (`current`: materialized; `base`: inherited at a branch), or null. */
+  ledger(sessionId: string, kind: 'base' | 'current'): unknown {
+    const r = this.db.prepare('SELECT ledger_json FROM engine_ledger WHERE session_id = ? AND kind = ?').get(sessionId, kind) as Row | undefined;
+    return r ? (JSON.parse(str(r.ledger_json)) as unknown) : null;
+  }
+
+  /** Raw (redacted) ledger document, for byte-level replay comparison. */
+  ledgerJson(sessionId: string, kind: 'base' | 'current'): string | null {
+    const r = this.db.prepare('SELECT ledger_json FROM engine_ledger WHERE session_id = ? AND kind = ?').get(sessionId, kind) as Row | undefined;
+    return r ? str(r.ledger_json) : null;
+  }
+
+  items(sessionId: string): unknown[] {
+    return (this.db.prepare('SELECT item_json FROM engine_items WHERE session_id = ? ORDER BY seq').all(sessionId) as Row[]).map((r) => JSON.parse(str(r.item_json)) as unknown);
+  }
+
   /** Engine rows of a session, for the audit bundle (engine.json, revisions.jsonl). */
   exportSession(sessionId: string): {
     run: RunRecord | null;
@@ -466,6 +637,10 @@ export class EngineRecords {
     checkpoints: CheckpointRecord[];
     revisions: RevisionRecord[];
     budget: { calls: number; usd: number; unknownCostCalls: number };
+    steps: StepRecord[];
+    turns: TurnRecord[];
+    items: unknown[];
+    ledger: unknown;
   } {
     return {
       run: this.findRun(sessionId),
@@ -474,6 +649,10 @@ export class EngineRecords {
       checkpoints: this.checkpoints(sessionId),
       revisions: this.revisions(sessionId),
       budget: this.usedBudget(sessionId),
+      steps: this.steps(sessionId),
+      turns: this.turns(sessionId),
+      items: this.items(sessionId),
+      ledger: this.ledger(sessionId, 'current'),
     };
   }
 }

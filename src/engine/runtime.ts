@@ -12,6 +12,7 @@ import type { CharId, CoreConfig, Mode, WorldState } from '../core/types.js';
 import type { Harness } from '../harness/index.js';
 import type { LlmClient, LlmRequest, LlmResult } from '../llm/types.js';
 import type { SessionRecord } from '../store/repo.js';
+import type { InteractionEnv } from './interaction-store.js';
 import type { EngineRecords, RunRecord } from './records.js';
 import type {
   CaseLikeConfig,
@@ -49,6 +50,8 @@ export class TrackingClient implements LlmClient {
   private readonly ledger: ChargeLedger | null;
   budgetRefusals = 0;
   errors = 0;
+  /** Message of the last budget refusal (call budget vs cost budget). */
+  lastBudgetRefusal: string | null = null;
 
   constructor(inner: LlmClient, ledger: ChargeLedger | null = null) {
     this.inner = inner;
@@ -77,7 +80,10 @@ export class TrackingClient implements LlmClient {
     }
     if (!result.ok) {
       this.errors += 1;
-      if (result.error.kind === 'budget') this.budgetRefusals += 1;
+      if (result.error.kind === 'budget') {
+        this.budgetRefusals += 1;
+        this.lastBudgetRefusal = result.error.message;
+      }
     }
     return result;
   }
@@ -120,6 +126,10 @@ export interface Runtime {
   faults: FaultSpec[];
   userPauseRounds: number[];
   maxRounds: number;
+  /** Interaction steps per round (PLAN §10.1): the round advances when none is actionable or this many committed. */
+  maxStepsPerRound: number;
+  /** Immutable committed snapshots, shared by the interaction ledger's derivations. */
+  snapshotCache: Map<number, WorldState>;
   maxRetries: number;
   hooks: EngineHooks;
   clock: () => number;
@@ -143,12 +153,20 @@ export function emit(rt: Runtime, event: EngineEvent): void {
 export async function hook(rt: Runtime, step: StepName): Promise<void> {
   if (!rt.hooks.onStep) return;
   const s = sessionOf(rt);
-  await rt.hooks.onStep(step, { sessionId: rt.sessionId, round: s.round, epoch: s.epoch });
+  const round = s.round;
+  // Interaction step of the round (committed character batches + 1).
+  const interactionStep = rt.harness.repo.committedBatches(rt.sessionId).filter((b) => b.kind === 'character' && b.round === round).length + 1;
+  await rt.hooks.onStep(step, { sessionId: rt.sessionId, round, epoch: s.epoch, step: interactionStep });
 }
 
 export function log(rt: Runtime, kind: string, data: unknown, key: string | null = null): boolean {
   const s = sessionOf(rt);
   return rt.records.log(rt.sessionId, s.round, s.epoch, kind, data, key);
+}
+
+/** The interaction ledger's environment for this run. */
+export function interactionEnv(rt: Runtime): InteractionEnv {
+  return { harness: rt.harness, records: rt.records, sessionId: rt.sessionId, config: rt.config, maxRounds: rt.maxRounds, lang: rt.lang, snapshots: rt.snapshotCache };
 }
 
 export function identity(rt: Runtime, round: number, epoch: number, callTag: string): CallIdentity {
@@ -187,9 +205,10 @@ export function takeFault(rt: Runtime, kind: FaultKind, round: number, target: s
 }
 
 /** The scripted interrupt for this round and phase that has not fired yet. */
-export function pendingInterrupt(rt: Runtime, round: number, phase: InterruptSpec['phase']): { spec: InterruptSpec; key: string } | null {
+export function pendingInterrupt(rt: Runtime, round: number, phase: InterruptSpec['phase'], step: number | null = null): { spec: InterruptSpec; key: string } | null {
   for (const [i, spec] of rt.interrupts.entries()) {
     if (spec.round !== round || spec.phase !== phase) continue;
+    if (spec.step !== undefined && step !== null && spec.step !== step) continue;
     const key = `${round}:${phase}:${i}`;
     if (!rt.records.hasLog(rt.sessionId, 'interrupt', key)) return { spec, key };
   }

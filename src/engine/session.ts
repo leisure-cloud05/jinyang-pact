@@ -36,9 +36,10 @@ import type { LlmClient, LlmRequest } from '../llm/types.js';
 import {
   WALL_CLOCK,
   advanceStep,
-  characterCommitted,
   commitStep,
+  committedSteps,
   decideStep,
+  executionPosition,
   generateStep,
   limitStep,
   linkJudgeLogs,
@@ -46,19 +47,27 @@ import {
   playerDone,
   playerStep,
   prepareStep,
+  recordRunStop,
   roundPrepared,
+  stepDecision,
+  stopReasonOf,
+  syncLedger,
   userPauseStep,
   type LimitReached,
   type StepSignal,
 } from './lifecycle.js';
+import { deriveInteraction } from './interaction-store.js';
+import { ledgerBefore, ledgerStats } from './interaction.js';
 import { PolicyDecisionSource } from './policy.js';
 import { EngineRecords, type CheckpointRecord, type RunRecord } from './records.js';
-import { EngineError, RefusingClient, TrackingClient, emit, expired, log, sessionOf, stateOf, type Runtime } from './runtime.js';
+import { EngineError, RefusingClient, TrackingClient, emit, expired, interactionEnv, log, sessionOf, stateOf, type Runtime } from './runtime.js';
 import {
   DEFAULT_MAX_CALLS,
+  DEFAULT_MAX_STEPS_PER_ROUND,
   DEFAULT_MAX_USD,
   DEFAULT_WALL_CLOCK_MS,
   ENGINE_VERSION,
+  type StopReason,
   type CaseLikeConfig,
   type CreateRunInput,
   type EngineOptions,
@@ -119,8 +128,7 @@ export function effectivePricing(llm: LlmClient, opts: Pick<EngineOptions, 'pric
  * effective model slugs, output caps and prices.
  */
 export function restoreBudgetClient(harness: Harness, records: EngineRecords, sessionId: string, llm: LlmClient, opts: EngineOptions): TrackingClient {
-  const maxCalls = opts.budget?.maxCalls ?? DEFAULT_MAX_CALLS;
-  const maxUsd = opts.budget?.maxUsd ?? DEFAULT_MAX_USD;
+  const { maxCalls, maxUsd } = effectiveLimits(records, sessionId, opts);
   const used = records.usedBudget(sessionId);
   const remainingCalls = maxCalls - used.calls;
   const remainingUsd = maxUsd - used.usd;
@@ -132,7 +140,8 @@ export function restoreBudgetClient(harness: Harness, records: EngineRecords, se
     end: (id: number, c: { status: 'done' | 'refused'; chargedUsd: number; attempts: number; unknownCost: boolean }) => records.chargeEnd(id, c),
   };
   if (remainingCalls <= 0 || !(remainingUsd > 0)) {
-    return new TrackingClient(new RefusingClient(`run budget already spent: ${used.calls} calls, $${used.usd.toFixed(6)}`), { ...ledger, reservation: () => 0 });
+    const which = remainingCalls <= 0 ? `call budget exhausted (${used.calls} of ${maxCalls} calls)` : `cost budget exhausted ($${used.usd.toFixed(6)} of $${maxUsd})`;
+    return new TrackingClient(new RefusingClient(`run budget already spent: ${which}`), { ...ledger, reservation: () => 0 });
   }
   const budgeted = new BudgetedClient(
     llm,
@@ -148,6 +157,38 @@ export function restoreBudgetClient(harness: Harness, records: EngineRecords, se
     },
   );
   return new TrackingClient(budgeted, { ...ledger, reservation: (req) => budgeted.reservationUsd(req) ?? 0 });
+}
+
+/**
+ * A recorded continuation budget (PLAN §8.4): added calls / USD / wall-clock, why and by whom, and where the run
+ * stood (recovery position). Only a suspended, unfinalized run can be extended; a finalized outcome never changes.
+ */
+export interface BudgetExtension {
+  addCalls: number;
+  addUsd: number;
+  addWallClockMs: number;
+  reason: string;
+  by: string;
+  position: { round: number; step: number; version: number; epoch: number };
+  atMs: number;
+}
+
+export function budgetExtensions(records: EngineRecords, sessionId: string): BudgetExtension[] {
+  return records.logs(sessionId, 'budget_extension').map((l) => l.data as BudgetExtension);
+}
+
+/** The run's limits: the options' (or defaults) plus every recorded extension. */
+export function effectiveLimits(records: EngineRecords, sessionId: string, opts: Pick<EngineOptions, 'budget' | 'wallClockLimitMs'>): { maxCalls: number; maxUsd: number; wallClockMs: number } {
+  const ext = budgetExtensions(records, sessionId);
+  return {
+    maxCalls: (opts.budget?.maxCalls ?? DEFAULT_MAX_CALLS) + ext.reduce((s, e) => s + e.addCalls, 0),
+    maxUsd: (opts.budget?.maxUsd ?? DEFAULT_MAX_USD) + ext.reduce((s, e) => s + e.addUsd, 0),
+    wallClockMs: (opts.wallClockLimitMs ?? DEFAULT_WALL_CLOCK_MS) + ext.reduce((s, e) => s + e.addWallClockMs, 0),
+  };
+}
+
+function wallClockMs(records: EngineRecords, sessionId: string, opts: EngineOptions): number {
+  return effectiveLimits(records, sessionId, opts).wallClockMs;
 }
 
 function personasOf(content: ContentBundle, caseConfig: CaseLikeConfig): Record<CharId, CharacterConfig> {
@@ -221,6 +262,22 @@ export class EngineSession {
       outcomeDetail: null,
       updatedAtMs: now,
     });
+    // Explicit, separate limits (PLAN §8.4): world rounds, interaction steps per round, calls, cost, wall clock.
+    records.log(
+      input.sessionId,
+      0,
+      0,
+      'limits',
+      {
+        engineVersion: ENGINE_VERSION,
+        maxRounds: caseConfig.max_rounds,
+        maxStepsPerRound: opts.interaction?.maxStepsPerRound ?? DEFAULT_MAX_STEPS_PER_ROUND,
+        maxCalls: opts.budget?.maxCalls ?? DEFAULT_MAX_CALLS,
+        maxUsd: opts.budget?.maxUsd ?? DEFAULT_MAX_USD,
+        wallClockMs: opts.wallClockLimitMs ?? DEFAULT_WALL_CLOCK_MS,
+      },
+      'limits',
+    );
     return EngineSession.open(harness, opts, input.sessionId);
   }
 
@@ -229,6 +286,9 @@ export class EngineSession {
     const records = new EngineRecords(harness.store);
     const run = records.findRun(sessionId);
     if (!run) throw new EngineError(`no engine run ${sessionId} in this database`);
+    if (run.engineVersion !== ENGINE_VERSION) {
+      throw new EngineError(`cannot resume ${run.engineVersion} run with ${ENGINE_VERSION}`);
+    }
     const caseConfig = findCase(opts.content, run.caseId);
     const session = harness.getSession(sessionId);
     const personas = personasOf(opts.content, caseConfig);
@@ -251,10 +311,12 @@ export class EngineSession {
       faults: opts.faults ?? ('faults' in caseConfig ? caseConfig.faults : []),
       userPauseRounds: opts.userPauseRounds ?? [],
       maxRounds: caseConfig.max_rounds,
+      maxStepsPerRound: opts.interaction?.maxStepsPerRound ?? DEFAULT_MAX_STEPS_PER_ROUND,
+      snapshotCache: new Map(),
       maxRetries: opts.maxRetries ?? 2,
       hooks: opts.hooks ?? {},
       clock: opts.clock ?? Date.now,
-      deadlineAt: run.startedAtMs + (opts.wallClockLimitMs ?? DEFAULT_WALL_CLOCK_MS),
+      deadlineAt: run.startedAtMs + wallClockMs(records, sessionId, opts),
       deadlinePollMs: opts.deadlinePollMs ?? 500,
     };
     const engine = new EngineSession(rt, opts);
@@ -283,7 +345,19 @@ export class EngineSession {
       .activations(parentSessionId, { beforeRound: round })
       .map(({ inherited: _i, ...a }) => ({ ...a, sessionId: newSessionId }));
     records.insertActivations(inherited, true);
-    records.log(newSessionId, round, 0, 'branched', { parentSessionId, round, version: result.version });
+    // The interaction ledger as it stood at the branch round's start becomes the child's base (like its snapshot).
+    const parentSession = harness.getSession(parentSessionId);
+    const parentLedger = deriveInteraction({
+      harness,
+      records,
+      sessionId: parentSessionId,
+      config: parentSession.config,
+      maxRounds: findCase(opts.content, parent.caseId).max_rounds,
+      lang: parent.lang,
+    });
+    const base = ledgerBefore(parentLedger, round);
+    harness.store.transaction(() => records.saveLedger(newSessionId, 'base', base));
+    records.log(newSessionId, round, 0, 'branched', { parentSessionId, round, version: result.version, inheritedItems: base.items.length });
     return EngineSession.open(harness, opts, newSessionId);
   }
 
@@ -316,6 +390,11 @@ export class EngineSession {
     const session = sessionOf(rt);
     const state = stateOf(rt);
     if (session.status === 'stopped') {
+      // An explicit stop (e.g. an error_recovery `stop` decision) still records why and what stayed unresolved.
+      if (!this.records.hasLog(this.sessionId, 'run_stop', 'run_stop')) {
+        const outcome = stopOutcome(session.runOutcome);
+        recordRunStop(rt, outcome, outcome === 'max_rounds' ? 'max_rounds' : outcome === 'budget_exhausted' ? 'call_budget' : 'error_recovery_stop', this.lastSuspendReason());
+      }
       this.finish(stopOutcome(session.runOutcome), this.lastSuspendReason());
       return false;
     }
@@ -323,10 +402,13 @@ export class EngineSession {
       if (this.stopOnLimit()) {
         const limit = this.lastLimit() ?? { outcome: 'error' as const, reason: 'suspended' };
         this.harness.stop(this.sessionId, limit.outcome, `stop.${session.controlSeq}`);
+        recordRunStop(rt, limit.outcome, stopReasonOf(rt, limit), limit.reason);
         return true;
       }
       return false;
     }
+    // Catch-up of the interaction ledger from committed facts (idempotent; e.g. after a crash between steps).
+    syncLedger(rt);
     // The deadline is checked before anything else, including completion.
     if (expired(rt)) return this.handle(WALL_CLOCK);
     if (state.terminal) {
@@ -356,22 +438,28 @@ export class EngineSession {
         const limit = await narratePending(rt);
         if (limit) return this.handle(limit);
         this.harness.stop(this.sessionId, 'max_rounds', `stop.${session.controlSeq}`);
+        recordRunStop(rt, 'max_rounds', 'max_rounds', `world-round limit of ${rt.maxRounds} reached without a world terminal`);
         return true;
       }
       if (userPauseStep(rt, round)) return true;
       await prepareStep(rt);
       return true;
     }
-    if (characterCommitted(rt, round)) {
-      const limit = await narratePending(rt);
-      if (limit) return this.handle(limit);
-      if (expired(rt)) return this.handle(WALL_CLOCK);
-      await advanceStep(rt);
-      return true;
-    }
+    // PLAYER first (also after an interrupt that restarted the current step), then interaction steps until no item
+    // is actionable or the round's step budget is spent, then ADVANCE (unresolved items carry over).
     if (!playerDone(rt, round)) {
       const limit = await playerStep(rt);
       return limit ? this.handle(limit) : true;
+    }
+    const done = committedSteps(rt, round);
+    if (done > 0) {
+      const limit = await narratePending(rt);
+      if (limit) return this.handle(limit);
+      if (expired(rt)) return this.handle(WALL_CLOCK);
+      if (stepDecision(rt, round, done).next === 'advance') {
+        await advanceStep(rt);
+        return true;
+      }
     }
     return this.handle(await generateStep(rt));
   }
@@ -426,8 +514,34 @@ export class EngineSession {
     this.harness.resume(this.sessionId, `resume.${session.controlSeq}`);
     this.rt.client = restoreBudgetClient(this.harness, this.records, this.sessionId, this.options.llm, this.options);
     // A resumed run gets a fresh wall-clock window (in memory; a reopened run measures from its start).
-    this.rt.deadlineAt = this.rt.clock() + (this.options.wallClockLimitMs ?? DEFAULT_WALL_CLOCK_MS);
+    this.rt.deadlineAt = this.rt.clock() + wallClockMs(this.records, this.sessionId, this.options);
     this.records.setOutcome(this.sessionId, null, null, this.rt.clock());
+  }
+
+  /**
+   * Continuation budget (PLAN §8.4): records added calls / USD / wall clock with the recovery position and its
+   * provenance; takes effect on `resume()`. Refused for a finalized run (its outcome is idempotent) and for a run that
+   * is not suspended.
+   */
+  extendBudget(input: { addCalls?: number; addUsd?: number; addWallClockMs?: number; reason: string; by?: string; requestId?: string }): BudgetExtension {
+    const run = this.records.findRun(this.sessionId);
+    if (run?.outcome) throw new EngineError(`run ${this.sessionId} is finalized (${run.outcome}); its budget cannot be extended`);
+    if (sessionOf(this.rt).status !== 'suspended') throw new EngineError('only a suspended run can be given more budget');
+    const ext: BudgetExtension = {
+      addCalls: Math.max(0, Math.floor(input.addCalls ?? 0)),
+      addUsd: Math.max(0, input.addUsd ?? 0),
+      addWallClockMs: Math.max(0, Math.floor(input.addWallClockMs ?? 0)),
+      reason: input.reason,
+      by: input.by ?? 'user',
+      position: executionPosition(this.rt),
+      atMs: this.rt.clock(),
+    };
+    if (input.requestId) {
+      const old = this.records.logs(this.sessionId,'budget_extension').find((l)=>l.key===input.requestId);
+      if (old) return old.data as BudgetExtension;
+      this.records.log(this.sessionId,ext.position.round,ext.position.epoch,'budget_extension',ext,input.requestId);
+    } else log(this.rt, 'budget_extension', ext);
+    return ext;
   }
 
   /** Named checkpoint at the latest round start (a quiescent version). */
@@ -468,6 +582,7 @@ export class EngineSession {
       .all(this.sessionId) as Array<{ role: string; attempts: number; cost_usd: number | null }>;
     const made = calls.filter((c) => Number(c.attempts) > 0);
     const charged = this.records.usedBudget(this.sessionId);
+    const stats = ledgerStats(deriveInteraction(interactionEnv(rt)));
     return {
       sessionId: this.sessionId,
       caseId: run.caseId,
@@ -494,6 +609,12 @@ export class EngineSession {
       decisions: repo.listSessionDecisions(this.sessionId).length,
       narrations: count(repo.listNarrations(this.sessionId), (n) => n.status),
       hashes: { content: run.contentHash, rules: run.rulesHash, prompts: run.promptHash },
+      engineVersion: run.engineVersion,
+      steps: stats.steps,
+      stepsByRound: stats.stepsByRound,
+      stopReason: ((this.records.logs(this.sessionId, 'run_stop').at(-1)?.data as { stopReason?: StopReason } | undefined)?.stopReason ?? null) as StopReason | null,
+      items: { created: stats.created, unresolved: stats.unresolved, unresolvedByKind: stats.unresolvedByKind },
+      limits: { maxRounds: rt.maxRounds, maxStepsPerRound: rt.maxStepsPerRound, ...effectiveLimits(this.records, this.sessionId, this.options) },
     };
   }
 

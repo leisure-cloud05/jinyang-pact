@@ -24,7 +24,8 @@ import {
   renderCharacterSystem,
   type CharacterVariant,
 } from './prompts/index.js';
-import { AGENT_SCHEMAS, CharacterOutputSchema, type CharacterOutput } from './schemas.js';
+import type { InteractionContextView } from './interaction-view.js';
+import { AGENT_SCHEMAS, CharacterOutputSchema, type CharacterOutput, type InteractionOutput } from './schemas.js';
 import { agentStatusOf, type AgentContent, type AgentStatus, type CallIdentity, type DialogueRow, type FeedbackRow, type Lang, type LlmCallSummary, type ProposalDraft } from './types.js';
 import { langName } from './util.js';
 
@@ -58,6 +59,8 @@ export interface CharacterTurnOptions {
   persona?: CharacterConfig;
   dialogue?: readonly DialogueRow[];
   feedback?: readonly FeedbackRow[];
+  /** Interaction view (PLAN §10.4): activation reason and unresolved items; their ids are recorded as supplied. */
+  interaction?: InteractionContextView | null;
   activeAgendaIds?: readonly string[] | null;
   names?: AgentNames;
   revision?: readonly RevisionItem[] | null;
@@ -81,6 +84,10 @@ export interface CharacterTurnResult {
   /** Action items that failed the core action parse (defensive; the output schema already enforces it). */
   invalidActions: { index: number; error: string }[];
   output: CharacterOutput | null;
+  /** Interaction metadata as output (validated and routed by the engine; null if none or unreadable). */
+  interaction: InteractionOutput | null;
+  /** Item ids the context showed (information supplied to the model). */
+  supplied: string[];
   context: BuiltCharacterContext;
   messages: ChatMessage[];
   promptIds: string[];
@@ -144,6 +151,7 @@ export function prepareCharacterCall(opts: Omit<CharacterTurnOptions, 'client' |
     maxChars: budget,
     ...(opts.dialogue ? { dialogue: opts.dialogue } : {}),
     ...(opts.feedback ? { feedback: opts.feedback } : {}),
+    ...(opts.interaction ? { interaction: opts.interaction } : {}),
     ...(opts.activeAgendaIds !== undefined ? { activeAgendaIds: opts.activeAgendaIds } : {}),
     ...(opts.names ? { names: opts.names } : {}),
   });
@@ -258,6 +266,7 @@ export async function runCharacterTurn(opts: CharacterTurnOptions): Promise<Char
     messages,
     promptIds,
     llm,
+    supplied: [...(built.context.interaction?.supplied ?? [])],
   };
   if (!result.ok) {
     const status = agentStatusOf(result.error.kind);
@@ -272,6 +281,7 @@ export async function runCharacterTurn(opts: CharacterTurnOptions): Promise<Char
       strippedCites: [],
       invalidActions: [],
       output: null,
+      interaction: null,
     };
   }
   const mapped = mapCharacterOutput(opts.charId, result.value, built.context, built.citeKeys);
@@ -286,5 +296,6 @@ export async function runCharacterTurn(opts: CharacterTurnOptions): Promise<Char
     strippedCites: mapped.strippedCites,
     invalidActions: mapped.invalidActions,
     output: result.value,
+    interaction: result.value.interaction ?? null,
   };
 }

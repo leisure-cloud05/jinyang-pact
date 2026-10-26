@@ -168,7 +168,7 @@ export function freezeHash(record: FreezeRecord): string {
 
 export function writeFreeze(file: string, record: FreezeRecord): void {
   mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`, 'utf8');
+  writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`, { encoding: 'utf8', flag: 'wx' });
 }
 
 export function readFreeze(file: string): FreezeRecord | null {

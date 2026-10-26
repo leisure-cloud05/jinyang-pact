@@ -93,7 +93,10 @@ export function App() {
     setError(null);
     try {
       // Ending a turn names the turn (a stale click cannot end the next one); resuming needs no token.
-      await postJson(sessionUrl(sessionId, 'advance'), { wait: 1500, turn: s?.control.turn ?? null });
+      await postJson(sessionUrl(sessionId, 'advance'), { wait: 1500, turn: s?.control.turn ?? null,
+        ...(s?.control.state === 'suspended' && s.control.suspendedReason?.toLowerCase().includes('budget')
+          ? { extendBudget: { addCalls: 50, addUsd: s.session.llm === 'live' ? 0.25 : 0 } } : {}),
+      });
       live.refresh();
     } catch (err) {
       setError(errorText(err));
@@ -315,7 +318,7 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: {
     case 'starting':
       body = (
         <p className="working" aria-live="polite">
-          <span className="spinner" aria-hidden="true" /> The council deliberates{c.lastStep ? ` (${c.lastStep})` : ''}…
+          <span className="spinner" aria-hidden="true" /> The council deliberates (conversation step {Math.min(c.interactionStep + 1, c.interactionStepLimit)} of {c.interactionStepLimit}){c.lastStep ? ` · ${c.lastStep}` : ''}…
         </p>
       );
       break;
@@ -326,7 +329,7 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: {
             <strong>Suspended:</strong> {c.suspendedReason ?? 'a limit was reached'}. The open batch and pauses are kept.
           </p>
           <button type="button" className="btn" disabled={busy} onClick={onAdvance}>
-            Resume
+            {c.suspendedReason?.toLowerCase().includes('budget') ? 'Add 50 calls (up to $0.25) and resume' : 'Resume'}
           </button>
         </>
       );

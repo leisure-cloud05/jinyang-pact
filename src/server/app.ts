@@ -590,7 +590,7 @@ export async function buildApp(opts: AppOptions): Promise<PlayApp> {
         } else if (control.sessionStatus === 'suspended') {
           intend({ kind: 'resume' });
         }
-        const action = ctl.advance(body.turn);
+        const action = ctl.advance(body.turn,body.extendBudget ? {...body.extendBudget,requestId:body.requestId} : undefined);
         const settled = await ctl.whenIdle(waitOf(body));
         return playerBody(sessionId, { action, settled, control: ctl.control() });
       },

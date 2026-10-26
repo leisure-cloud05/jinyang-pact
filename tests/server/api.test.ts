@@ -6,6 +6,23 @@ import type { StateView } from '../../src/server/api-types.js';
 import { addressCouncil, advance, createSession, get, input, makeApp, playToEnd, post, rid, state, turnOf } from './helpers.js';
 
 describe('server basics', () => {
+  it('shows interaction progress and records an explicit web budget extension once', async () => {
+    const { app, manager } = await makeApp({budget:{maxCalls:3,maxUsd:1}});
+    const id = await createSession(app,'C1');
+    const first = await state(app,id);
+    expect(first.json.control.interactionStep).toBe(0);
+    expect(first.json.control.interactionStepLimit).toBe(4);
+    await addressCouncil(app,id)(first.json);
+    await advance(app,id);
+    const suspended = await state(app,id);
+    expect(suspended.json.control.state).toBe('suspended');
+    const body = {requestId:rid('extend'),turn:null,wait:10_000,extendBudget:{addCalls:50,addUsd:0}};
+    const resumed = await post(app,`/api/sessions/${id}/advance`,body);
+    expect(resumed.status).toBe(200);
+    const replay = await post(app,`/api/sessions/${id}/advance`,body);
+    expect(replay.status).toBe(200);
+    expect(manager.ctx(id).records.logs(id,'budget_extension')).toHaveLength(1);
+  });
   it('lists configs (cases, dev, pilot, free play) and refuses live without --live', async () => {
     const { app } = await makeApp();
     const cfg = await get(app, '/api/config');

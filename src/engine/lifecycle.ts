@@ -4,8 +4,11 @@
  *  2 PLAYER    the round's player turn (script or UI) is persisted first, then applied in ONE transaction with the
  *              queued instructions (delivered as player speech to everyone present), SELECT and the player-done
  *              marker — a crash either loses nothing or repeats nothing
- *  3 SELECT    the deterministic scene scheduler (§10.3), activations logged with tier and reason
- *  4 GENERATE  character batch: authorized contexts → parallel character calls (baseline: baseline prompt variant)
+ *  3 SELECT    the deterministic scene scheduler (§10.3) per interaction step `r<round>.s<step>`: the round's tiers
+ *              in step 1, actionable interaction items (§10.4) in every step; activations logged with tier and reason
+ *  4 GENERATE  character batch: authorized contexts (with each character's interaction view, from the ledger
+ *              derived from everything committed before the step) → parallel character calls; the turns (recorded
+ *              outputs) are stored atomically with the proposals (baseline: baseline prompt variant)
  *  5 CHECK     schema/cites (agents layer) — cite errors logged
  *  6 ASSESS    Harness dry run (mandatory, control and prompt pauses; baseline: prompt pauses only);
  *              full mode: Judge with the REVISE loop (one revision call per character, one re-assessment) BEFORE
@@ -16,9 +19,13 @@
  *  8 COMMIT    commitBatch (baseline: permissive executor)
  *  9 NARRATE   per scene via createNarrateFn; a failed scene is regenerated once from the committed events;
  *              otherwise it stays narration_pending; budget refusals reach the limit handling
- * 10 ADVANCE   system_advance (+ staged mutiny system_outcome, decided before the next round)
- * Every harness request id is deterministic (round, epoch, generation, step), so a restarted engine repeats a step
- * idempotently (H06). The wall-clock deadline is checked after every awaited call and before commits; a watchdog
+ *              — each commit derives the follow-up items in the same transaction
+ *  ·  STEP      after a committed step: another step (3–9) while an item is actionable and the round's step budget
+ *              allows; else
+ * 10 ADVANCE   system_advance (+ staged mutiny system_outcome, decided before the next round); unresolved items
+ *              carry over
+ * Every harness request id is deterministic (round, interaction step, epoch, batch generation), so a restarted
+ * engine repeats a step idempotently (H06). The wall-clock deadline is checked after every awaited call and before commits; a watchdog
  * aborts outstanding calls when it expires.
  */
 import { runAnswer, noAnswerLine } from '../agents/answer.js';
@@ -27,14 +34,17 @@ import { runCharacterTurn, type CharacterTurnResult, type RevisionItem } from '.
 import { judgeWithRevision, runJudge, type JudgeProposalInput, type JudgeVerdict } from '../agents/judge.js';
 import { renderFactHeader, fallbackProse } from '../agents/narration/index.js';
 import { createNarrateFn } from '../agents/narrator.js';
-import type { DialogueRow, FeedbackRow, ProposalDraft } from '../agents/types.js';
+import type { DialogueRow, ProposalDraft } from '../agents/types.js';
 import type { BatchDecision, BatchProposal } from '../core/execute.js';
 import { isPlayerSide, presentAt } from '../core/knowledge.js';
 import { BESIEGED_FACTION, CHAR_IDS, type CharId, type LocId, type NarrationFact, type WorldState } from '../core/types.js';
 import type { DecisionInput, NarrateOutput, NarrateRequest, PlayerInput, ProposalInput, SemanticPauseInput } from '../harness/index.js';
 import type { BatchRecord, DecisionRecord, PauseRecord, ProposalRecord } from '../store/repo.js';
 import { pausedWithinLimits } from './policy.js';
-import type { ActivationRecord, RevisionRecord } from './records.js';
+import type { InteractionContextView } from '../agents/interaction-view.js';
+import { actionableItems, interactionViewFor, isCharId, itemTier, type Ledger } from './interaction.js';
+import { ledgerHashOf, syncInteraction } from './interaction-store.js';
+import type { ActivationRecord, RevisionRecord, TurnRecord } from './records.js';
 import {
   callSignal,
   emit,
@@ -42,6 +52,7 @@ import {
   fireInterrupt,
   hook,
   identity,
+  interactionEnv,
   log,
   pendingInterrupt,
   sessionOf,
@@ -50,18 +61,27 @@ import {
   EngineError,
   type Runtime,
 } from './runtime.js';
-import { schedule, type LastActivation, type SchedulerPersona } from './scheduler.js';
-import type { ActivationView, DecisionChoice, DecisionContext, EngineEvent, PlayerTurn } from './types.js';
+import { schedule, type LastActivation, type PendingCandidate, type SchedulerPersona } from './scheduler.js';
+import type { ActivationView, DecisionChoice, DecisionContext, EngineEvent, PlayerTurn, StopReason } from './types.js';
 
 export type StepSignal = 'continue' | 'stopped';
 
 export interface LimitReached {
   outcome: 'budget_exhausted' | 'error';
   reason: string;
+  /** Which limit (PLAN §8.4); a budget refusal is classified from the refusal itself when absent. */
+  stopReason?: StopReason;
 }
 
-export const WALL_CLOCK: LimitReached = { outcome: 'error', reason: 'wall-clock limit of the run exceeded' };
+export const WALL_CLOCK: LimitReached = { outcome: 'error', reason: 'wall-clock limit of the run exceeded', stopReason: 'wall_clock' };
 export const BUDGET: LimitReached = { outcome: 'budget_exhausted', reason: 'LLM budget exhausted' };
+
+/** Stop reason of a limit: wall clock, or the call / cost budget named by the last refusal. */
+export function stopReasonOf(rt: Runtime, limit: LimitReached): StopReason {
+  if (limit.stopReason) return limit.stopReason;
+  if (limit.outcome === 'error') return 'wall_clock';
+  return /call budget/i.test(rt.client.lastBudgetRefusal ?? limit.reason) ? 'call_budget' : 'cost_budget';
+}
 
 function isChar(id: string): id is CharId {
   return (CHAR_IDS as readonly string[]).includes(id);
@@ -85,7 +105,65 @@ export function roundPrepared(rt: Runtime, round: number): boolean {
 }
 
 export function characterCommitted(rt: Runtime, round: number): boolean {
-  return rt.harness.repo.committedBatches(rt.sessionId).some((b) => b.kind === 'character' && b.round === round);
+  return committedSteps(rt, round) > 0;
+}
+
+/** Interaction steps of `round` completed (= committed character batches of the round; PLAN §10.1). */
+export function committedSteps(rt: Runtime, round: number): number {
+  return rt.harness.repo.committedBatches(rt.sessionId).filter((b) => b.kind === 'character' && b.round === round).length;
+}
+
+/** The interaction step the round is in (derived from committed facts, never from a recovered phase). */
+export function currentStep(rt: Runtime, round: number): number {
+  return committedSteps(rt, round) + 1;
+}
+
+export function stepId(round: number, step: number): string {
+  return `r${round}.s${step}`;
+}
+
+/** Step of an activation's select id (`r<round>.s<step>.e<epoch>`; engine.v1 ids `r<round>.e<epoch>` are step 1). */
+export function stepOfSelectId(selectId: string): number {
+  const m = /^r\d+\.s(\d+)\./.exec(selectId);
+  return m ? Number(m[1]) : 1;
+}
+
+/** Derives and materializes the interaction ledger (idempotent; joins the caller's transaction). */
+export function syncLedger(rt: Runtime): Ledger {
+  return syncInteraction(interactionEnv(rt));
+}
+
+/** Scheduling candidates from the ledger's actionable items at (round, step). */
+function candidatesOf(ledger: Ledger, state: WorldState, round: number, step: number): PendingCandidate[] {
+  return actionableItems(ledger, state, round, step)
+    .filter((it) => isCharId(it.responsible))
+    .map((it) => ({ charId: it.responsible, itemId: it.itemId, kind: it.kind, tier: itemTier(it.kind), seq: it.seq }));
+}
+
+export interface StepDecision {
+  next: 'step' | 'advance';
+  reason: 'actionable_items' | 'no_actionable_items' | 'step_budget_exhausted';
+  actionable: string[];
+}
+
+/**
+ * After step `done` of `round` committed: another step when an item is actionable and the round's step budget
+ * allows it, else ADVANCE (unresolved items carry over). Derived from committed facts; logged once per step.
+ */
+export function stepDecision(rt: Runtime, round: number, done: number): StepDecision {
+  const ledger = syncLedger(rt);
+  const state = stateOf(rt);
+  const actionable = candidatesOf(ledger, state, round, done + 1).map((c) => `${c.itemId}:${c.charId}:${c.kind}`);
+  const decision: StepDecision =
+    actionable.length === 0
+      ? { next: 'advance', reason: 'no_actionable_items', actionable }
+      : done >= rt.maxStepsPerRound
+        ? { next: 'advance', reason: 'step_budget_exhausted', actionable }
+        : { next: 'step', reason: 'actionable_items', actionable };
+  if (log(rt, 'step_decision', { round, step: done, ...decision, maxStepsPerRound: rt.maxStepsPerRound }, `${stepId(round, done)}`)) {
+    emit(rt, { type: 'step', round, step: done, next: decision.next, reason: decision.reason, actionable });
+  }
+  return decision;
 }
 
 /** The PLAYER step of `round` completed and no interrupt has restarted it since. */
@@ -123,7 +201,12 @@ export function headerForVersions(rt: Runtime, fromVersion: number, toVersion: n
 export async function prepareStep(rt: Runtime): Promise<void> {
   const state = stateOf(rt);
   await hook(rt, 'prepare');
-  const result = rt.harness.runSystemPrepare(rt.sessionId, `r${state.round}.prepare`);
+  // Deliveries and the items they create commit together (a crash loses or repeats neither).
+  const result = rt.harness.store.transaction(() => {
+    const r = rt.harness.runSystemPrepare(rt.sessionId, `r${state.round}.prepare`);
+    syncLedger(rt);
+    return r;
+  });
   emit(rt, { type: 'round', round: state.round, day: state.day, epoch: sessionOf(rt).epoch });
   emit(rt, { type: 'system', kind: 'prepare', result, header: headerForVersions(rt, result.fromVersion, result.toVersion) });
 }
@@ -232,27 +315,41 @@ export function addressedThisRound(rt: Runtime, round: number): CharId[] {
   return CHAR_IDS.filter((c) => out.has(c));
 }
 
-/** SELECT for the current round and epoch (idempotent: an existing selection is reused). */
+/** Hash of a ledger as used for a selection and its contexts (replay compares it with a re-derivation). */
+export function ledgerHash(ledger: Ledger): string {
+  return ledgerHashOf(ledger);
+}
+
+/**
+ * SELECT for the current round, step and epoch (idempotent: an existing selection is reused). Candidates come from
+ * the interaction ledger's actionable items plus, in the round's first step, the round-level tiers (offers, agendas,
+ * periodic activation). The ledger used is logged with its hash and the number of happenings it was derived from.
+ */
 export function selectStep(rt: Runtime): { rows: ActivationRecord[]; created: boolean; event: EngineEvent } {
   const state = stateOf(rt);
   const session = sessionOf(rt);
   const round = state.round;
-  const selectId = `r${round}.e${session.epoch}`;
+  const step = currentStep(rt, round);
+  const selectId = `${stepId(round, step)}.e${session.epoch}`;
   const existing = rt.records.activations(rt.sessionId, { selectId });
   const eventOf = (rows: ActivationRecord[]): EngineEvent => ({
     type: 'select',
     round,
+    step,
     active: rows.filter((a) => !a.skipped).map(toView),
     skipped: rows.filter((a) => a.skipped).map(toView),
   });
   if (existing.length > 0) return { rows: existing, created: false, event: eventOf(existing) };
-  // History from earlier rounds only: an interrupted or crashed selection of this round did not act.
+  // History of completed steps only: an interrupted or crashed selection of this step did not act.
   const lastActivation: Partial<Record<CharId, LastActivation>> = {};
-  for (const a of rt.records.activations(rt.sessionId, { beforeRound: round })) {
+  for (const a of rt.records.activations(rt.sessionId)) {
     if (a.skipped) continue;
+    if (a.round > round || (a.round === round && stepOfSelectId(a.selectId) >= step)) continue;
     const prev = lastActivation[a.charId];
     if (!prev || a.round > prev.round || (a.round === prev.round && a.version > prev.version)) lastActivation[a.charId] = { round: a.round, version: a.version };
   }
+  const ledger = syncLedger(rt);
+  log(rt, 'ledger_used', { use: 'select', selectId, round, step, epoch: session.epoch, controlSeq: session.controlSeq, hash: ledgerHash(ledger), items: ledger.items.length }, selectId);
   const result = schedule({
     state,
     config: rt.config,
@@ -260,6 +357,8 @@ export function selectStep(rt: Runtime): { rows: ActivationRecord[]; created: bo
     addressed: addressedThisRound(rt, round),
     lastActivation,
     events: rt.harness.repo.listEvents(rt.sessionId).map((e) => ({ version: e.version, kind: e.kind })),
+    step,
+    pending: candidatesOf(ledger, state, round, step),
   });
   const rows = [...result.active.map((c) => ({ c, skipped: false })), ...result.skipped.map((c) => ({ c, skipped: true }))].map(({ c, skipped }, ord) => ({
     sessionId: rt.sessionId,
@@ -279,16 +378,21 @@ export function selectStep(rt: Runtime): { rows: ActivationRecord[]; created: bo
   return { rows: stored, created: true, event: eventOf(stored) };
 }
 
-/** The selection GENERATE uses: this epoch's, else the latest of the round (regeneration), else a new SELECT. */
+/**
+ * The selection GENERATE uses: this step's selection of this epoch, else this step's latest (a regeneration after
+ * an amendment or a deadlock decision keeps the step's activations), else a new SELECT. Never a selection of an
+ * earlier step: a later step of the same round cannot reuse a stale selection.
+ */
 function currentSelection(rt: Runtime): ActivationRecord[] {
   const round = stateOf(rt).round;
   const epoch = sessionOf(rt).epoch;
-  const own = rt.records.activations(rt.sessionId, { selectId: `r${round}.e${epoch}` });
+  const step = currentStep(rt, round);
+  const own = rt.records.activations(rt.sessionId, { selectId: `${stepId(round, step)}.e${epoch}` });
   if (own.length > 0) return own;
-  const ofRound = rt.records.activations(rt.sessionId, { round });
-  if (ofRound.length > 0) {
-    const latestEpoch = Math.max(...ofRound.map((a) => a.epoch));
-    return ofRound.filter((a) => a.epoch === latestEpoch);
+  const ofStep = rt.records.activations(rt.sessionId, { round }).filter((a) => stepOfSelectId(a.selectId) === step && a.selectId.startsWith(`${stepId(round, step)}.`));
+  if (ofStep.length > 0) {
+    const latestEpoch = Math.max(...ofStep.map((a) => a.epoch));
+    return ofStep.filter((a) => a.epoch === latestEpoch);
   }
   const selected = selectStep(rt);
   if (selected.created) emit(rt, selected.event);
@@ -298,27 +402,6 @@ function currentSelection(rt: Runtime): ActivationRecord[] {
 // ---------------------------------------------------------------------------------------------------------------
 // 4–6 GENERATE, CHECK, ASSESS
 // ---------------------------------------------------------------------------------------------------------------
-
-const FEEDBACK_STATUSES = new Set(['rejected', 'withheld', 'unapplied', 'format_error']);
-
-function feedbackFor(rt: Runtime, charId: CharId, round: number): FeedbackRow[] {
-  return rt.harness.repo
-    .listSessionProposals(rt.sessionId)
-    .filter((p) => p.actor === charId && p.round >= round - 1 && FEEDBACK_STATUSES.has(p.status))
-    .map((p) => ({
-      round: p.round,
-      seq: p.seq,
-      actionType: typeof p.action === 'object' && p.action !== null ? String((p.action as { type?: unknown }).type ?? 'unknown') : 'unknown',
-      status: p.status as FeedbackRow['status'],
-      feedback:
-        p.feedback ??
-        (p.status === 'withheld'
-          ? 'The player withheld this proposal.'
-          : p.status === 'format_error'
-            ? 'Your output could not be read and was treated as waiting.'
-            : null),
-    }));
-}
 
 function dialogueRows(rt: Runtime): DialogueRow[] {
   return rt.harness.repo.listDialogue(rt.sessionId) as DialogueRow[];
@@ -331,6 +414,8 @@ interface CallOptions {
   callTag: string;
   signal: AbortSignal;
   agendaIds: string[];
+  /** The character's interaction view (from the step's ledger; feedback included). */
+  interaction: InteractionContextView | null;
   revision?: RevisionItem[];
 }
 
@@ -342,11 +427,13 @@ interface CallOutcome {
   errorMessage: string | null;
   drafts: ProposalDraft[];
   callTag: string;
+  /** Item ids the context supplied (recorded with the turn). */
+  supplied: string[];
 }
 
 async function callCharacter(rt: Runtime, charId: CharId, opts: CallOptions, allowFault: boolean): Promise<CallOutcome> {
   if (allowFault && takeFault(rt, 'llm_timeout', opts.round, charId)) {
-    return { actor: charId, result: null, status: 'error', errorKind: 'timeout', errorMessage: 'injected llm_timeout fault', drafts: [], callTag: opts.callTag };
+    return { actor: charId, result: null, status: 'error', errorKind: 'timeout', errorMessage: 'injected llm_timeout fault', drafts: [], callTag: opts.callTag, supplied: [] };
   }
   const result = await runCharacterTurn({
     client: rt.client,
@@ -359,7 +446,7 @@ async function callCharacter(rt: Runtime, charId: CharId, opts: CallOptions, all
     identity: identity(rt, opts.round, opts.epoch, opts.callTag),
     persona: rt.personas[charId],
     dialogue: dialogueRows(rt),
-    feedback: feedbackFor(rt, charId, opts.round),
+    interaction: opts.interaction,
     activeAgendaIds: opts.agendaIds,
     names: rt.names,
     signal: opts.signal,
@@ -376,6 +463,32 @@ async function callCharacter(rt: Runtime, charId: CharId, opts: CallOptions, all
     errorMessage: result.llm.errorMessage,
     drafts: result.drafts,
     callTag: opts.callTag,
+    supplied: result.supplied,
+  };
+}
+
+/**
+ * The recorded turn of an actor in a step (PLAN §10.4): the final outcome (after retries / a REVISE call), the item
+ * ids its context showed, the interaction metadata and speech as output, the raw text, and its proposal ids.
+ */
+function turnRecord(rt: Runtime, batchId: string, round: number, step: number, epoch: number, o: CallOutcome, skipped: boolean, proposalIds: string[]): TurnRecord {
+  const r = o.result;
+  const status: TurnRecord['status'] = skipped ? 'skipped' : o.status;
+  return {
+    sessionId: rt.sessionId,
+    turnId: `${batchId}:${o.actor}`,
+    batchId,
+    round,
+    step,
+    epoch,
+    actor: o.actor,
+    status,
+    callTag: o.callTag,
+    supplied: o.supplied,
+    interaction: status === 'ok' ? (r?.interaction ?? null) : null,
+    speech: status === 'ok' ? (r?.speech ?? '') : '',
+    raw: status === 'ok' ? (r?.llm.raw ?? null) : null,
+    proposalIds,
   };
 }
 
@@ -401,11 +514,41 @@ export function limitStep(rt: Runtime, limit: LimitReached, stop: boolean): void
   if (session.status !== 'suspended' && session.status !== 'stopped') {
     rt.harness.suspend(rt.sessionId, limit.reason, `suspend.${session.controlSeq}`);
   }
-  log(rt, 'suspended', limit);
+  const stopReason = stopReasonOf(rt, limit);
+  log(rt, 'suspended', { ...limit, stopReason, position: executionPosition(rt) });
   emit(rt, { type: 'suspended', reason: limit.reason });
   if (stop && sessionOf(rt).status !== 'stopped') {
     rt.harness.stop(rt.sessionId, limit.outcome, `stop.${sessionOf(rt).controlSeq}`);
+    recordRunStop(rt, limit.outcome, stopReason, limit.reason);
   }
+}
+
+/** Where the run is (recovery position): round, step, world version, epoch. */
+export function executionPosition(rt: Runtime): { round: number; step: number; version: number; epoch: number } {
+  const state = stateOf(rt);
+  return { round: state.round, step: currentStep(rt, state.round), version: state.version, epoch: sessionOf(rt).epoch };
+}
+
+/**
+ * An execution stop (never a world terminal, PLAN §8.4): the outcome, the limit that stopped the run, the position,
+ * and the interaction items still unresolved. Logged once.
+ */
+export function recordRunStop(rt: Runtime, outcome: string, stopReason: StopReason, detail: string | null): void {
+  const ledger = syncLedger(rt);
+  const unresolved = ledger.items.filter((i) => i.status !== 'resolved' && i.status !== 'obsolete');
+  log(
+    rt,
+    'run_stop',
+    {
+      outcome,
+      stopReason,
+      detail,
+      position: executionPosition(rt),
+      worldTerminal: stateOf(rt).terminal?.kind ?? null,
+      unresolved: unresolved.map((i) => ({ id: i.itemId, kind: i.kind, responsible: i.responsible, status: i.status, since: `r${i.created.round}.s${i.created.step}` })),
+    },
+    'run_stop',
+  );
 }
 
 /**
@@ -537,16 +680,32 @@ export async function generateStep(rt: Runtime): Promise<StepSignal | LimitReach
 }
 
 async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | LimitReached> {
-  const selection = currentSelection(rt).filter((a) => !a.skipped);
+  const selectionRows = currentSelection(rt);
+  const selection = selectionRows.filter((a) => !a.skipped);
   const state = stateOf(rt);
   const round = state.round;
+  const step = currentStep(rt, round);
   const generation = rt.harness.repo.listBatches(rt.sessionId).filter((b) => b.kind === 'character' && b.round === round).length;
   const epoch = sessionOf(rt).epoch;
-  const prefix = `r${round}.e${epoch}.b${generation}`;
-  if (takeFault(rt, 'budget_exhausted', round, null)) return { outcome: 'budget_exhausted', reason: 'injected budget_exhausted fault' };
-  const opened = rt.harness.openCharacterBatch(rt.sessionId, `${prefix}.open`);
+  // Every request id carries the round, the interaction step, the epoch and the batch generation.
+  const prefix = `${stepId(round, step)}.e${epoch}.b${generation}`;
+  if (takeFault(rt, 'budget_exhausted', round, null)) return { outcome: 'budget_exhausted', reason: 'injected budget_exhausted fault', stopReason: 'call_budget' };
+  const selectId = selectionRows[0]?.selectId ?? `${stepId(round, step)}.e${epoch}`;
+  const opened = rt.harness.store.transaction(() => {
+    const o = rt.harness.openCharacterBatch(rt.sessionId, `${prefix}.open`);
+    rt.records.insertStep({ sessionId: rt.sessionId, batchId: o.batchId, stepId: stepId(round, step), round, step, epoch: o.epoch, selectId });
+    return o;
+  });
   const batchId = opened.batchId;
   await hook(rt, 'generate:opened');
+  // Contexts of this step read the ledger derived from everything committed before it (never a parallel turn).
+  const ledger = syncLedger(rt);
+  const at = sessionOf(rt);
+  log(rt, 'ledger_used', { use: 'context', selectId, batchId, round, step, epoch, controlSeq: at.controlSeq, hash: ledgerHash(ledger), items: ledger.items.length }, `ctx:${prefix}`);
+  const views = new Map<CharId, InteractionContextView>();
+  for (const a of selection) {
+    views.set(a.charId, interactionViewFor(ledger, a.charId, { state, round, step, maxSteps: rt.maxStepsPerRound, activation: { tier: a.tier, reason: a.reason } }));
+  }
   const refusalsBefore = rt.client.budgetRefusals;
   const checkLimits = (): void => {
     if (expired(rt)) throw new LimitSignal(WALL_CLOCK);
@@ -554,12 +713,13 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
   };
 
   // Parallel character calls (the scripted `generate` interrupt fires after N completed calls).
-  const interrupt = pendingInterrupt(rt, round, 'generate');
+  const interrupt = pendingInterrupt(rt, round, 'generate', step);
   let completed = 0;
-  const base: Omit<CallOptions, 'agendaIds'> = { state, round, epoch, callTag: `char.g${generation}`, signal };
+  const base: Omit<CallOptions, 'agendaIds' | 'interaction'> = { state, round, epoch, callTag: `char.s${step}.g${generation}`, signal };
+  const viewOf = (c: CharId): InteractionContextView | null => views.get(c) ?? null;
   const outcomes = await Promise.all(
     selection.map(async (a) => {
-      const out = await callCharacter(rt, a.charId, { ...base, agendaIds: a.agendaIds }, true);
+      const out = await callCharacter(rt, a.charId, { ...base, agendaIds: a.agendaIds, interaction: viewOf(a.charId) }, true);
       completed += 1;
       if (interrupt && completed === (interrupt.spec.afterCalls ?? 1) && batchLive(rt, batchId, epoch)) fireInterrupt(rt, interrupt);
       return out;
@@ -569,9 +729,16 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
 
   const byActor = new Map<CharId, CallOutcome>(outcomes.map((o) => [o.actor, o]));
   if (!batchLive(rt, batchId, epoch)) {
-    // Interrupted (or superseded): whatever arrived is recorded as stale_epoch for the audit trail.
-    const late = outcomes.flatMap((o) => o.drafts.map((d) => toInput(d, o.status === 'format_error')));
-    if (late.length > 0) rt.harness.submitProposals(rt.sessionId, batchId, late, `${prefix}.submit`);
+    // Interrupted (or superseded): whatever arrived is recorded as stale_epoch for the audit trail; the turns are
+    // kept too but, their batch never committing, have no effect on the interaction ledger.
+    rt.harness.store.transaction(() => {
+      const ordered = outcomes.flatMap((o) => o.drafts.map((d) => ({ actor: o.actor, input: toInput(d, o.status === 'format_error') })));
+      const late = ordered.length > 0 ? rt.harness.submitProposals(rt.sessionId, batchId, ordered.map((x) => x.input), `${prefix}.submit`) : null;
+      for (const o of outcomes) {
+        const ids = ordered.flatMap((x, i) => (x.actor === o.actor && late?.proposalIds[i] ? [late.proposalIds[i] as string] : []));
+        rt.records.insertTurn(turnRecord(rt, batchId, round, step, epoch, o, false, ids));
+      }
+    });
     return 'continue';
   }
   checkLimits();
@@ -594,7 +761,7 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
       }
       attempt += 1;
       const agendaIds = selection.find((a) => a.charId === charId)?.agendaIds ?? [];
-      current = await callCharacter(rt, charId, { ...base, agendaIds, callTag: `char.g${generation}.retry${attempt}` }, false);
+      current = await callCharacter(rt, charId, { ...base, agendaIds, interaction: viewOf(charId), callTag: `char.s${step}.g${generation}.retry${attempt}` }, false);
       byActor.set(charId, current);
       if (!batchLive(rt, batchId, epoch)) return 'continue';
       checkLimits();
@@ -603,8 +770,10 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
 
   const finalDrafts = new Map<CharId, ProposalDraft[]>();
   const formatErrors = new Set<CharId>();
+  const finalOutcome = new Map<CharId, CallOutcome>();
   for (const a of selection) {
     const o = byActor.get(a.charId);
+    if (o) finalOutcome.set(a.charId, o);
     if (!o || o.errorKind === 'skipped') continue;
     finalDrafts.set(a.charId, o.drafts);
     if (o.status === 'format_error') formatErrors.add(a.charId);
@@ -627,7 +796,7 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
     if (judged.length > 0) {
       const revised = new Map<CharId, { drafts: ProposalDraft[]; callTag: string; items: Array<{ proposalId: string; verdict: JudgeVerdict }> }>();
       const assess = async (proposals: readonly JudgeProposalInput[], reassessment: boolean): Promise<JudgeVerdict[]> => {
-        const tag = `${reassessment ? 'rejudge' : 'judge'}.g${generation}`;
+        const tag = `${reassessment ? 'rejudge' : 'judge'}.s${step}.g${generation}`;
         for (let attempt = 0; ; attempt++) {
           const injected = attempt === 0 && !reassessment && takeFault(rt, 'llm_timeout', round, 'judge');
           const r = injected
@@ -721,7 +890,7 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
         revise: async (actor, items) => {
           if (!isChar(actor)) return null;
           const originals = finalDrafts.get(actor) ?? [];
-          const originalTag = byActor.get(actor)?.callTag ?? `char.g${generation}`;
+          const originalTag = byActor.get(actor)?.callTag ?? `char.s${step}.g${generation}`;
           const origIds = originals.map((_d, i) => `rev:${batchId}:${actor}:o${i}`);
           const writeOriginals = (status: RevisionRecord['status'], replacedBy: string[]): void => {
             originals.forEach((d, i) => {
@@ -736,13 +905,14 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
             });
           atomically(() => writeOriginals('revising', []));
           const agendaIds = selection.find((a) => a.charId === actor)?.agendaIds ?? [];
-          const callTag = `rev.g${generation}`;
+          const callTag = `rev.s${step}.g${generation}`;
           const out = await callCharacter(
             rt,
             actor,
             {
               ...base,
               agendaIds,
+              interaction: viewOf(actor),
               callTag,
               revision: items.map((i) => ({ action: i.proposal.action, reason: i.verdict.reason, category: i.verdict.category })),
             },
@@ -762,6 +932,8 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
             writeOriginals('replaced', replIds);
           });
           revised.set(actor, { drafts: out.drafts, callTag, items: items.map((i) => ({ proposalId: i.proposal.proposalId, verdict: i.verdict })) });
+          // The revision's output (speech, metadata, raw text) is the turn's final recorded output.
+          finalOutcome.set(actor, out);
           const replacements: JudgeProposalInput[] = [];
           out.drafts.forEach((d, i) => {
             if (!judgeable(rt, state, d)) return;
@@ -806,6 +978,13 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
       rt.records.insertRevision({ ...r, links: { ...r.links, proposalId: result.proposalIds[index] ?? null } });
     }
     linkJudgeLogs(rt, batchId);
+    // The step's turns (recorded outputs), atomically with their proposals.
+    for (const a of selection) {
+      const o = finalOutcome.get(a.charId);
+      if (!o) continue;
+      const ids = ordered.flatMap((x, i) => (x.draft.actor === a.charId && result.proposalIds[i] ? [result.proposalIds[i] as string] : []));
+      rt.records.insertTurn(turnRecord(rt, batchId, round, step, epoch, o, o.errorKind === 'skipped', ids));
+    }
     return result;
   });
   emit(rt, {
@@ -832,7 +1011,7 @@ async function generate(rt: Runtime, signal: AbortSignal): Promise<StepSignal | 
     semantic.push({ category: v.category, proposalIds: [id], question: { zh: q, en: q } });
   }
 
-  const assessInterrupt = pendingInterrupt(rt, round, 'assess');
+  const assessInterrupt = pendingInterrupt(rt, round, 'assess', step);
   if (assessInterrupt) {
     fireInterrupt(rt, assessInterrupt);
     return 'continue';
@@ -946,7 +1125,7 @@ export async function decideStep(rt: Runtime): Promise<StepSignal | LimitReached
   const epoch = sessionOf(rt).epoch;
   const batch = pause.batchId ? rt.harness.repo.findBatch(pause.batchId) : null;
   if (batch?.kind === 'character') {
-    const pending = pendingInterrupt(rt, round, 'decide');
+    const pending = pendingInterrupt(rt, round, 'decide', currentStep(rt, round));
     if (pending) {
       fireInterrupt(rt, pending);
       return 'continue';
@@ -968,7 +1147,12 @@ export async function decideStep(rt: Runtime): Promise<StepSignal | LimitReached
   if (choice.option === 'ask') return askStep(rt, pause, ctx, choice, epoch);
   const input = decisionInput(choice);
   const requestId = `d:${pause.id}:${ctx.asked}`;
-  const res = rt.harness.resolvePause(rt.sessionId, pause.id, input, requestId);
+  // A decision may commit the batch: its follow-up items are derived in the same transaction.
+  const res = rt.harness.store.transaction(() => {
+    const r = rt.harness.resolvePause(rt.sessionId, pause.id, input, requestId);
+    syncLedger(rt);
+    return r;
+  });
   const skippedRules = (choice as { skippedRules?: string[] }).skippedRules ?? [];
   log(rt, 'decision', {
     pauseId: pause.id,
@@ -1128,7 +1312,12 @@ async function answerStep(rt: Runtime, pause: PauseRecord, rawAsk: PendingAsk, e
 
 export async function commitStep(rt: Runtime, batch: BatchRecord): Promise<void> {
   await hook(rt, 'commit');
-  const result = rt.harness.commitBatch({ sessionId: rt.sessionId, batchId: batch.batchId, requestId: `commit:${batch.batchId}` });
+  // The commit, the follow-up items it creates and the processing progress of its turns: one transaction.
+  const result = rt.harness.store.transaction(() => {
+    const r = rt.harness.commitBatch({ sessionId: rt.sessionId, batchId: batch.batchId, requestId: `commit:${batch.batchId}` });
+    syncLedger(rt);
+    return r;
+  });
   log(rt, 'commit', { batchId: batch.batchId, ok: result.ok, rule: result.rule, reason: result.reason, events: result.events.length });
   emit(rt, { type: 'commit', result });
 }
@@ -1241,7 +1430,11 @@ export async function advanceStep(rt: Runtime): Promise<void> {
   if (state.terminal) return;
   await hook(rt, 'advance');
   if (!characterCommitted(rt, state.round)) throw new EngineError(`round ${state.round} has no committed character batch; ADVANCE refused`);
-  const result = rt.harness.runSystemAdvance(rt.sessionId, `r${state.round}.advance`);
+  const result = rt.harness.store.transaction(() => {
+    const r = rt.harness.runSystemAdvance(rt.sessionId, `r${state.round}.advance`);
+    syncLedger(rt);
+    return r;
+  });
   if (!result.ok) throw new EngineError(`ADVANCE refused (${result.rule ?? '?'}): ${result.reason ?? ''}`);
   log(rt, 'advance', { round: state.round, toVersion: result.toVersion, staged: result.staged, terminal: result.terminal?.kind ?? null });
   emit(rt, { type: 'system', kind: 'advance', result, header: headerForVersions(rt, result.fromVersion, result.toVersion) });

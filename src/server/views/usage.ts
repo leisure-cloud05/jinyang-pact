@@ -4,7 +4,7 @@
  * Player view: offstage actors and call tags (which name remote scenes) are hidden.
  * Audit: player view is a summary; director view is the full record set of the session.
  */
-import { DEFAULT_MAX_CALLS, DEFAULT_MAX_USD } from '../../engine/index.js';
+import { DEFAULT_MAX_CALLS, DEFAULT_MAX_USD, ledgerStats, type Ledger } from '../../engine/index.js';
 import type { UsageBucket, UsageView, ViewMode } from '../api-types.js';
 import type { SessionCtx } from '../context.js';
 
@@ -140,6 +140,7 @@ export function auditView(ctx: SessionCtx, viewer: ViewMode): Record<string, unk
     },
   };
   if (viewer === 'player') return summary;
+  const ledger = ctx.records.ledger(ctx.sessionId, 'current') as Ledger | null;
   return {
     ...summary,
     session: ctx.session,
@@ -154,6 +155,7 @@ export function auditView(ctx: SessionCtx, viewer: ViewMode): Record<string, unk
     epochs: repo.listEpochs(ctx.sessionId),
     roundStarts: repo.listRoundStarts(ctx.sessionId),
     instructions: repo.listInstructions(ctx.sessionId),
+    interaction: ledger ? ledgerStats(ledger) : null,
     engine: ctx.records.exportSession(ctx.sessionId),
   };
 }

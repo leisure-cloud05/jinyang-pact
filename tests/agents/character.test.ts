@@ -97,6 +97,7 @@ describe('character agent', () => {
           { type: 'dispatch_document', args: { docId: 'doc:1', docVersion: 1 }, rationale: 'b', cites: ['zztj280-014'] },
         ],
         ask_player: { question: 'Send now?' },
+        interaction: null,
       },
       built.context,
       built.citeKeys,

@@ -64,7 +64,9 @@ export const DecisionSchema = z.strictObject({
 
 export const InterruptSchema = z.strictObject({ requestId: RequestIdSchema, text: Text, wait: Wait });
 /** Ending a turn needs its token; resuming a suspended run does not. */
-export const AdvanceSchema = z.strictObject({ requestId: RequestIdSchema, turn: TurnToken.nullable().optional(), wait: Wait });
+export const AdvanceSchema = z.strictObject({ requestId: RequestIdSchema, turn: TurnToken.nullable().optional(), wait: Wait,
+  extendBudget: z.strictObject({ addCalls: z.number().int().min(0).max(200), addUsd: z.number().min(0).max(2) }).optional(),
+});
 export const SaveSchema = z.strictObject({
   requestId: RequestIdSchema,
   name: z

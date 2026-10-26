@@ -149,11 +149,23 @@ describe('agent output schemas', () => {
       private_rationale: 'r',
       actions: ACTION_TYPES.map((type) => ({ type, args: argsFor[type], rationale: 'r', cites: [] })),
       ask_player: null,
+      interaction: null,
     };
     for (let i = 0; i < output.actions.length; i += 3) {
       const chunk = { ...output, actions: output.actions.slice(i, i + 3) };
       expect(validateOutput(CharacterOutputSchema, JSON.parse(JSON.stringify(chunk))).ok).toBe(true);
     }
+    const withMeta = {
+      ...output,
+      actions: [],
+      interaction: {
+        addressed: [{ item: 'i3', how: 'answered', note: 'n' }],
+        requests: [{ to: 'liu_zhiyuan', topic: 't', question: 'q' }],
+        wait_for: { on: 'reply', who: 'liu_zhiyuan', round: null, reason: 'r' },
+      },
+    };
+    expect(validateOutput(CharacterOutputSchema, JSON.parse(JSON.stringify(withMeta))).ok).toBe(true);
+    expect(validateOutput(CharacterOutputSchema, { ...withMeta, interaction: { ...withMeta.interaction, wait_for: { on: 'forever', who: null, round: null, reason: 'r' } } }).ok).toBe(false);
     expect(validateOutput(CharacterOutputSchema, { ...output, actions: output.actions.slice(0, 4) }).ok).toBe(false);
     const extra = { ...output, actions: [{ type: 'wait', args: {}, rationale: 'r', cites: [], sneaky: 1 }] };
     expect(validateOutput(CharacterOutputSchema, extra).ok).toBe(false);

@@ -48,10 +48,11 @@ import type {
 import { preferenceFor, type CharacterConfig } from '../content/schema.js';
 import { believedResources } from './ledger.js';
 import { actorName, buildNames, loc, locationName, type AgentNames } from './names.js';
+import { itemLine, type InteractionContextView } from './interaction-view.js';
 import type { AgentContent, DialogueRow, FeedbackRow, Lang } from './types.js';
 import { asTermSet, isLocalized, jsonLine, sanitizeJson, sha256Hex, stripMetaNote, termsView, type TermsView } from './util.js';
 
-export const CHARACTER_CONTEXT_VERSION = 'ctx.character.v1';
+export const CHARACTER_CONTEXT_VERSION = 'ctx.character.v2';
 /** Budget for the serialized context when the caller gives none (the agent computes it from the input cap). */
 export const DEFAULT_CHARACTER_CONTEXT_BUDGET = 17_500;
 export const DEFAULT_MAX_DIALOGUE = 40;
@@ -68,8 +69,16 @@ export interface CharacterContextInput {
   persona?: CharacterConfig;
   /** All dialogue rows of the session so far (filtered here to what the character heard). */
   dialogue?: readonly DialogueRow[];
-  /** Redacted feedback on this character's recent proposals (rows older than last round are ignored). */
+  /**
+   * Redacted feedback on this character's proposals (legacy path, used only when no `interaction` view is given; no
+   * age filter: unresolved feedback is never dropped because it is old).
+   */
   feedback?: readonly FeedbackRow[];
+  /**
+   * The interaction view (PLAN §10.4): why the character is called now and the unresolved items it is responsible
+   * for (feedback included). Pinned: never truncated away; dialogue rows it refers to are pinned too.
+   */
+  interaction?: InteractionContextView | null;
   /** Budget in characters for the serialized context. */
   maxChars?: number;
   maxDialogue?: number;
@@ -266,6 +275,8 @@ export interface CharacterContext {
   feedback: FeedbackRow[];
   dialogue: DialogueView[];
   sources: SourceView[];
+  /** Interaction view with display names of the actors it mentions (null on the legacy path). */
+  interaction: (InteractionContextView & { names: Record<string, string> }) | null;
 }
 
 export interface TruncationReport {
@@ -275,6 +286,10 @@ export interface TruncationReport {
   sourcesDropped: number;
   beliefsDropped: number;
   memoriesDropped: number;
+  /** Dialogue rows kept because an unresolved item refers to them. */
+  dialoguePinned: number;
+  /** Items shown in compact form (id, kind, short text and the ref of the full text) to fit the budget. */
+  itemsCompacted: number;
   overBudget: boolean;
 }
 
@@ -674,9 +689,37 @@ function section(title: string, items: readonly unknown[], empty = '(none)'): st
   return `=== ${title} ===\n${body}`;
 }
 
-/** Deterministic text form of the context (what the model reads). */
-export function serializeCharacterContext(ctx: CharacterContext): string {
+function interactionSections(ctx: CharacterContext, compact: ReadonlySet<string>): string[] {
+  const view = ctx.interaction;
+  if (!view) return [];
+  const nameOf = (id: ActorId): string => view.names[id] ?? id;
+  const now = {
+    round: view.round,
+    step: `${view.step} of at most ${view.maxSteps} this round`,
+    reason: view.activation?.reason ?? 'scheduled',
+    itemsNeedingAttentionNow: view.triggeredBy,
+  };
   const parts = [
+    section('WHY YOU ARE CALLED NOW', [now]),
+    section(
+      'ITEMS FOR YOU (unresolved; most urgent first — list those you deal with in interaction.addressed)',
+      view.items.map((i) => itemLine(i, nameOf, compact.has(i.id))),
+    ),
+  ];
+  const own = {
+    requestsYouMade: view.myRequests.map((r) => ({ id: r.id, to: nameOf(r.to), toId: r.to, topic: r.topic, question: r.question, status: r.status, reply: r.reply })),
+    yourWait: view.waiting ? itemLine(view.waiting, nameOf) : null,
+  };
+  if (own.requestsYouMade.length > 0 || own.yourWait) parts.push(section('YOUR REQUESTS AND WAIT', [own]));
+  if (view.resolvedSinceLastTurn.length > 0) parts.push(section('RESOLVED SINCE YOUR LAST TURN (by facts; for your information)', view.resolvedSinceLastTurn));
+  if (view.notes.length > 0) parts.push(section('NOTES ON YOUR RECENT TURNS', view.notes));
+  return parts;
+}
+
+/** Deterministic text form of the context (what the model reads). */
+export function serializeCharacterContext(ctx: CharacterContext, opts: { compact?: ReadonlySet<string> } = {}): string {
+  const parts = [
+    ...interactionSections(ctx, opts.compact ?? new Set()),
     section('YOU (persona)', [ctx.self]),
     section('TIME AND PLACE', [{ ...ctx.time, ...ctx.scene, travel: ctx.travel }]),
     section('RULE PARAMETERS', [ctx.rules]),
@@ -691,7 +734,10 @@ export function serializeCharacterContext(ctx: CharacterContext): string {
     section('LETTERS AND REPORTS RECEIVED (claims, not verified facts)', ctx.messages),
     section('WHAT YOU KNOW (your assertions; cite by ref)', ctx.beliefs),
     section('ADVICE ADDRESSED TO YOU', ctx.advice),
-    section('FEEDBACK ON YOUR RECENT PROPOSALS', ctx.feedback),
+  );
+  // With an interaction view, feedback is part of ITEMS FOR YOU (unresolved feedback persists there).
+  if (!ctx.interaction) parts.push(section('FEEDBACK ON YOUR PROPOSALS', ctx.feedback));
+  parts.push(
     section('DIALOGUE YOU HEARD (oldest first; what others said is their claim)', ctx.dialogue),
     section('HISTORICAL SOURCES YOU KNOW (cite by id)', ctx.sources),
   );
@@ -719,6 +765,11 @@ function citeKeysOf(ctx: CharacterContext): string[] {
   return [...keys].sort();
 }
 
+/**
+ * Deterministic truncation: oldest dialogue first (rows an unresolved item refers to are pinned), then
+ * lower-priority sources, oldest beliefs, private memories; finally items already seen are shown in compact form
+ * (oldest first) with the ref of their full text. Unresolved items are never dropped. Everything is reported.
+ */
 function fitToBudget(ctx: CharacterContext, budget: number): { text: string; report: TruncationReport } {
   const report: TruncationReport = {
     budget,
@@ -727,29 +778,47 @@ function fitToBudget(ctx: CharacterContext, budget: number): { text: string; rep
     sourcesDropped: 0,
     beliefsDropped: 0,
     memoriesDropped: 0,
+    dialoguePinned: 0,
+    itemsCompacted: 0,
     overBudget: false,
   };
-  let text = serializeCharacterContext(ctx);
-  const over = (): boolean => text.length > budget;
-  while (over() && ctx.dialogue.length > 0) {
-    ctx.dialogue.shift();
-    report.dialogueDropped += 1;
-    text = serializeCharacterContext(ctx);
+  const compact = new Set<string>();
+  const render = (): string => serializeCharacterContext(ctx, { compact });
+  const pinned = new Set<string>();
+  for (const it of [...(ctx.interaction?.items ?? []), ...(ctx.interaction?.waiting ? [ctx.interaction.waiting] : [])]) {
+    for (const r of it.refs) if (r.startsWith('dialogue:')) pinned.add(r);
   }
+  let text = render();
+  const over = (): boolean => text.length > budget;
+  while (over()) {
+    const i = ctx.dialogue.findIndex((d) => !pinned.has(d.ref));
+    if (i < 0) break;
+    ctx.dialogue.splice(i, 1);
+    report.dialogueDropped += 1;
+    text = render();
+  }
+  report.dialoguePinned = ctx.dialogue.filter((d) => pinned.has(d.ref)).length;
   while (over() && ctx.sources.length > 0) {
     ctx.sources.pop();
     report.sourcesDropped += 1;
-    text = serializeCharacterContext(ctx);
+    text = render();
   }
   while (over() && ctx.beliefs.length > 0) {
     ctx.beliefs.shift();
     report.beliefsDropped += 1;
-    text = serializeCharacterContext(ctx);
+    text = render();
   }
   while (over() && ctx.self.privateMemory.length > 0) {
     ctx.self.privateMemory.shift();
     report.memoriesDropped += 1;
-    text = serializeCharacterContext(ctx);
+    text = render();
+  }
+  const compactable = [...(ctx.interaction?.items ?? [])].filter((i) => !i.now).sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
+  for (const it of compactable) {
+    if (!over()) break;
+    compact.add(it.id);
+    report.itemsCompacted += 1;
+    text = render();
   }
   report.length = text.length;
   report.overBudget = over();
@@ -814,9 +883,15 @@ export function buildCharacterContext(input: CharacterContextInput): BuiltCharac
   const heard = (input.dialogue ?? [])
     .filter((r) => r.speaker === charId || r.listeners.includes(charId))
     .sort((a, b) => a.seq - b.seq);
-  const dialogue: DialogueView[] = heard
-    .filter((r) => r.kind !== 'advice' || r.speaker === charId)
-    .slice(-(input.maxDialogue ?? DEFAULT_MAX_DIALOGUE))
+  // The last N rows heard, plus older rows an unresolved item refers to (retrieved by reference, PLAN §9.2).
+  const pinnedSeqs = new Set<number>();
+  for (const it of [...(input.interaction?.items ?? []), ...(input.interaction?.waiting ? [input.interaction.waiting] : [])]) {
+    for (const r of it.refs) if (/^dialogue:\d+$/.test(r)) pinnedSeqs.add(Number(r.slice('dialogue:'.length)));
+  }
+  const spoken = heard.filter((r) => r.kind !== 'advice' || r.speaker === charId);
+  const recentFrom = Math.max(0, spoken.length - (input.maxDialogue ?? DEFAULT_MAX_DIALOGUE));
+  const dialogue: DialogueView[] = spoken
+    .filter((r, i) => i >= recentFrom || pinnedSeqs.has(r.seq))
     .map((r) => ({
       ref: `dialogue:${r.seq}`,
       seq: r.seq,
@@ -839,10 +914,20 @@ export function buildCharacterContext(input: CharacterContextInput): BuiltCharac
       text: r.text,
       payload: r.payload === undefined ? null : sanitizeJson(r.payload, lang),
     }));
-  const feedback = (input.feedback ?? [])
-    .filter((f) => f.round >= state.round - 1)
-    .map((f) => ({ ...f }))
-    .sort((a, b) => a.round - b.round || a.seq - b.seq);
+  // Legacy feedback rows (no age filter); with an interaction view, unresolved feedback lives in its items.
+  const feedback = input.interaction
+    ? []
+    : (input.feedback ?? []).map((f) => ({ ...f })).sort((a, b) => a.round - b.round || a.seq - b.seq);
+  let interaction: CharacterContext['interaction'] = null;
+  if (input.interaction) {
+    const view = structuredClone(input.interaction);
+    const ids = new Set<string>();
+    for (const it of [...view.items, ...(view.waiting ? [view.waiting] : [])]) if (it.from) ids.add(it.from);
+    for (const r of view.myRequests) ids.add(r.to);
+    const nameMap: Record<string, string> = {};
+    for (const id of [...ids].sort()) nameMap[id] = actorName(names, id as ActorId, lang);
+    interaction = { ...view, names: nameMap };
+  }
 
   const partial = { documents, negotiations, messages, suggestions, siege };
   const agendaIds = input.activeAgendaIds ?? null;
@@ -901,6 +986,7 @@ export function buildCharacterContext(input: CharacterContextInput): BuiltCharac
     feedback,
     dialogue,
     sources: sourcesFor(content, persona, charId),
+    interaction,
   };
   if (!isAlive(state, charId)) context.self.agendas = [];
 

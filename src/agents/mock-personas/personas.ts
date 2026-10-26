@@ -55,7 +55,7 @@ function sameTerms(a: TermSetArgs, b: TermSetArgs): boolean {
 }
 
 function output(speech: string, rationale: string, actions: CharacterActionItem[], ask: string | null = null): CharacterOutput {
-  return { speech, private_rationale: rationale, actions: actions.slice(0, 3), ask_player: ask ? { question: ask } : null };
+  return { speech, private_rationale: rationale, actions: actions.slice(0, 3), ask_player: ask ? { question: ask } : null, interaction: null };
 }
 
 function wait(rationale: string): CharacterActionItem {
@@ -507,9 +507,49 @@ const PERSONAS: Record<CharId, (meta: CharacterMeta) => CharacterOutput> = {
   li_congke: li,
 };
 
+function objectRef(type: string, args: unknown): string {
+  const a = (args ?? {}) as Record<string, unknown>;
+  const target = a.target as { id?: unknown } | undefined;
+  return `${type}|${String(a.docId ?? a.offerId ?? target?.id ?? a.to ?? a.resource ?? '')}`;
+}
+
+/**
+ * Deterministic interaction behaviour of the mock personas (PLAN §9.3, §10.4): a question put to the persona is
+ * answered (a short generic line, recorded as `answered`); an action identical in kind and object to one that was
+ * rejected or withheld (an open feedback item) is not repeated (`declined`). Everything else stays unaddressed.
+ */
+function interactionAware(meta: CharacterMeta, out: CharacterOutput): CharacterOutput {
+  const view = meta.context.interaction;
+  if (!view) return out;
+  const addressed: NonNullable<CharacterOutput['interaction']>['addressed'] = [];
+  let actions = out.actions;
+  for (const it of view.items) {
+    if (it.kind !== 'feedback' || !it.attempted || it.attempted.status === 'format_error') continue;
+    const key = objectRef(it.attempted.type, it.attempted.args);
+    const kept = actions.filter((a) => objectRef(a.type, a.args) !== key);
+    if (kept.length !== actions.length || it.now) {
+      addressed.push({ item: it.id, how: 'declined', note: 'not repeating the failed action' });
+      actions = kept;
+    }
+  }
+  let speech = out.speech;
+  for (const it of view.items) {
+    if (it.kind !== 'request' || addressed.length >= 8) continue;
+    if (!speech) speech = say(meta.context, { zh: '承问，愚以为此事宜慎，当依实情而定。', en: 'You ask my view: this needs care and must follow the facts.' });
+    addressed.push({ item: it.id, how: 'answered', note: 'answered in speech' });
+  }
+  if (addressed.length === 0) return out;
+  return {
+    ...out,
+    speech,
+    actions: actions.length > 0 ? actions : [wait('Not repeating a failed action.')],
+    interaction: { addressed, requests: [], wait_for: null },
+  };
+}
+
 /** The persona's turn for a character call (revision requests drop the flagged action types). */
 export function personaTurn(meta: CharacterMeta): CharacterOutput {
-  const out = PERSONAS[meta.context.self.id](meta);
+  const out = interactionAware(meta, PERSONAS[meta.context.self.id](meta));
   if (!meta.revision || meta.revision.length === 0) return out;
   const flagged = new Set(
     meta.revision.map((r) => (typeof r.action === 'object' && r.action !== null ? String((r.action as { type?: unknown }).type) : '')),

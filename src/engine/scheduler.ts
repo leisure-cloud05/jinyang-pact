@@ -20,8 +20,22 @@ import { hasReceiptEvidence } from '../core/knowledge.js';
 import { BESIEGED_FACTION, CHAR_IDS, type CharId, type CoreConfig, type Message, type WorldState } from '../core/types.js';
 import { MAX_ACTIVE } from './types.js';
 
-export type Tier = '1' | '1b' | '2' | '3' | '4';
-export const TIERS: readonly Tier[] = ['1', '1b', '2', '3', '4'];
+export type Tier = '1' | '1b' | '1c' | '2' | '3' | '4';
+export const TIERS: readonly Tier[] = ['1', '1b', '1c', '2', '3', '4'];
+
+/**
+ * An actionable interaction item (PLAN §10.4) as a scheduling candidate: tier 1b deliveries, 1c interaction items
+ * (requests, replies, feedback, satisfied waits, the clerk's advice), 2 the clerk's address, 1 offers not yet
+ * shown (steps after the first). Ordered by the item's creation order (oldest first), so a candidate left out by the
+ * cap keeps its precedence and is served within a bounded number of steps.
+ */
+export interface PendingCandidate {
+  charId: CharId;
+  itemId: string;
+  kind: string;
+  tier: '1' | '1b' | '1c' | '2';
+  seq: number;
+}
 
 export type AgendaEvent =
   | 'round_start'
@@ -65,6 +79,16 @@ export interface SchedulerInput {
   /** Committed world events up to the SELECT state (version and kind). */
   events: ReadonlyArray<{ version: number; kind: string }>;
   cap?: number;
+  /**
+   * Interaction step of the round (default 1). Step 1 applies every tier; later steps only actionable items
+   * (no agendas, no periodic activation, offers only if not yet shown).
+   */
+  step?: number;
+  /**
+   * Actionable items (the interaction ledger). When given, tiers 1b and 2 come from items (a delivery or the clerk's
+   * words stay pending until a committed turn of the recipient has seen them) instead of the last-activation rule.
+   */
+  pending?: readonly PendingCandidate[];
 }
 
 export interface Candidate {
@@ -154,66 +178,100 @@ export function schedule(input: SchedulerInput): ScheduleResult {
   const round = state.round;
   const days = config.params.round_days;
   const cap = input.cap ?? MAX_ACTIVE;
+  const step = input.step ?? 1;
+  const first = step <= 1;
   const reasons = new Map<CharId, { tier: Tier; reason: string }>();
-  const tiers: Record<Tier, CharId[]> = { '1': [], '1b': [], '2': [], '3': [], '4': [] };
+  const tiers: Record<Tier, CharId[]> = { '1': [], '1b': [], '1c': [], '2': [], '3': [], '4': [] };
+  const tierReason = new Map<string, string>();
   const note = (tier: Tier, c: CharId, reason: string): void => {
+    if (tiers[tier].includes(c)) return;
     tiers[tier].push(c);
+    tierReason.set(`${tier}:${c}`, reason);
     if (!reasons.has(c)) reasons.set(c, { tier, reason });
   };
+  /** Item candidates of a tier: per character, its items (oldest first); characters by their oldest item. */
+  const itemTier = (tier: PendingCandidate['tier']): Array<[CharId, PendingCandidate[]]> => {
+    const by = new Map<CharId, PendingCandidate[]>();
+    for (const p of input.pending ?? []) {
+      if (p.tier !== tier || !alive(state, p.charId)) continue;
+      const list = by.get(p.charId) ?? [];
+      list.push(p);
+      by.set(p.charId, list);
+    }
+    for (const list of by.values()) list.sort((a, b) => a.seq - b.seq);
+    return [...by.entries()].sort((a, b) => (a[1][0]?.seq ?? 0) - (b[1][0]?.seq ?? 0) || ORDER(a[0]) - ORDER(b[0]));
+  };
+  const itemsText = (list: readonly PendingCandidate[]): string => list.map((p) => `${p.itemId} (${p.kind})`).join(', ');
 
-  // Tier 1: holders of a delivered live offer awaiting their answer (one live offer per negotiating thread/pair).
+  // Tier 1: holders of a delivered live offer awaiting their answer (one live offer per negotiating thread/pair);
+  // after the round's first step only offers that have not been shown yet.
   const t1 = new Map<CharId, string>();
-  for (const id of Object.keys(state.commitments).sort(compareIds)) {
-    const thread = state.commitments[id];
-    if (!thread || thread.status !== 'negotiating') continue;
-    const offer = state.offers[thread.liveOfferId];
-    if (!offer || offer.status !== 'delivered' || !alive(state, offer.to)) continue;
-    if (!hasReceiptEvidence(state, offer.to, offer.id, offer.termsVersion)) continue;
-    if (!t1.has(offer.to)) t1.set(offer.to, `pending offer ${offer.id} (${thread.pair}) awaits an answer`);
+  if (first) {
+    for (const id of Object.keys(state.commitments).sort(compareIds)) {
+      const thread = state.commitments[id];
+      if (!thread || thread.status !== 'negotiating') continue;
+      const offer = state.offers[thread.liveOfferId];
+      if (!offer || offer.status !== 'delivered' || !alive(state, offer.to)) continue;
+      if (!hasReceiptEvidence(state, offer.to, offer.id, offer.termsVersion)) continue;
+      if (!t1.has(offer.to)) t1.set(offer.to, `pending offer ${offer.id} (${thread.pair}) awaits an answer`);
+    }
   }
+  for (const [c, list] of itemTier('1')) if (!t1.has(c)) t1.set(c, `offer item ${itemsText(list)} awaits an answer`);
   for (const c of CHAR_IDS) {
     const why = t1.get(c);
     if (why) note('1', c, why);
   }
 
-  // Tier 1b: other delivery recipients not activated since the delivery (carry-forward).
+  // Tier 1b: other delivery recipients — items not yet seen in a committed turn (or, without items, not activated
+  // since the delivery); carry-forward either way.
   const pending = new Map<CharId, { from: number; ids: string[] }>();
-  for (const id of Object.keys(state.messages).sort(compareIds)) {
-    const m = state.messages[id];
-    if (!m || m.status !== 'delivered' || m.kind === 'offer' || !isChar(m.to) || !alive(state, m.to)) continue;
-    const from = deliveryRound(m, days);
-    if (from > round || (input.lastActivation[m.to]?.round ?? 0) >= from) continue;
-    const entry = pending.get(m.to) ?? { from, ids: [] };
-    entry.from = Math.min(entry.from, from);
-    entry.ids.push(`${m.id} (${m.kind})`);
-    pending.set(m.to, entry);
-  }
-  for (const [c, p] of [...pending.entries()].sort((a, b) => a[1].from - b[1].from || ORDER(a[0]) - ORDER(b[0]))) {
-    note('1b', c, `delivered since round ${p.from}, not yet acted on: ${p.ids.join(', ')}`);
+  if (input.pending) {
+    for (const [c, list] of itemTier('1b')) note('1b', c, `delivered, not yet seen: ${itemsText(list)}`);
+  } else {
+    for (const id of Object.keys(state.messages).sort(compareIds)) {
+      const m = state.messages[id];
+      if (!m || m.status !== 'delivered' || m.kind === 'offer' || !isChar(m.to) || !alive(state, m.to)) continue;
+      const from = deliveryRound(m, days);
+      if (from > round || (input.lastActivation[m.to]?.round ?? 0) >= from) continue;
+      const entry = pending.get(m.to) ?? { from, ids: [] };
+      entry.from = Math.min(entry.from, from);
+      entry.ids.push(`${m.id} (${m.kind})`);
+      pending.set(m.to, entry);
+    }
+    for (const [c, p] of [...pending.entries()].sort((a, b) => a[1].from - b[1].from || ORDER(a[0]) - ORDER(b[0]))) {
+      note('1b', c, `delivered since round ${p.from}, not yet acted on: ${p.ids.join(', ')}`);
+    }
   }
 
-  // Tier 2: addressed by the player this round.
-  const addressed = new Set(input.addressed);
-  for (const c of CHAR_IDS) if (addressed.has(c) && alive(state, c)) note('2', c, 'addressed by the player this round');
+  // Tier 1c: interaction items (a question put to you, an answer to yours, feedback, a met wait, the clerk's advice).
+  for (const [c, list] of itemTier('1c')) note('1c', c, `items needing attention: ${itemsText(list)}`);
 
-  // Tier 3: agenda owners at the player's scene whose trigger fires.
+  // Tier 2: addressed by the player (items: not yet seen; legacy: this round).
+  if (input.pending) {
+    for (const [c, list] of itemTier('2')) note('2', c, `addressed by the player: ${itemsText(list)}`);
+  } else {
+    const addressed = new Set(input.addressed);
+    for (const c of CHAR_IDS) if (addressed.has(c) && alive(state, c)) note('2', c, 'addressed by the player this round');
+  }
+
+  // Tier 3: agenda owners at the player's scene whose trigger fires (the round's first step only).
   const agendaIds = new Map<CharId, string[]>();
-  for (const c of CHAR_IDS) agendaIds.set(c, alive(state, c) ? firedAgendas(input, c) : []);
+  for (const c of CHAR_IDS) agendaIds.set(c, first && alive(state, c) ? firedAgendas(input, c) : []);
   for (const c of CHAR_IDS) {
-    if (!alive(state, c) || state.characters[c].location !== state.player.location) continue;
+    if (!first || !alive(state, c) || state.characters[c].location !== state.player.location) continue;
     const fired = agendaIds.get(c) ?? [];
     if (fired.length > 0) note('3', c, `agenda at the player's scene: ${fired.join(', ')}`);
   }
 
-  // Tier 4: periodic activation.
+  // Tier 4: periodic activation (the round's first step only).
   for (const c of CHAR_IDS) {
     const p = input.personas[c].periodicActivation;
-    if (!p || !alive(state, c)) continue;
+    if (!first || !p || !alive(state, c)) continue;
     const k = round - 1 - p.offset;
     if (k >= 0 && k % p.every_rounds === 0) note('4', c, `periodic (every ${p.every_rounds} rounds, offset ${p.offset})`);
   }
 
-  // Fill: tier 1 always; then 1b, 2, 3, 4 up to the cap.
+  // Fill: tier 1 always; then 1b, 1c, 2, 3, 4 up to the cap.
   const selected: CharId[] = [...tiers['1']];
   const skipped: Candidate[] = [];
   const seenSkipped = new Set<CharId>();
@@ -223,7 +281,8 @@ export function schedule(input: SchedulerInput): ScheduleResult {
       if (selected.length < cap) selected.push(c);
       else if (!seenSkipped.has(c)) {
         seenSkipped.add(c);
-        skipped.push({ charId: c, tier, reason: `${reasonFor(tier, c, input, pending, t1)} (over the cap of ${cap})`, agendaIds: agendaIds.get(c) ?? [] });
+        const why = input.pending && (tier === '1b' || tier === '1c' || tier === '2') ? (tierReason.get(`${tier}:${c}`) ?? tier) : reasonFor(tier, c, input, pending, t1);
+        skipped.push({ charId: c, tier, reason: `${why} (over the cap of ${cap})`, agendaIds: agendaIds.get(c) ?? [] });
       }
     }
   }
@@ -246,6 +305,8 @@ function reasonFor(
       return t1.get(c) ?? 'pending offer';
     case '1b':
       return `delivered since round ${pending.get(c)?.from ?? '?'}, not yet acted on`;
+    case '1c':
+      return 'items needing attention';
     case '2':
       return 'addressed by the player this round';
     case '3':

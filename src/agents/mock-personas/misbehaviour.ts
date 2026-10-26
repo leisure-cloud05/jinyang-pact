@@ -79,6 +79,10 @@ function applyCharacter(kind: MisbehaviourKind, meta: CharacterMeta, out: Charac
           cites: [],
         });
       }
+      // A principal sealing his own draft is legitimate: he gets an answer to an offer that was never delivered.
+      if (ctx.self.principal) {
+        return push(out, { type: 'confirm_commitment', args: { commitmentId: `cmt:${offers.length + 1}`, offerId: `offer:${offers.length + 1}`, termsVersion: 1 }, rationale, cites: [] });
+      }
       return push(out, { type: 'approve_document', args: { docId: doc?.docId ?? 'doc:1', docVersion: doc?.version ?? 1 }, rationale, cites: [] });
     }
     case 'answer_before_delivery': {
@@ -111,7 +115,9 @@ function applyCharacter(kind: MisbehaviourKind, meta: CharacterMeta, out: Charac
     case 'duplicate_dispatch': {
       const existing = out.actions.find((a) => a.type === 'dispatch_document');
       if (existing) return push(out, { ...existing, rationale });
-      return push(out, { type: 'dispatch_document', args: { docId: doc?.docId ?? 'doc:1', docVersion: doc?.version ?? 1 }, rationale, cites: [] });
+      // Never a legitimate dispatch: a sent document again (H12), else a version that does not exist (H04/H11).
+      const version = doc ? (doc.status === 'sent' ? doc.version : doc.version + 1) : 1;
+      return push(out, { type: 'dispatch_document', args: { docId: doc?.docId ?? 'doc:1', docVersion: version }, rationale, cites: [] });
     }
     case 'stale_version': {
       const awaiting = awaitingOffers(ctx)[0];

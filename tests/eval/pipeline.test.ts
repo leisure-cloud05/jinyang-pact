@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { main as expMain } from '../../src/cli/exp.js';
 import { loadConfig } from '../../src/config/env.js';
 import { runAgreement } from '../../src/eval/agreement.js';
-import { buildFreeze, freezeMismatches, frozenFileHashes, MAIN_SETTINGS } from '../../src/eval/freeze.js';
+import { buildFreeze, freezeMismatches, frozenFileHashes, MAIN_SETTINGS, writeFreeze } from '../../src/eval/freeze.js';
 import { buildPackets } from '../../src/eval/humaneval.js';
 import { reconcileDir, type FetchFn } from '../../src/eval/reconcile.js';
 import { buildReport } from '../../src/eval/report.js';
@@ -289,6 +289,8 @@ describe('exp CLI', () => {
     expect(freeze.hashes.prompts).toMatch(/^[0-9a-f]{64}$/);
     expect(freeze.hashes.files).toMatch(/^[0-9a-f]{64}$/);
     expect(freezeMismatches(freeze, buildFreeze(mockConfig(), content()))).toEqual([]);
+    expect(() => writeFreeze(path.join(root, 'freeze.json'), freeze)).toThrow();
+    expect(JSON.parse(readFileSync(path.join(root, 'freeze.json'), 'utf8'))).toEqual(freeze);
     const changed = { ...freeze, hashes: { ...freeze.hashes, prompts: 'x' } };
     expect(freezeMismatches(changed, buildFreeze(mockConfig(), content()))[0]).toMatch(/hashes\.prompts/);
     expect(await expMain(['--plan', 'main', '--live', '--runs-root', root, '--no-env-file'], io, { config: mockConfig() })).toBe(1);

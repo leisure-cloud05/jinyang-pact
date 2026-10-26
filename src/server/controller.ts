@@ -17,7 +17,7 @@
  * Engine events are republished on the session's SSE channel as player-safe messages (no remote-scene content).
  */
 import { runMapper, type MapperResult } from '../agents/mapper.js';
-import { choosePolicy, type DecisionChoice, type DecisionContext, type EngineEvent, type EngineSession, type PlayerContext, type PlayerTurn, type StepName } from '../engine/index.js';
+import { choosePolicy, committedSteps, type DecisionChoice, type DecisionContext, type EngineEvent, type EngineSession, type PlayerContext, type PlayerTurn, type StepName } from '../engine/index.js';
 import type { ScriptInputLike } from '../core/script.js';
 import type { LocId } from '../core/types.js';
 import { HarnessError, type Harness, type InterruptResult, type PlayerInput, type PlayerResult } from '../harness/index.js';
@@ -76,6 +76,11 @@ const MAX_CONSECUTIVE_FAILURES = 5;
  * depend on whether a remote scene had events, so streaming them would reveal offstage activity).
  */
 const EVERY_ROUND_STEPS = new Set<string>(['prepare', 'player', 'generate:opened', 'generate:called', 'generate:submitted', 'assess', 'decide', 'advance']);
+/**
+ * Steps that recur within a round only when an interaction step follows (engine.v2): whether one does depends on
+ * offstage items too, so they are streamed for the round's first interaction step only.
+ */
+const FIRST_STEP_ONLY = new Set<string>(['generate:opened', 'generate:called', 'generate:submitted', 'assess']);
 
 export function turnToken(round: number, epoch: number): string {
   return `turn-r${round}-e${epoch}`;
@@ -180,8 +185,9 @@ export class PlayController {
     }
   }
 
-  onStep(step: StepName, info: { round: number; epoch: number }): void {
+  onStep(step: StepName, info: { round: number; epoch: number; step?: number }): void {
     if (!EVERY_ROUND_STEPS.has(step)) return;
+    if (FIRST_STEP_ONLY.has(step) && (info.step ?? 1) > 1) return;
     this.lastStep = step;
     this.deps.hub.publish(this.sessionId, 'phase', { step, round: info.round, epoch: info.epoch });
   }
@@ -373,7 +379,7 @@ export class PlayController {
   }
 
   /** Ends the turn named by `token` (or resumes a suspended run). */
-  advance(token: string | null | undefined): 'end_turn' | 'resumed' | 'restarted' {
+  advance(token: string | null | undefined, extension?: {addCalls:number;addUsd:number;requestId:string}): 'end_turn' | 'resumed' | 'restarted' {
     if (this.turn) {
       const t = this.requireTurn(token);
       this.turn = null;
@@ -385,6 +391,7 @@ export class PlayController {
     if (this.running) throw new ApiError(409, 'busy', 'The council is still deliberating.');
     const session = this.harness.getSession(this.sessionId);
     if (session.status === 'suspended') {
+      if (extension) this.engine.extendBudget({...extension,reason:'explicit web resume',by:'web'});
       this.engine.resume();
       this.start();
       return 'resumed';
@@ -454,6 +461,8 @@ export class PlayController {
       day: state.day,
       phase: session.phase,
       epoch: session.epoch,
+      interactionStep: committedSteps(this.engine.rt,state.round),
+      interactionStepLimit: this.engine.rt.maxStepsPerRound,
       sessionStatus: session.status,
       pauseId: this.decision?.pauseId ?? null,
       outcome,
