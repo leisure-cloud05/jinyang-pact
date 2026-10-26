@@ -10,6 +10,7 @@ import { DecisionModal } from './components/DecisionModal';
 import { DirectorDialog, NewSessionDialog, TransmitDialog } from './components/dialogs';
 import { DraftPanel } from './components/DraftPanel';
 import { InspectorPanel } from './components/InspectorPanel';
+import { SiegeWatch, topAlert } from './components/SiegeWatch';
 import { StoryPanel } from './components/StoryPanel';
 import { TimelinePanel } from './components/TimelinePanel';
 import { Badge, ErrorNote, Tabs } from './components/ui';
@@ -220,7 +221,8 @@ export function App() {
             {area === 'play' ? (
               <>
               <PlayGuide state={s.control.state} />
-              <div className="play-grid">
+              {/* Keyed by session: another session starts with fresh panels (no carried-over edits or echoes). */}
+              <div className="play-grid" key={sessionId}>
                 <div className="play-main">
                   <StoryPanel sessionId={sessionId} state={s} view={view} tick={live.tick} lang={lang} startNote={config?.scenario.startNote ?? null} />
                   <ActionBar
@@ -232,6 +234,7 @@ export function App() {
                   />
                 </div>
                 <aside className="play-side" aria-label="Council and draft">
+                  <SiegeWatch watch={s.siegeWatch} control={s.control} lang={lang} />
                   <CouncilPanel sessionId={sessionId} state={s} view={view} tick={live.tick} lang={lang} onChanged={live.refresh} onConfirmTransmit={() => setTransmit(true)} />
                   <DraftPanel sessionId={sessionId} state={s} lang={lang} onChanged={live.refresh} onTransmit={() => setTransmit(true)} />
                 </aside>
@@ -299,6 +302,8 @@ function PlayGuide({ state }: { state: string }) {
 
 function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview }: { state: NonNullable<ReturnType<typeof useLiveSession>['state']>; busy: boolean; onAdvance: () => void; onOpenDecision: () => void; onReview: () => void }) {
   const c = state.control;
+  const watch = state.siegeWatch;
+  const alert = topAlert(watch);
   let body;
   switch (c.state) {
     case 'awaiting_player':
@@ -306,6 +311,12 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview }: { state
         <>
           <p>
             <strong>Your turn.</strong> Speak to the council, revise the draft or set its timing — then let the council deliberate.
+            {watch.next ? (
+              <span className="time-cost">
+                {' '}
+                Ending the turn spends time: after the council has spoken, {watch.roundDays} days pass (day {watch.day} → {watch.next.day}).
+              </span>
+            ) : null}
           </p>
           <button type="button" className="btn" disabled={busy} onClick={onAdvance}>
             End turn →
@@ -367,6 +378,11 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview }: { state
   return (
     <div className={`action-bar state-${c.state}`} role="region" aria-label="What happens next">
       {body}
+      {alert && c.state !== 'finished' ? (
+        <p className={`bar-alert bar-alert-${alert.level}`}>
+          <strong>{alert.level === 'critical' ? 'City in danger:' : 'Warning:'}</strong> {alert.text.en}
+        </p>
+      ) : null}
     </div>
   );
 }

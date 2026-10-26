@@ -236,6 +236,7 @@ export class EngineSession {
     }
     const caseConfig = findCase(opts.content, input.caseId);
     const config = caseCoreConfig(opts.content, input.caseId);
+    if (opts.roundLimitEnding) config.chapterDeadlineRound = caseConfig.max_rounds;
     const initialState = caseInitialState(opts.content, input.caseId);
     const seed = runSeed(input.caseId, input.rep);
     const hashes = { content: contentHash(opts.content), rules: hashValue(config), prompts: promptSetHash() };

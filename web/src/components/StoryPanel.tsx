@@ -60,8 +60,14 @@ export function StoryPanel({ sessionId, state, view, tick, lang, startNote }: { 
           <div className="ending" role="status">
             <p className="ending-kicker">End of the chapter</p>
             <p className="ending-title" lang={lang}>
-              {t(TERMINAL_LABELS[w.terminal.kind] ?? { zh: w.terminal.kind, en: w.terminal.kind }, lang)}
+              {w.terminal.detail.cause === 'missed_opportunity'
+                ? t({ zh: '错过时机 · 全面战争 · 晋阳城破', en: 'Opportunity missed · All-out war · Jinyang falls' }, lang)
+                : t(TERMINAL_LABELS[w.terminal.kind] ?? { zh: w.terminal.kind, en: w.terminal.kind }, lang)}
             </p>
+            {w.terminal.detail.cause === 'missed_opportunity' ? <p lang={lang}>{t({
+              zh: '求援期限已尽，仍未达成有效盟约。后唐围城军发动全面攻城，晋阳失守。这是错过求援时机的结局，无须等到粮尽或围城压力达到 100。',
+              en: 'The deadline passed without an effective pact securing relief. The Later Tang besiegers launched a full assault and took Jinyang. Missing the diplomatic window triggers this ending before grain runs out or siege pressure reaches 100.',
+            }, lang)}</p> : null}
             <p className="ending-meta">
               Day {w.terminal.day}, round {w.terminal.round} · outcome {state.control.outcome ?? '—'}
             </p>
@@ -105,8 +111,8 @@ function Item({ item, lang, view, onRegenerate, busy }: { item: StoryItem; lang:
           {where}
           <span>What happened</span>
           {item.status !== 'ok' ? (
-            <Badge tone="muted" title={`The model's prose was not shown (${item.fallbackReason ?? item.status}); a template narration is shown instead.`}>
-              {item.status === 'failed' ? 'narration pending' : 'template narration'}
+            <Badge tone="muted" title={item.fallbackReason === 'language_mismatch' ? 'The recorded prose uses a different language. A template is shown in the selected language; the original record is preserved.' : `The model's prose was not shown (${item.fallbackReason ?? item.status}); a template narration is shown instead.`}>
+              {item.status === 'failed' ? 'narration pending' : item.fallbackReason === 'language_mismatch' ? 'language fallback' : 'template narration'}
             </Badge>
           ) : null}
         </div>

@@ -203,6 +203,8 @@ export interface EngineHooks {
 
 export interface EngineOptions {
   content: ContentBundle;
+  /** Turn the chapter's round limit into a world ending (interactive play). Persisted in CoreConfig. */
+  roundLimitEnding?: boolean;
   /** The LLM client (the engine wraps it in a per-run BudgetedClient). */
   llm: LlmClient;
   lang?: Lang;

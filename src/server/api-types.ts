@@ -274,6 +274,10 @@ export interface StateView {
   session: SessionInfo;
   control: ControlView;
   world: WorldView;
+  /** Round clock and siege outlook (hourglass and city-defence alerts). */
+  siegeWatch: SiegeWatchView;
+  /** The assistance negotiation as the clerk knows it, on the road between the two courts. */
+  negotiationTrack: NegotiationTrackView;
   characters: CharacterView[];
   player: { name: L10n; title: L10n; permissions: string[] };
   document: DraftView | null;
@@ -281,6 +285,102 @@ export interface StateView {
   pendingPause: PauseView | null;
   /** Director view only: the full world state. */
   full?: unknown;
+}
+
+/** Siege levels the clerk sees at headquarters. */
+export interface SiegeLevels {
+  /** Days of grain supply. */
+  grain: number;
+  pressure: number;
+  morale: number;
+}
+
+export interface SiegeAlertView {
+  level: 'critical' | 'warning' | 'notice';
+  code: 'fall_next' | 'mutiny_next' | 'morale_falls' | 'last_round';
+  text: L10n;
+}
+
+/**
+ * The round clock and the siege outlook. Built from what the clerk sees at headquarters (Hedong's grain, siege
+ * pressure and morale) and the public game rules; `next` applies the engine's own five-day transition, assuming
+ * nothing else happens this round. Advisory only: it never blocks or changes a choice.
+ */
+export interface SiegeWatchView {
+  round: number;
+  maxRounds: number;
+  /** Rounds left in the chapter, the current one included (0 once the chapter has ended). */
+  roundsLeft: number;
+  day: number;
+  /** Days that pass when a round ends. */
+  roundDays: number;
+  now: SiegeLevels;
+  /** The siege once this round's days have passed, if nothing else changes (null once the chapter has ended). */
+  next: (SiegeLevels & { day: number; round: number; moraleDrops: boolean; falls: 'grain' | 'pressure' | null; mutinyRisk: boolean }) | null;
+  /** The rules' thresholds, for the gauges. */
+  limits: {
+    pressureCap: number;
+    moraleCap: number;
+    moraleLowGrain: number;
+    moraleHighPressure: number;
+    mutinyGrainMax: number;
+    mutinyMoraleMax: number;
+    fallGrainMax: number;
+    fallPressureMin: number;
+  };
+  /** Most severe first. */
+  alerts: SiegeAlertView[];
+}
+
+/** Where an offer stands as far as the clerk can tell. */
+export type OfferStage = 'proposed' | 'awaiting' | 'received' | 'countered' | 'confirmed' | 'rejected' | 'withdrawn';
+
+export interface TrackEndView {
+  charId: string;
+  name: L10n;
+  place: L10n;
+}
+
+export interface OfferCardView {
+  offerId: string;
+  /** `out`: sent from Jinyang; `in`: received at Jinyang. */
+  direction: 'out' | 'in';
+  from: string;
+  to: string;
+  termsVersion: number;
+  stage: OfferStage;
+  /** The clerk's own belief about the offer (as in `world.negotiation`). */
+  believedStatus: string | null;
+  /** Day the clerk learned of it: the day it went out, or the day it reached headquarters. */
+  sinceDay: number;
+  /** Day the clerk learned its current status (a reply: the day it reached headquarters). */
+  statusDay: number | null;
+  /** Outgoing: the day the courier should reach the far court by the schedule (the clerk cannot see the delivery). */
+  dueDay: number | null;
+  /** Place on the road as far as the clerk can tell: 0 at Jinyang, 1 at the far court. */
+  position: number;
+  /** A withdrawal the clerk knows of: on the road (`pending`), in time (`effective`) or too late (`late`). */
+  withdrawal: string | null;
+  /** Terms as the clerk knows them (null: unknown). */
+  terms: TermsView | null;
+  segment: number;
+  segmentRound: number;
+}
+
+/**
+ * The assistance negotiation as the clerk knows it, laid out on the road between Jinyang and the far court. Built
+ * from the clerk's own assertions and public facts (courier days, the round cap) only: a reply appears once it has
+ * reached headquarters.
+ */
+export interface NegotiationTrackView {
+  near: TrackEndView;
+  far: TrackEndView;
+  /** Courier days between the two courts. */
+  travelDays: number;
+  /** Known offers, oldest first; the last one is where the talks stand. */
+  cards: OfferCardView[];
+  /** Counter-offers allowed per negotiation segment before the talks need a decision (H13). */
+  roundCap: number;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

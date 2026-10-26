@@ -1,23 +1,32 @@
 /** Display helpers: bilingual text, category/option labels, number formatting. */
-import type { L10n, Lang } from '../../src/server/api-types.js';
+import type { CatalogTermView, L10n, Lang } from '../../src/server/api-types.js';
+import { displayText } from '../../src/display-language.js';
+export { displayText, displayValue } from '../../src/display-language.js';
 
 export function t(text: L10n | null | undefined, lang: Lang): string {
   if (!text) return '';
-  return lang === 'zh' ? text.zh : text.en;
+  return displayText(lang === 'zh' ? text.zh : text.en, lang);
 }
 
 /** Some legacy notes store Chinese and English in one field, separated by ` / `. Show the English half in the web UI. */
 export function englishDisplay(text: string): string {
-  const split = text.lastIndexOf(' / ');
-  if (split < 0) return text;
-  const first = text.slice(0, split);
-  const second = text.slice(split + 3);
-  return /[\u3400-\u9fff]/u.test(first) && /[A-Za-z]/u.test(second) ? second : text;
+  return displayText(text, 'en');
 }
 
 export function fmt(n: number | null | undefined): string {
   if (n === null || n === undefined) return '—';
   return n.toLocaleString('en-US');
+}
+
+/** A term's value as shown to the player: yes/no, a formatted number, or the catalog label of an enum value. */
+export function termValueText(term: CatalogTermView | undefined, v: unknown, lang: Lang): string {
+  if (typeof v === 'boolean') return v ? (lang === 'zh' ? '是' : 'yes') : lang === 'zh' ? '否' : 'no';
+  if (typeof v === 'number') return fmt(v);
+  if (term && term.type === 'enum') {
+    const label = term.values.find((x) => x.value === v)?.label;
+    return label ? t(label, lang) : String(v);
+  }
+  return String(v ?? '—');
 }
 
 export function usd(n: number | null | undefined): string {

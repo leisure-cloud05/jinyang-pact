@@ -8,6 +8,7 @@
 import { fallbackProse, renderFactLine } from '../../agents/narration/index.js';
 import type { Lang } from '../../agents/types.js';
 import type { NarrationFact } from '../../core/types.js';
+import { displayText, proseMatchesLanguage } from '../../display-language.js';
 import type { EventRecord, NarrationRecord } from '../../store/repo.js';
 import type { StoryItem, StoryView, ViewMode } from '../api-types.js';
 import type { SessionCtx } from '../context.js';
@@ -89,9 +90,10 @@ export function storyView(ctx: SessionCtx, viewer: ViewMode, lang: Lang): StoryV
     }
     for (const [scene, facts] of byScene) {
       const n = g.batchId ? narrations.get(`${g.batchId}\u0000${scene}`) : undefined;
-      const headerLines = facts.map((f) => renderFactLine(f, names, lang));
+      const headerLines = facts.map((f) => displayText(renderFactLine(f, names, lang), lang));
       if (n && (viewer === 'director' || scene === ctx.playerLoc)) {
-        const templated = n.status !== 'ok';
+        const languageMismatch = n.status === 'ok' && (ctx.lang !== lang || !proseMatchesLanguage(splitProse(n), lang));
+        const templated = n.status !== 'ok' || languageMismatch;
         items.push({
           kind: 'narration',
           round: first.round,
@@ -105,8 +107,8 @@ export function storyView(ctx: SessionCtx, viewer: ViewMode, lang: Lang): StoryV
           headerLines,
           prose: templated ? fallbackProse(facts, names, lang, scene) : splitProse(n),
           proseLang: templated ? lang : ctx.lang,
-          status: n.status,
-          fallbackReason: fallbackReason(n),
+          status: languageMismatch ? 'fallback' : n.status,
+          fallbackReason: languageMismatch ? 'language_mismatch' : fallbackReason(n),
           inherited,
         });
       } else {

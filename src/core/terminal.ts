@@ -68,6 +68,22 @@ export function evaluateTerminal(state: WorldState, config: CoreConfig, phase: T
 
   const open = threads.some((t) => t.status === 'negotiating' || t.status === 'confirmed');
 
+  // Interactive chapters have a diplomatic deadline, independent of grain/pressure thresholds. A pact
+  // already known to Shi wins above; an unfinished draft or an offer still in transit does not secure relief.
+  if (config.chapterDeadlineRound !== undefined && state.round > config.chapterDeadlineRound) {
+    return {
+      kind: 'jinyang_falls',
+      detail: {
+        cause: 'missed_opportunity',
+        escalation: 'full_war',
+        besieger: 'tang',
+        deadlineRound: config.chapterDeadlineRound,
+        grain: n.grain,
+        pressure: n.pressure,
+      },
+    };
+  }
+
   // 3. no_assistance: abandoned, nothing open, closure evidence for every thread (or nothing was ever sent)
   if (state.flags.assistanceAbandoned && !open && threads.every((t) => hasClosureEvidence(state, config, t))) {
     return { kind: 'no_assistance', detail: { threads: threads.length, ...projectionDetail(projectSiege(state, config)) } };

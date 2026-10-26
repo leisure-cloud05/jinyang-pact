@@ -7,17 +7,10 @@ import { useState } from 'react';
 import type { DiffView, EventsView, Lang, ProposalsView, ReplayView, StateView, ViewMode } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl, viewParam } from '../api';
 import { useResource } from '../hooks';
-import { STATUS_TONE, t } from '../labels';
+import { STATUS_TONE, displayText, displayValue, t } from '../labels';
 import { Badge, Empty, ErrorNote, Tabs } from './ui';
 
 type Sub = 'events' | 'proposals' | 'diff' | 'replay';
-
-function short(v: unknown): string {
-  if (v === null || v === undefined) return '∅';
-  if (typeof v === 'string') return v.length > 80 ? `${v.slice(0, 80)}…` : v;
-  const s = JSON.stringify(v);
-  return s.length > 120 ? `${s.slice(0, 120)}…` : s;
-}
 
 export function InspectorPanel({ sessionId, state, view, tick, lang }: { sessionId: string; state: StateView; view: ViewMode; tick: number; lang: Lang }) {
   const [sub, setSub] = useState<Sub>('events');
@@ -40,7 +33,7 @@ export function InspectorPanel({ sessionId, state, view, tick, lang }: { session
       {view === 'player' ? <p className="hint">Player view: only what the clerk can witness at headquarters. The director view shows every court.</p> : null}
       {sub === 'events' ? <Events sessionId={sessionId} view={view} tick={tick} lang={lang} /> : null}
       {sub === 'proposals' ? <Proposals sessionId={sessionId} view={view} tick={tick} lang={lang} /> : null}
-      {sub === 'diff' ? <Diff sessionId={sessionId} view={view} tick={tick} round={state.world.round} /> : null}
+      {sub === 'diff' ? <Diff sessionId={sessionId} view={view} tick={tick} round={state.world.round} lang={lang} /> : null}
       {sub === 'replay' ? <Replay sessionId={sessionId} /> : null}
     </section>
   );
@@ -98,9 +91,9 @@ function Events({ sessionId, view, tick, lang }: { sessionId: string; view: View
                       <td>
                         <code>{c.path}</code>
                       </td>
-                      <td className="before">{short(c.before)}</td>
+                      <td className="before">{displayValue(c.before, lang)}</td>
                       <td aria-hidden="true">→</td>
-                      <td className="after">{short(c.after)}</td>
+                      <td className="after">{displayValue(c.after, lang)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -165,7 +158,7 @@ function Proposals({ sessionId, view, tick, lang }: { sessionId: string; view: V
                       <Badge tone="bad">{p.rule}</Badge> <span className="hint">{p.ruleTitle}</span>
                     </span>
                   ) : null}
-                  {p.reason ? <div className="reason">{p.reason}</div> : null}
+                  {p.reason ? <div className="reason">{displayText(p.reason, lang)}</div> : null}
                 </td>
               </tr>
             ))}
@@ -177,7 +170,7 @@ function Proposals({ sessionId, view, tick, lang }: { sessionId: string; view: V
 }
 
 /** Player view: between round starts (world versions are not exposed); director view: between world versions. */
-function Diff({ sessionId, view, tick, round }: { sessionId: string; view: ViewMode; tick: number; round: number }) {
+function Diff({ sessionId, view, tick, round, lang }: { sessionId: string; view: ViewMode; tick: number; round: number; lang: Lang }) {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
   const params =
@@ -210,9 +203,9 @@ function Diff({ sessionId, view, tick, round }: { sessionId: string; view: ViewM
                 <td>
                   <code>{c.path}</code>
                 </td>
-                <td className="before">{short(c.before)}</td>
+                <td className="before">{displayValue(c.before, lang)}</td>
                 <td aria-hidden="true">→</td>
-                <td className="after">{short(c.after)}</td>
+                <td className="after">{displayValue(c.after, lang)}</td>
               </tr>
             ))}
           </tbody>

@@ -38,7 +38,7 @@ Reply with ONE JSON object only (no prose, no markdown fences): {"prose": string
 
 export const NARRATOR_USER = defineTemplate(
   'narrator.user',
-  3,
+  4,
   `SCENE: {{scene}} · day {{day}}
 
 FACT HEADER (already shown to the reader; do not restate it):
@@ -52,11 +52,7 @@ COMMITTED FACTS (index: fact; for your understanding only):
 
 Write only 1-2 short sentences of atmosphere. The header already tells the reader what happened; do not retell, paraphrase or dramatize those events.
 
-For Chinese prose, aim for about 20-50 Chinese characters. Use anonymous descriptions such as 众人 or 人影. Do not copy names, titles, places, numbers, treaty terms or resource words from the context. Avoid numeral idioms such as 一片, 四周 and 万籁.
-
-Safe style examples (adapt the atmosphere rather than repeating the same sentence):
-- 烛影微摇，窗外风声渐紧。众人静坐，神色凝重。
-- 暮色笼着庭院，衣袖轻拂案角，堂内寂然。
+{{language_instruction}}
 
 Before replying, scan your prose for forbidden names, quantities, terms and outcomes. Rewrite any offending phrase. Keep the JSON fields unchanged and use only the provided fact indexes in mentioned_facts.
 Reply with the JSON object only.`,

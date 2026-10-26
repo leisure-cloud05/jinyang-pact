@@ -9,6 +9,30 @@ export function Badge({ tone = 'muted', children, title }: { tone?: string; chil
   );
 }
 
+/** A person's initials in a round token (decorative: the name is always shown beside it). */
+export function Avatar({ name, small = false }: { name: string; small?: boolean }) {
+  const initials = name
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join('');
+  return (
+    <span className={`avatar ${small ? 'avatar-small' : ''}`} aria-hidden="true">
+      {initials}
+    </span>
+  );
+}
+
+/** A vermilion seal impression; `fresh` stamps it down once, then it stays (decorative: the text beside it says what it means). */
+export function Stamp({ glyph, fresh = false }: { glyph: string; fresh?: boolean }) {
+  return (
+    <span className={`stamp ${fresh ? 'stamp-fresh' : ''}`} aria-hidden="true">
+      {glyph}
+    </span>
+  );
+}
+
 export function Empty({ children }: { children: ReactNode }) {
   return <p className="empty">{children}</p>;
 }

@@ -27,6 +27,7 @@ English → tick "Add the case's scripted clerk lines" → Begin.**
 
 Part 1 continues the C6 session above. Part 2 needs a fresh session in which the request has not been sent yet:
 **New session → C1 — Cooperation with valid terms and authorization → Full → 中文** (Chinese narration) **→ Begin**.
+Part 3 shows the play aids in a fresh **C3 — Stricter acceptable terms** session.
 
 **Part 1, C6 (after the dispatch was endorsed)**
 
@@ -59,6 +60,22 @@ Part 1 continues the C6 session above. Part 2 needs a fresh session in which the
 8. **Usage.** Logical calls, attempts, tokens, cost (reported vs estimated; an unknown cost is never shown as zero)
    and latency per role (mock: zero cost). While the director view is locked, offstage calls are hidden. After the
    unlock, or once the chapter has ended, the full record is shown. *Takeaway: every call is budgeted and logged.*
+
+**Part 3, C3 (play aids)**
+
+9. **Hourglass.** Beside the story: day, round, rounds left, the council's exchanges this round, and what the next
+   five days do to grain, pressure and morale if nothing else changes. In a C5 session (low grain), withholding the
+   request brings a mutiny warning by round 3 and **City in danger** by round 5, repeated above **End turn**.
+   *Takeaway: every turn spends time, and the alerts never decide for the player.*
+10. **Read the room.** Each person present has a bearing (Composed, Uneasy, Pressing) and what it rests on: the
+    siege and the words you heard them say. *Takeaway: an impression from visible cues, never a hidden value.*
+11. **Private counsel.** Under *Speak to…*, choose **Sang Weihan** in *Whisper privately to*, click **Remind of the
+    long-term cost** and send it. The log marks the line **private → Sang Weihan**. *Takeaway: knowledge isolation
+    covers the player's own words; only he heard it.*
+12. **Negotiation track.** Speak to Shi and Sang (e.g. *明公，表已誊毕，请用印遣使。*), **End turn** and endorse the
+    dispatch. Shi's seal stamps onto the draft and his courier sets out for the Khitan court; on day 10 the Khitan
+    counter-offer arrives at Jinyang, listing what it changed. *Takeaway: the cards follow what the clerk knows; a
+    letter moves by the courier's schedule, and a reply appears only once it reaches headquarters.*
 
 ## If something goes wrong
 

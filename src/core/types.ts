@@ -828,6 +828,8 @@ export interface CharacterRules {
 
 export interface CoreConfig {
   params: GameParams;
+  /** Play chapter deadline: unresolved diplomacy ends in a final assault after this round. */
+  chapterDeadlineRound?: number;
   /** Symmetric travel matrix in days; 0 on the diagonal. */
   travel: Record<LocId, Record<LocId, number>>;
   catalog: TermsCatalog;

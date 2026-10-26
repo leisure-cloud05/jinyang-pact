@@ -1,0 +1,93 @@
+/** node tests/browser/map-ui.mjs --playwright <module file> --browser <chromium executable> */
+import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
+import { createServer } from 'vite';
+const { values } = parseArgs({ options: { playwright: { type: 'string' }, browser: { type: 'string' } } });
+const { chromium } = await import(values.playwright ? pathToFileURL(values.playwright).href : 'playwright');
+const root = fileURLToPath(new URL('../../', import.meta.url));
+const output = await mkdtemp(path.join(tmpdir(), 'pact-map-check-'));
+const vite = await createServer({ configFile: path.join(root, 'web/vite.config.ts'), server: { port: 0, host: '127.0.0.1' }, plugins: [{ name: 'map-check-fixture', configureServer(server) {
+server.middlewares.use('/__map-check', async (_req, res) => {
+  const fixture = `/@fs/${path.join(root, 'tests/browser/map-fixture.jsx').replaceAll('\\', '/')}`;
+  res.setHeader('Content-Type', 'text/html');
+  res.end(await server.transformIndexHtml('/__map-check', `<html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div><script type="module" src="${fixture}"></script></body></html>`));
+});
+} }] });
+let browser;
+try {
+  await vite.listen();
+  browser = await chromium.launch({ headless: true, ...(values.browser ? { executablePath: values.browser } : {}) });
+  const page = await browser.newPage({ viewport: { width: 1000, height: 1000 }, colorScheme: 'light' });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}/__map-check`);
+  await page.waitForFunction(() => Boolean(window.setMapState));
+  const map = page.locator('.journey-map');
+  const settled = () => page.waitForFunction(() => document.querySelector('.journey-map').dataset.playing === 'false');
+  assert.equal(await map.getAttribute('data-playing'), 'false');
+  await page.evaluate(() => window.setMapState(s => ({ ...s, cards: [{ offerId: 'offer A', direction: 'out', termsVersion: 1, stage: 'proposed', position: 0, withdrawal: null, terms: window.mapTerms }] })));
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.scene === 'seal');
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.scene === 'courier');
+  const start = await page.locator('.map-traveller').getAttribute('transform');
+  await page.waitForTimeout(400);
+  assert.notEqual(await page.locator('.map-traveller').getAttribute('transform'), start, 'departure must move');
+  await settled();
+  await page.evaluate(() => window.setMapState(s => ({ ...s, cards: structuredClone(s.cards) })));
+  await page.waitForTimeout(150);
+  assert.equal(await map.getAttribute('data-playing'), 'false', 'polling must not replay');
+  await page.evaluate(() => window.setMapState(s => ({ ...s, draft: { ...s.draft, version: 2 } })));
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.scene === 'draft');
+  await page.evaluate(() => window.setMapState(s => ({ ...s, cards: s.cards.map(c => ({ ...c, stage: 'awaiting', position: 1 })) })));
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.scene === 'courier');
+  await page.waitForTimeout(550);
+  await map.screenshot({ path: path.join(output, 'courier.png') });
+  await map.getByRole('button', { name: 'Skip' }).click();
+  assert.equal(await map.getAttribute('data-playing'), 'false');
+  await page.evaluate(() => window.setMapState(s => ({ ...s, cards: [...s.cards, { ...s.cards[0], offerId: 'offer B', direction: 'in', stage: 'received', termsVersion: 2, position: 0 }] })));
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.playing === 'true');
+  await settled();
+  assert.equal(await page.locator('.map-traveller').getAttribute('transform'), 'translate(100 265)');
+  await page.evaluate(() => window.setMapState(s => ({ ...s, cards: s.cards.map((c, i) => i ? { ...c, stage: 'confirmed' } : c), terminal: { kind: 'pact_concluded', detail: { confirmedDay: 10, khitanArrivalDay: 25 } } })));
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.scene === 'relief');
+  await page.waitForTimeout(800);
+  await map.screenshot({ path: path.join(output, 'relief.png') });
+  assert.match(await map.innerText(), /arrival has not been observed/);
+  await settled();
+  const seen = await page.evaluate(() => window.mapScenesSeen);
+  assert.ok(seen.includes('seal') && seen.includes('confirmation') && seen.includes('relief'));
+  await map.getByRole('button', { name: 'Replay' }).click();
+  await page.waitForFunction(() => document.querySelector('.journey-map').dataset.playing === 'true');
+  await map.getByRole('button', { name: 'Skip' }).click();
+  const select = page.getByLabel('Cession of territory', { exact: true });
+  for (const [value, count] of [['none', 0], ['yanmen_north', 1], ['sixteen_prefectures', 2]]) {
+    await select.selectOption(value);
+    assert.equal(await page.locator('.cession-preview .is-selected').count(), count);
+  }
+  const number = page.getByLabel('Annual silk', { exact: true });
+  await number.fill('50000');
+  assert.equal(await page.getByRole('slider', { name: 'Annual silk (slider)' }).inputValue(), '50000');
+  await page.getByRole('slider', { name: 'Annual silk (slider)' }).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await number.inputValue(), '60000');
+  await page.locator('.cession-preview').screenshot({ path: path.join(output, 'cession.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'mobile must not scroll horizontally');
+  await page.locator('.cession-preview').screenshot({ path: path.join(output, 'mobile-cession.png') });
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
+  await map.getByRole('button', { name: 'Replay' }).click();
+  await settled();
+  await map.screenshot({ path: path.join(output, 'dark-reduced.png') });
+  await page.reload();
+  await page.waitForFunction(() => Boolean(window.setMapState));
+  assert.equal(await map.getAttribute('data-playing'), 'false');
+  assert.equal(await map.getAttribute('data-scene'), 'relief', 'restoring a completed chapter must not replay old events');
+  assert.deepEqual(errors, []);
+  console.log(JSON.stringify({ passed: true, screenshots: output, checks: 'departure, travel, incoming reply, confirmation, projected relief, replay, skip, polling, cession, sliders, mobile, reduced motion, no browser errors' }));
+} finally {
+  await browser?.close();
+  await vite.close();
+}

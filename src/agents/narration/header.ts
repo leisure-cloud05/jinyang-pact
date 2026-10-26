@@ -205,6 +205,11 @@ export function renderFactLine(fact: NarrationFact, names: AgentNames, lang: Lan
         ? `自第${day('fromDay')}日至第${day('toDay')}日：存粮${day('grain')}日，围城压力${day('pressure')}，士气${day('morale')}。`
         : `Day ${day('fromDay')} to day ${day('toDay')}: grain ${day('grain')} days, siege pressure ${day('pressure')}, morale ${day('morale')}.`;
     case 'terminal': {
+      if (str(d, 'terminal') === 'jinyang_falls' && str(d, 'cause') === 'missed_opportunity') {
+        return zh
+          ? '结局：错过时机，全面战争，晋阳城破。求援期限已尽，仍未达成有效盟约；后唐围城军发动全面攻城，晋阳失守。'
+          : 'Ending: the opportunity missed, all-out war, Jinyang falls. The deadline for securing relief passed without an effective pact; the Later Tang besiegers launched a full assault and took the city.';
+      }
       const t = TERMINAL[str(d, 'terminal') ?? ''] ?? { zh: `结局：${str(d, 'terminal')}`, en: `Ending: ${str(d, 'terminal')}` };
       const fall = num(d, 'fallDay');
       const arrival = num(d, 'khitanArrivalDay');

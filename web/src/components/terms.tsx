@@ -4,7 +4,8 @@
  */
 import { useId } from 'react';
 import type { CatalogView, Lang, TermLimitsView, TermsView } from '../../../src/server/api-types';
-import { fmt, t } from '../labels';
+import { fmt, t, termValueText } from '../labels';
+import { CessionPreview } from './TerritoryMap';
 
 export type TermsDraft = Omit<TermsView, 'secret_clauses'> & { secret_clauses: string[] };
 
@@ -25,17 +26,6 @@ export function burdenOf(terms: Record<string, unknown>, catalog: CatalogView): 
   return Math.round(total * 100) / 100;
 }
 
-function valueText(key: string, v: unknown, catalog: CatalogView, lang: Lang): string {
-  const e = catalog.terms.find((x) => x.key === key);
-  if (typeof v === 'boolean') return v ? (lang === 'zh' ? '是' : 'yes') : lang === 'zh' ? '否' : 'no';
-  if (typeof v === 'number') return fmt(v);
-  if (e && e.type === 'enum') {
-    const label = e.values.find((x) => x.value === v)?.label;
-    return label ? t(label, lang) : String(v);
-  }
-  return String(v ?? '—');
-}
-
 export function TermsTable({ terms, catalog, lang, compact = false }: { terms: TermsView; catalog: CatalogView; lang: Lang; compact?: boolean }) {
   const rows = catalog.terms.filter((e) => e.applicable || (terms as unknown as Record<string, unknown>)[e.key] !== (e.type === 'boolean' ? false : e.type === 'enum' ? 'none' : 0));
   return (
@@ -44,7 +34,7 @@ export function TermsTable({ terms, catalog, lang, compact = false }: { terms: T
         {rows.map((e) => (
           <tr key={e.key}>
             <th scope="row">{t(e.label, lang)}</th>
-            <td>{valueText(e.key, (terms as unknown as Record<string, unknown>)[e.key], catalog, lang)}</td>
+            <td>{termValueText(e, (terms as unknown as Record<string, unknown>)[e.key], lang)}</td>
           </tr>
         ))}
         {terms.secret_clauses.map((c) => (
@@ -79,9 +69,10 @@ export function TermsEditor({
       {catalog.terms.map((e) => {
         const id = `${base}-${e.key}`;
         const disabled = !e.applicable;
+        const hasSlider = e.type === 'integer' && e.max !== null && Number.isFinite(e.max) && e.max > (e.min ?? 0);
         const hint = disabled ? (lang === 'zh' ? '不适用于此双方' : `not applicable to ${catalog.pair}`) : e.type === 'integer' ? `${fmt(e.min)}–${fmt(e.max)}${e.step ? `, step ${fmt(e.step)}` : ''}` : '';
         return (
-          <div key={e.key} className={`field ${disabled ? 'field-disabled' : ''}`}>
+          <div key={e.key} className={`field ${e.type === 'enum' ? 'term-enum-field' : ''} ${hasSlider ? 'term-slider-field' : ''} ${disabled ? 'field-disabled' : ''}`}>
             <label htmlFor={id}>{t(e.label, lang)}</label>
             {e.type === 'boolean' ? (
               <input id={id} type="checkbox" checked={rec[e.key] === true} disabled={disabled} onChange={(ev) => set(e.key, ev.target.checked)} />
@@ -107,6 +98,28 @@ export function TermsEditor({
                 onChange={(ev) => set(e.key, ev.target.value === '' ? 0 : Math.max(0, Math.round(Number(ev.target.value))))}
               />
             )}
+            {e.key === 'cession' && !disabled ? <CessionPreview value={String(rec[e.key] ?? 'none')} lang={lang} /> : null}
+            {hasSlider ? (
+              <div className="term-slider-control">
+                <input
+                  id={`${id}-slider`}
+                  type="range"
+                  aria-label={`${t(e.label, lang)} (${lang === 'zh' ? '滑块' : 'slider'})`}
+                  aria-describedby={`${id}-hint`}
+                  min={e.min ?? 0}
+                  max={e.max!}
+                  step={e.step ?? 1}
+                  value={typeof rec[e.key] === 'number' ? (rec[e.key] as number) : 0}
+                  disabled={disabled}
+                  onChange={(ev) => set(e.key, Number(ev.target.value))}
+                />
+                <div className="term-slider-scale" aria-hidden="true">
+                  <span>{fmt(e.min ?? 0)}</span>
+                  <span>{lang === 'zh' ? '拖动滑块或输入数值' : 'Drag or enter a value'}</span>
+                  <span>{fmt(e.max)}</span>
+                </div>
+              </div>
+            ) : null}
             {hint ? (
               <span id={`${id}-hint`} className="hint">
                 {hint}

@@ -110,6 +110,25 @@ export function useResource<T>(url: string | null, tick: number): Resource<T> {
   return { data, error, loading, reload: () => setNonce((n) => n + 1) };
 }
 
+/**
+ * True from the render in which `key` changes until `ms` later (never on the first render): drives one-shot
+ * animations such as a seal stamped down or a courier setting out. A null key never counts as a change.
+ */
+export function useJustChanged(key: string | null, ms = 1600): boolean {
+  const prev = useRef<string | null | undefined>(undefined);
+  const [active, setActive] = useState<string | null>(null);
+  const changed = prev.current !== undefined && key !== null && key !== prev.current;
+  useEffect(() => {
+    const was = prev.current;
+    prev.current = key;
+    if (was === undefined || key === null || key === was) return;
+    setActive(key);
+    const timer = window.setTimeout(() => setActive((k) => (k === key ? null : k)), ms);
+    return () => window.clearTimeout(timer);
+  }, [key, ms]);
+  return changed || (key !== null && active === key);
+}
+
 /** Persisted UI preference (localStorage, best effort). */
 export function usePref<T extends string>(key: string, initial: T): [T, (v: T) => void] {
   const [value, setValue] = useState<T>(() => {

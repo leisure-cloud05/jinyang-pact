@@ -243,6 +243,7 @@ export class SessionManager {
     return {
       content: this.content,
       llm: this.llmFor(meta, harness),
+      roundLimitEnding: true,
       lang,
       decisions: new CallbackDecisionSource((ctx) => ctl.awaitDecision(ctx)),
       players: { turn: (ctx) => ctl.awaitTurn(ctx) },

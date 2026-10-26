@@ -6,7 +6,9 @@
 import { useMemo, useState } from 'react';
 import type { Lang, PauseView, StateView, TermLimitsView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
-import { ACTION_LABELS, CATEGORY_LABELS, OPTION_LABELS, PAUSE_KIND_LABELS, t } from '../labels';
+import { ACTION_LABELS, CATEGORY_LABELS, OPTION_LABELS, PAUSE_KIND_LABELS, displayText, t } from '../labels';
+import { notePresentation, noteToSubmit } from '../note-editor';
+import { decisionFacts } from '../decision-presentation';
 import { LimitsEditor, TermsEditor, TermsTable, toDraft, type TermsDraft } from './terms';
 import { Badge, Dialog, ErrorNote } from './ui';
 
@@ -18,7 +20,8 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
   const [advice, setAdvice] = useState('');
   const [counter, setCounter] = useState<TermsDraft | null>(firstTerms ? toDraft(firstTerms) : null);
   const [amend, setAmend] = useState<TermsDraft | null>(doc ? toDraft(doc.terms) : null);
-  const [amendNote, setAmendNote] = useState(doc?.note ?? '');
+  const [amendNote, setAmendNote] = useState<string | null>(null);
+  const noteDisplay = doc ? notePresentation(doc.note, doc.terms, catalog, lang) : { text: '', summarized: false };
   const grantees = useMemo(() => [...new Set(pause.proposals.map((p) => p.actor).filter((a) => a !== 'player' && a !== 'system'))], [pause.proposals]);
   const [grantee, setGrantee] = useState(grantees[0] ?? '');
   const [categories, setCategories] = useState<string[]>([pause.category]);
@@ -57,7 +60,7 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
         setError('There is no draft to amend.');
         return Promise.resolve();
       }
-      body.amend = { docId: doc.docId, baseDocVersion: '$current', terms: amend, note: amendNote };
+      body.amend = { docId: doc.docId, baseDocVersion: '$current', terms: amend, note: noteToSubmit(amendNote, doc.note) };
     }
     if (option === 'delegate' && grantee) {
       body.authorization = { grantee, categories, limits, expiresRound: expires === '' ? null : Number(expires) };
@@ -99,7 +102,7 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
         <div>
           <h3 className="small-head">What you can see</h3>
           <ul className="facts-list" lang={lang}>
-            {pause.visibleFacts.map((f, i) => (
+            {decisionFacts(pause).map((f, i) => (
               <li key={i}>{t(f, lang)}</li>
             ))}
           </ul>
@@ -109,7 +112,9 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
                 <strong>{p.actorName.en}</strong>
                 <span className="muted">{ACTION_LABELS[p.type] ?? p.type.replaceAll('_', ' ')}</span>
               </div>
-              <p lang={lang}>{t(p.summary, lang)}</p>
+              {p.type !== 'dispatch_document' ? <p lang={lang}>{t(p.summary, lang)}</p> : !p.terms ? (
+                <p lang={lang}>{lang === 'en' ? 'The terms of this letter are not available to you.' : '你尚无法得知这封书信的条款。'}</p>
+              ) : null}
               {p.terms ? <TermsTable terms={p.terms} catalog={catalog} lang={lang} compact /> : null}
             </div>
           ))}
@@ -124,12 +129,12 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
                 <div key={i} className="ask-entry">
                   <p lang={lang}>
                     <span className="muted">You: </span>
-                    {q.question}
+                    {displayText(q.question, lang)}
                   </p>
                   {q.answer !== null ? (
                     <p lang={lang}>
                       <strong>{q.answeredBy ? t(q.answeredBy, lang) : ''}</strong>
-                      {q.outcome && q.outcome !== 'answered' ? <Badge tone="info">{q.outcome}</Badge> : null} {q.answer}
+                      {q.outcome && q.outcome !== 'answered' ? <Badge tone="info">{q.outcome}</Badge> : null} {displayText(q.answer, lang)}
                     </p>
                   ) : (
                     <p className="muted">Waiting for an answer…</p>
@@ -183,7 +188,8 @@ export function DecisionModal({ sessionId, state, pause, lang, onHide, onDone }:
               <TermsEditor value={amend} onChange={setAmend} catalog={catalog} lang={lang} knownClauses={doc?.terms.secret_clauses ?? []} />
               <div className="field">
                 <label htmlFor="amend-note">Note</label>
-                <input id="amend-note" type="text" value={amendNote} onChange={(e) => setAmendNote(e.target.value)} />
+                <input id="amend-note" type="text" value={amendNote ?? noteDisplay.text} onChange={(e) => setAmendNote(e.target.value)} aria-describedby={noteDisplay.summarized ? 'amend-note-help' : undefined} />
+                {noteDisplay.summarized ? <p id="amend-note-help" className="hint">English summary of the recorded draft terms, not a translation of the original note. The original note is kept unless you edit this field.</p> : null}
               </div>
             </details>
           ) : null}

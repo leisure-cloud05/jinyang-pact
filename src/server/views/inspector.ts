@@ -10,6 +10,7 @@
  */
 import { renderFactLine } from '../../agents/narration/index.js';
 import type { Lang } from '../../agents/types.js';
+import { displayText } from '../../display-language.js';
 import { canAccessDocument, playerView } from '../../core/knowledge.js';
 import { own } from '../../core/ids.js';
 import type { WorldState } from '../../core/types.js';
@@ -85,7 +86,7 @@ export function eventsView(ctx: SessionCtx, viewer: ViewMode, lang: Lang): Event
       batchId: e.batchId,
       inherited: e.inherited,
       rulesApplied: [...e.rulesApplied],
-      lines: facts.map((f) => renderFactLine(f, ctx.names, lang)),
+      lines: facts.map((f) => displayText(renderFactLine(f, ctx.names, lang), lang)),
       proposal: originVisible && e.proposalId ? { proposalId: e.proposalId, actor: origin.actor, type: actionType(origin.action) } : null,
       decisionId: e.decisionId,
       changes,

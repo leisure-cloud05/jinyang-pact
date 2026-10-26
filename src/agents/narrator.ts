@@ -8,6 +8,7 @@
  */
 import type { CharacterStatus, CharId, CoreConfig, LocId, NarrationFact, WorldState } from '../core/types.js';
 import { CHAR_IDS } from '../core/types.js';
+import { proseMatchesLanguage } from '../display-language.js';
 import type { ChatMessage, LlmClient } from '../llm/types.js';
 import { DEFAULT_INPUT_CAPS, INPUT_MARGIN, summarizeCall } from './call.js';
 import { actorName, buildNames, locationName, type AgentNames } from './names.js';
@@ -26,7 +27,7 @@ import { AGENT_SCHEMAS, NarratorOutputSchema } from './schemas.js';
 import { agentStatusOf, type AgentContent, type CallIdentity, type Lang, type LlmCallSummary } from './types.js';
 
 export type NarrationStatus = 'ok' | 'fallback' | 'failed';
-export type FallbackReason = 'checker' | 'format_error' | 'error' | null;
+export type FallbackReason = 'checker' | 'format_error' | 'error' | 'language_mismatch' | null;
 
 /** Stored with the narration row (`check` column). */
 export interface NarrationCheckRecord {
@@ -116,6 +117,9 @@ export function prepareNarration(opts: Omit<NarrateSceneOptions, 'client' | 'sig
   const factLines = opts.facts.map((f, i) => `${i}: ${renderFactLine(f, names, opts.lang)}`);
   const build = (lines: string[]): string =>
     render(NARRATOR_USER, {
+      language_instruction: opts.lang === 'en'
+        ? 'Write the prose in English only. Do not use Chinese characters or copy Chinese source text. Safe atmosphere example: Candlelight trembled in the hall; outside, the wind stirred the curtains.'
+        : '请只用简体中文写约20至50字的气氛描写，不写人名、地名、数量、条款或结果。示例：烛影微摇，窗外风声渐紧。众人静坐，神色凝重。',
       scene: locationName(names, opts.scene, opts.lang),
       day,
       header,
@@ -203,7 +207,8 @@ export async function narrateScene(opts: NarrateSceneOptions): Promise<Narration
   const prose = result.value.prose.trim();
   const checker = checkSceneProse(prose, { config: opts.config, state: opts.state, facts: opts.facts, names, day: meta.day });
   const mentionedFacts = result.value.mentioned_facts.filter((i) => i >= 0 && i < opts.facts.length);
-  const ok = checker.ok && prose.length > 0;
+  const languageOk = proseMatchesLanguage(prose, opts.lang);
+  const ok = checker.ok && prose.length > 0 && languageOk;
   return {
     status: ok ? 'ok' : 'fallback',
     raw: result.raw,
@@ -211,7 +216,7 @@ export async function narrateScene(opts: NarrateSceneOptions): Promise<Narration
     prose,
     displayedProse: ok ? prose : fallback,
     displayed: joinDisplayed(header, ok ? prose : fallback),
-    check: { ...base, checker, fallbackReason: ok ? null : 'checker', mentionedFacts },
+    check: { ...base, checker, fallbackReason: ok ? null : !languageOk && prose.length > 0 ? 'language_mismatch' : 'checker', mentionedFacts },
     llm,
     messages,
   };

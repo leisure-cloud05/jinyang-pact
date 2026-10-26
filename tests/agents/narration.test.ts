@@ -243,6 +243,37 @@ describe('narrator agent', () => {
     expect(failed.displayed).toContain(failed.header);
   });
 
+  it('falls back for wrong-language prose even when all factual checks pass', async () => {
+    const { d, facts } = await sceneOfC1();
+    for (const [lang, prose] of [['en', '烛影微摇，窗外风声渐紧。'], ['zh', 'The curtains stirred in the wind.']] as const) {
+      const { mock } = newMock();
+      mock.register('narrator', () => ({ prose, mentioned_facts: [] }));
+      const result = await narrateScene({ client: mock, content: content(), config: d.config, state: d.state, scene: 'jinyang_hq', facts, lang, identity: { round: 1 } });
+      expect(result.check.checker?.ok).toBe(true);
+      expect(result.status).toBe('fallback');
+      expect(result.check.fallbackReason).toBe('language_mismatch');
+      expect(result.prose).toBe(prose);
+      expect(result.displayedProse).not.toBe(prose);
+      expect(result.displayedProse).toBe(fallbackProse(facts, names(), lang, 'jinyang_hq'));
+      const instruction = result.messages.find((m) => m.role === 'user')?.content ?? '';
+      if (lang === 'en') {
+        expect(instruction).toContain('English only');
+        expect(instruction).not.toContain('For Chinese prose');
+      }
+    }
+  });
+
+  it('keeps valid English model prose instead of replacing it with a template', async () => {
+    const { d, facts } = await sceneOfC1();
+    const { mock } = newMock();
+    const prose = 'The curtains stirred in the wind.';
+    mock.register('narrator', () => ({ prose, mentioned_facts: [] }));
+    const result = await narrateScene({ client: mock, content: content(), config: d.config, state: d.state, scene: 'jinyang_hq', facts, lang: 'en', identity: { round: 1 } });
+    expect(result.status).toBe('ok');
+    expect(result.displayedProse).toBe(prose);
+    expect(result.check.fallbackReason).toBeNull();
+  });
+
   it('never gives the narrator secret text, and scrubs an injected canary', async () => {
     const d = driver('C4');
     const r = commitEndorsed(d, [

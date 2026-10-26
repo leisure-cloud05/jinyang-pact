@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CompareView, Lang, SessionListItem, TimelineView, ViewMode } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl, viewParam } from '../api';
 import { useResource } from '../hooks';
-import { CATEGORY_LABELS, OPTION_LABELS, TERMINAL_LABELS, t } from '../labels';
+import { CATEGORY_LABELS, OPTION_LABELS, TERMINAL_LABELS, englishDisplay, t } from '../labels';
 import { Badge, Empty, ErrorNote, Section } from './ui';
 
 export function TimelinePanel({
@@ -122,7 +122,7 @@ export function TimelinePanel({
                         <Badge tone={p.status === 'obsolete' ? 'muted' : p.status === 'open' ? 'info' : 'ok'}>{p.status}</Badge> {CATEGORY_LABELS[p.category] ?? p.category}
                         {p.option ? ` → ${OPTION_LABELS[p.option]?.label ?? p.option}` : ''}
                         {p.by === 'policy' ? ' (policy)' : ''}
-                        {p.advice ? <span className="hint"> “{p.advice}”</span> : null}
+                        {p.advice ? <span className="hint"> “{englishDisplay(p.advice)}”</span> : null}
                       </li>
                     ))}
                   </ul>
@@ -255,7 +255,7 @@ function Comparison({ data }: { data: CompareView }) {
               ref={d && it.index === d.index && side === 'a' ? mark : undefined}
               className={d && it.index === d.index ? 'diverge' : d && it.index > d.index ? 'after-diverge' : ''}
             >
-              <span className="muted">R{it.round}</span> {it.text}
+              <span className="muted">R{it.round}</span> {englishDisplay(it.text)}
             </li>
           ))}
         </ol>

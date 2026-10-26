@@ -1,33 +1,38 @@
 /**
  * Draft: the request for assistance as the clerk sees it — terms (editable within the catalog ranges), version,
- * Shi Jingtang's approval, dispatch timing, the negotiation as far as the clerk knows it, the council's
- * suggestions, the goal and standing authorizations. "Transmit" is the player's own decision (player-initiated:
- * no pause), so it asks for confirmation first.
+ * Shi Jingtang's approval (his seal is stamped on when it comes), dispatch timing, the negotiation track as far as
+ * the clerk knows it, the council's suggestions, the goal and standing authorizations. "Transmit" is the player's
+ * own decision (player-initiated: no pause), so it asks for confirmation first.
  */
 import { useEffect, useState } from 'react';
 import type { InputResult, Lang, StateView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
-import { englishDisplay, fmt, t } from '../labels';
+import { useJustChanged } from '../hooks';
+import { displayValue, englishDisplay, t, termValueText } from '../labels';
+import { notePresentation, noteToSubmit } from '../note-editor';
+import { NegotiationTrack } from './NegotiationTrack';
 import { TermsEditor, TermsTable, burdenOf, limitsSummary, toDraft, type TermsDraft } from './terms';
-import { Badge, Empty, ErrorNote, Section } from './ui';
+import { Badge, Empty, ErrorNote, Section, Stamp } from './ui';
 
 export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { sessionId: string; state: StateView; lang: Lang; onChanged: () => void; onTransmit: () => void }) {
   const doc = state.document;
   const catalog = state.catalog;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<TermsDraft | null>(doc ? toDraft(doc.terms) : null);
-  const [note, setNote] = useState(doc?.note ?? '');
+  const [note, setNote] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [timing, setTiming] = useState<{ mode: string; rounds: number }>({ mode: doc?.timing.mode ?? 'now', rounds: 1 });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const yourTurn = state.control.state === 'awaiting_player';
+  // Shi's seal is stamped down when his approval comes to cover the current version.
+  const sealFresh = useJustChanged(doc?.approvedCurrent ? `${doc.docId}:${doc.approval?.version ?? doc.version}` : null);
 
   useEffect(() => {
     if (!editing && doc) {
       setDraft(toDraft(doc.terms));
-      setNote(doc.note);
+      setNote(null);
     }
   }, [doc?.version, editing]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -58,7 +63,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
   };
 
   const revise = (): Promise<void> =>
-    act({ type: 'revise_document', args: { docId: doc.docId, baseDocVersion: doc.version, terms: draft, note } }, () => setEditing(false));
+    act({ type: 'revise_document', args: { docId: doc.docId, baseDocVersion: doc.version, terms: draft, note: noteToSubmit(note, doc.note) } }, () => setEditing(false));
 
   const suggest = (): Promise<void> => {
     const current = toDraft(doc.terms) as unknown as Record<string, unknown>;
@@ -76,6 +81,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
 
   const goalMax = state.world.goal.limits.burden_max;
   const draftBurden = burdenOf(draft as unknown as Record<string, unknown>, catalog);
+  const noteDisplay = notePresentation(doc.note, doc.terms, catalog, lang);
 
   return (
     <section className="panel draft" aria-labelledby="draft-title">
@@ -97,6 +103,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
           ) : (
             <Badge tone="muted">not approved</Badge>
           )}
+          {doc.approvedCurrent ? <Stamp glyph="印" fresh={sealFresh} /> : null}
         </div>
       </div>
 
@@ -105,7 +112,8 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
           <TermsEditor value={draft} onChange={setDraft} catalog={catalog} lang={lang} knownClauses={doc.terms.secret_clauses} />
           <div className="field">
             <label htmlFor="doc-note">Note</label>
-            <input id="doc-note" type="text" value={note} onChange={(e) => setNote(e.target.value)} />
+            <input id="doc-note" type="text" value={note ?? noteDisplay.text} onChange={(e) => setNote(e.target.value)} aria-describedby={noteDisplay.summarized ? 'doc-note-help' : undefined} />
+            {noteDisplay.summarized ? <p id="doc-note-help" className="hint">English summary of the recorded draft terms, not a translation of the original note. The original note is kept unless you edit this field.</p> : null}
           </div>
           <div className="field">
             <label htmlFor="sug-reason">Reason (for a suggestion)</label>
@@ -127,7 +135,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
       ) : (
         <>
           <TermsTable terms={doc.terms} catalog={catalog} lang={lang} />
-          {doc.note ? <p className="doc-note">{englishDisplay(doc.note)}</p> : null}
+          {doc.note ? <p className="doc-note">{noteDisplay.text}{noteDisplay.summarized ? <span className="hint"> (English terms summary; original note preserved.)</span> : null}</p> : null}
           <div className="row">
             <button type="button" className="btn-secondary" disabled={!yourTurn || doc.status === 'sent'} onClick={() => setEditing(true)}>
               Edit terms
@@ -181,39 +189,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
       <ErrorNote error={error} />
 
       <Section title="Negotiation as you know it">
-        {state.world.negotiation.offers.length === 0 ? (
-          <Empty>No offer has been sent or received that you know of.</Empty>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Offer</th>
-                <th>From → to</th>
-                <th>Terms v</th>
-                <th>You believe</th>
-                <th>Segment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.world.negotiation.offers.map((o) => (
-                <tr key={o.offerId}>
-                  <td>{o.offerId}</td>
-                  <td>
-                    {o.fromName.en} → {o.toName.en}
-                  </td>
-                  <td>{o.termsVersion}</td>
-                  <td>{o.believedStatus ?? 'unknown'}</td>
-                  <td>
-                    {o.segment}.{o.segmentRound}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        <p className="hint">
-          Segment {state.world.negotiation.segment}: {state.world.negotiation.roundsUsed} of 2 negotiation rounds used.
-        </p>
+        <NegotiationTrack track={state.negotiationTrack} negotiation={state.world.negotiation} catalog={catalog} lang={lang} draft={doc} terminal={state.world.terminal} />
       </Section>
 
       {doc.suggestions.length > 0 ? (
@@ -224,7 +200,10 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
                 <strong>{s.byName.en}</strong> on v{s.targetVersion} (R{s.round}):{' '}
                 {Object.entries(s.terms)
                   .filter(([, v]) => v !== null)
-                  .map(([k, v]) => `${t(catalog.terms.find((e) => e.key === k)?.label ?? { zh: k, en: k }, lang)} ${termValue(k, v, catalog, lang)}`)
+                  .map(([k, v]) => {
+                    const term = catalog.terms.find((e) => e.key === k);
+                    return `${t(term?.label ?? { zh: k, en: k }, lang)} ${termValueText(term, v, lang)}`;
+                  })
                   .join('; ') || '—'}
                 <span className="hint"> — {englishDisplay(s.reason)}</span>
               </li>
@@ -270,29 +249,11 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
               <span className="muted">
                 {b.subject} · {b.predicate} · day {b.asOfDay} · {b.evidence.kind}
               </span>{' '}
-              {beliefText(b.value, lang)}
+              {displayValue(b.value, lang)}
             </li>
           ))}
         </ul>
       </details>
     </section>
   );
-}
-
-function termValue(key: string, v: unknown, catalog: StateView['catalog'], lang: Lang): string {
-  if (typeof v === 'boolean') return v ? (lang === 'zh' ? '是' : 'yes') : lang === 'zh' ? '否' : 'no';
-  if (typeof v === 'number') return fmt(v);
-  const label = catalog.terms.find((e) => e.key === key)?.values.find((o) => o.value === v)?.label;
-  return label ? t(label, lang) : String(v);
-}
-
-function beliefText(value: unknown, lang: Lang): string {
-  if (typeof value === 'string') return value;
-  if (value && typeof value === 'object') {
-    const v = value as Record<string, unknown>;
-    if (typeof v.zh === 'string' && typeof v.en === 'string') return lang === 'zh' ? v.zh : v.en;
-    if (typeof v.status === 'string') return v.status;
-    return JSON.stringify(value).slice(0, 160);
-  }
-  return String(value);
 }

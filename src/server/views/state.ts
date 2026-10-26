@@ -5,6 +5,7 @@
 import { playerView, canAccessDocument } from '../../core/knowledge.js';
 import { compareIds, own } from '../../core/ids.js';
 import { documentPair } from '../../core/negotiation.js';
+import { siegeNumbers } from '../../core/siege.js';
 import { TERM_SEMANTICS, limitBurden, payerFor, withinLimits } from '../../core/terms.js';
 import { TermLimitsSchema } from '../../content/schema.js';
 import { CESSION_VALUES, CHAR_IDS, SCALAR_TERM_KEYS, type CharId, type Document, type PairId, type TermSet } from '../../core/types.js';
@@ -27,6 +28,8 @@ import type { SessionCtx } from '../context.js';
 import { sanitizeForPlayer } from '../guard.js';
 import { Projection } from '../projection.js';
 import { actionType, describeAction, nameOf, placeOf, playerSeesActor, termsFor } from './common.js';
+import { negotiationTrack } from './negotiation-track.js';
+import { siegeWatch } from './siege-watch.js';
 
 export const LIMIT_KEYS = Object.keys(TermLimitsSchema.shape);
 
@@ -293,11 +296,16 @@ export function stateView(
   const doc = playerDocument(ctx);
   const pair = doc ? (documentPair(ctx.state, ctx.config, doc) ?? 'hedong-khitan') : 'hedong-khitan';
   const pause = pending ? ctx.harness.repo.findPause(pending.pauseId) : null;
+  const world = worldView(ctx, viewer);
   const view: StateView = {
     view: viewer,
     session: base.session,
     control: base.control,
-    world: worldView(ctx, viewer),
+    world,
+    // Hedong's own grain and the siege are what the clerk sees at headquarters (the same numbers as `world`).
+    siegeWatch: siegeWatch(siegeNumbers(ctx.state), ctx.config.params, { maxRounds: ctx.caseConfig.max_rounds, ended: base.session.ended }),
+    // In both views: what the clerk knows of the negotiation (the director sees the rest in the inspector).
+    negotiationTrack: negotiationTrack(ctx, world.negotiation.offers),
     characters: characters(ctx),
     player: {
       name: { ...ctx.names.player.name },
