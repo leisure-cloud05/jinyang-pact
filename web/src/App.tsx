@@ -227,6 +227,8 @@ export function App() {
         {s && sessionId ? (
           <>
             {area === 'play' ? (
+              <>
+              <PlayGuide lang={lang} state={s.control.state} />
               <div className="play-grid">
                 <div className="play-main">
                   <StoryPanel sessionId={sessionId} state={s} view={view} tick={live.tick} lang={lang} onLang={setStoryLang} startNote={config?.scenario.startNote ?? null} />
@@ -244,6 +246,7 @@ export function App() {
                   <DraftPanel sessionId={sessionId} state={s} lang={lang} onChanged={live.refresh} onTransmit={() => setTransmit(true)} />
                 </aside>
               </div>
+              </>
             ) : null}
             {area === 'inspector' ? <InspectorPanel sessionId={sessionId} state={s} view={view} tick={live.tick} lang={lang} /> : null}
             {area === 'timeline' ? <TimelinePanel sessionId={sessionId} view={view} tick={live.tick} lang={lang} sessions={sessions} onOpen={open} /> : null}
@@ -286,6 +289,25 @@ export function App() {
   );
 }
 
+function PlayGuide({ lang, state }: { lang: Lang; state: string }) {
+  const zh = lang === 'zh';
+  const active = state === 'awaiting_decision' ? 3 : state === 'awaiting_player' ? 2 : 1;
+  return (
+    <section className="play-guide" aria-label={zh ? '游玩指引' : 'How to play'}>
+      <div className="guide-intro">
+        <span className="guide-kicker">{zh ? '晋阳帅府 · 书记视角' : 'JINYANG · THE CLERK’S VIEW'}</span>
+        <h1>{zh ? '你执笔，诸人自决。' : 'You write. They decide.'}</h1>
+        <p>{zh ? '向在场人物进言，查看表稿，再交由诸人商议。你不能替任何人作出承诺。' : 'Speak to those present, review the draft, then let the council deliberate. You cannot promise on anyone’s behalf.'}</p>
+      </div>
+      <ol className="guide-steps">
+        <li className={active === 1 ? 'guide-active' : ''}><span>01</span><strong>{zh ? '看局势' : 'Read'}</strong><small>{zh ? '左侧纪事' : 'Story at left'}</small></li>
+        <li className={active === 2 ? 'guide-active' : ''}><span>02</span><strong>{zh ? '发言或改稿' : 'Speak or edit'}</strong><small>{zh ? '右侧帅府与表稿' : 'Council and draft'}</small></li>
+        <li className={active === 3 ? 'guide-active' : ''}><span>03</span><strong>{zh ? '听取回应' : 'Respond'}</strong><small>{zh ? '结束回合；必要时裁决' : 'End turn; decide if asked'}</small></li>
+      </ol>
+    </section>
+  );
+}
+
 function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: { state: NonNullable<ReturnType<typeof useLiveSession>['state']>; busy: boolean; onAdvance: () => void; onOpenDecision: () => void; onReview: () => void; lang: Lang }) {
   const c = state.control;
   let body;
@@ -294,10 +316,10 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: {
       body = (
         <>
           <p>
-            <strong>Your turn.</strong> Speak to the council, revise the draft or set its timing — then let the council deliberate.
+            <strong>{lang === 'zh' ? '轮到你了。' : 'Your turn.'}</strong> {lang === 'zh' ? '可向在场人物发言、建议或修改表稿；准备好后结束回合，让他们商议。' : 'Speak to the council, revise the draft or set its timing — then let the council deliberate.'}
           </p>
           <button type="button" className="btn" disabled={busy} onClick={onAdvance}>
-            End turn →
+            {lang === 'zh' ? '结束回合，让诸人商议 →' : 'End turn →'}
           </button>
         </>
       );
@@ -306,10 +328,10 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: {
       body = (
         <>
           <p>
-            <strong>A decision is needed:</strong> {state.pendingPause ? (CATEGORY_LABELS[state.pendingPause.category] ?? state.pendingPause.category) : ''}
+            <strong>{lang === 'zh' ? '需要你的决定：' : 'A decision is needed:'}</strong> {state.pendingPause ? (CATEGORY_LABELS[state.pendingPause.category] ?? state.pendingPause.category) : ''}
           </p>
           <button type="button" className="btn" onClick={onOpenDecision}>
-            Open the decision
+            {lang === 'zh' ? '查看并决定' : 'Open the decision'}
           </button>
         </>
       );
@@ -318,7 +340,7 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: {
     case 'starting':
       body = (
         <p className="working" aria-live="polite">
-          <span className="spinner" aria-hidden="true" /> The council deliberates (conversation step {Math.min(c.interactionStep + 1, c.interactionStepLimit)} of {c.interactionStepLimit}){c.lastStep ? ` · ${c.lastStep}` : ''}…
+          <span className="spinner" aria-hidden="true" /> {lang === 'zh' ? '诸人正在商议' : 'The council deliberates'} ({lang === 'zh' ? '交互步骤' : 'conversation step'} {Math.min(c.interactionStep + 1, c.interactionStepLimit)} / {c.interactionStepLimit}){c.lastStep ? ` · ${c.lastStep}` : ''}…
         </p>
       );
       break;
@@ -326,10 +348,10 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview, lang }: {
       body = (
         <>
           <p>
-            <strong>Suspended:</strong> {c.suspendedReason ?? 'a limit was reached'}. The open batch and pauses are kept.
+            <strong>{lang === 'zh' ? '运行已暂停：' : 'Suspended:'}</strong> {c.suspendedReason ?? 'a limit was reached'}. {lang === 'zh' ? '未完成的对话和决定已保留。' : 'The open batch and pauses are kept.'}
           </p>
           <button type="button" className="btn" disabled={busy} onClick={onAdvance}>
-            {c.suspendedReason?.toLowerCase().includes('budget') ? 'Add 50 calls (up to $0.25) and resume' : 'Resume'}
+            {c.suspendedReason?.toLowerCase().includes('budget') ? (lang === 'zh' ? '追加 50 次调用并继续（最多 $0.25）' : 'Add 50 calls (up to $0.25) and resume') : (lang === 'zh' ? '继续' : 'Resume')}
           </button>
         </>
       );

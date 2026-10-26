@@ -37,6 +37,17 @@ export function NewSessionDialog({ config, onCreated, onCancel }: { config: Serv
   return (
     <Dialog title="New session" onEscape={onCancel ?? undefined}>
       <div className="form">
+        {config.configs.some((c) => c.id === 'D1') ? (
+          <div className="demo-callout">
+            <div>
+              <strong>{lang === 'zh' ? '第一次来？先看一场帅府议事。' : 'New here? Start with a council scene.'}</strong>
+              <p>{lang === 'zh' ? 'D1 会安排书记的示范台词；离线模拟角色回应，不花费模型费用。进入后点“结束回合”即可开始。' : 'D1 adds the clerk’s sample lines. Mock characters answer offline at no model cost. Begin, then end your turn.'}</p>
+            </div>
+            <button type="button" className="btn-secondary" onClick={() => { setCaseId('D1'); setMode('full'); setLang('zh'); setLlm('mock'); setScript(true); }}>
+              {lang === 'zh' ? '选用离线示范' : 'Use offline demo'}
+            </button>
+          </div>
+        ) : null}
         <div className="field">
           <label htmlFor="ns-case">Configuration</label>
           <select id="ns-case" value={caseId} onChange={(e) => setCaseId(e.target.value)} data-autofocus>
