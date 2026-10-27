@@ -216,6 +216,8 @@ export interface DraftView {
   history: Array<{ version: number; by: string; byName: L10n; round: number }>;
   /** Whether the player may transmit now (the harness decides; this is a hint). */
   transmit: { ok: boolean; reason: string | null };
+  /** The dispatch, once the document went out: the version sent, the day, and who sent it (`player`: the clerk). */
+  sent: { version: number; day: number; by: string } | null;
   suggestions: SuggestionView[];
 }
 

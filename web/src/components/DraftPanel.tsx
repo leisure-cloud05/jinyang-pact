@@ -2,11 +2,13 @@
  * Draft: the request for assistance as the clerk sees it — terms (editable within the catalog ranges), version,
  * Shi Jingtang's approval (his seal is stamped on when it comes), dispatch timing, the negotiation track as far as
  * the clerk knows it, the council's suggestions, the goal and standing authorizations. "Transmit" is the player's
- * own decision (player-initiated: no pause), so it asks for confirmation first.
+ * own decision (player-initiated: no pause), so it opens the dispatch ceremony for a last review first; the clerk's
+ * seal (遣) then stays on the draft beside Shi's.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { InputResult, Lang, StateView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
+import { DISPATCH_GLYPH } from '../dispatch';
 import { useJustChanged } from '../hooks';
 import { displayValue, englishDisplay, t, termValueText } from '../labels';
 import { notePresentation, noteToSubmit } from '../note-editor';
@@ -16,7 +18,7 @@ import { NegotiationTrack } from './NegotiationTrack';
 import { TermsEditor, TermsTable, burdenOf, limitsSummary, toDraft, type TermsDraft } from './terms';
 import { Badge, Dialog, Empty, ErrorNote, Section, Stamp } from './ui';
 
-export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { sessionId: string; state: StateView; lang: Lang; onChanged: () => void; onTransmit: () => void }) {
+export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit, editRequest }: { sessionId: string; state: StateView; lang: Lang; onChanged: () => void; onTransmit: () => void; editRequest: number }) {
   const doc = state.document;
   const catalog = state.catalog;
   const [editing, setEditing] = useState(false);
@@ -32,6 +34,9 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
   const closeEditor = useCallback(() => { if (!busy) setEditing(false); }, [busy]);
   // Shi's seal is stamped down when his approval comes to cover the current version.
   const sealFresh = useJustChanged(doc?.approvedCurrent ? `${doc.docId}:${doc.approval?.version ?? doc.version}` : null);
+  // The clerk's own seal stays on the draft as the record of a dispatch the player confirmed.
+  const sentByYou = doc?.sent?.by === 'player' ? doc.sent : null;
+  const dispatchFresh = useJustChanged(sentByYou ? `${doc?.docId}:${sentByYou.version}` : null);
 
   useEffect(() => {
     if (!editing && doc) {
@@ -39,6 +44,24 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
       setNote(null);
     }
   }, [doc?.version, editing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openEditor = (): void => {
+    if (!doc) return;
+    setDraft(toDraft(doc.terms));
+    setEditVersion(doc.version);
+    setNote(null);
+    setReason('');
+    setError(null);
+    setResult(null);
+    setEditing(true);
+  };
+  // "Back to edit" in the dispatch confirmation opens the editor on the current version.
+  const editSeen = useRef(editRequest);
+  useEffect(() => {
+    if (editRequest === editSeen.current) return;
+    editSeen.current = editRequest;
+    openEditor();
+  }, [editRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!doc || !draft) {
     return (
@@ -88,20 +111,11 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
   const draftViolations = draftGoalViolations(draft as unknown as Record<string, unknown>, state.world.goal.limits, catalog, doc.terms.secret_clauses);
   const noteDisplay = notePresentation(doc.note, doc.terms, catalog, lang);
   const staleEdit = editing && editVersion !== doc.version;
-  const openEditor = (): void => {
-    setDraft(toDraft(doc.terms));
-    setEditVersion(doc.version);
-    setNote(null);
-    setReason('');
-    setError(null);
-    setResult(null);
-    setEditing(true);
-  };
 
   return (
     <section className="panel draft" aria-labelledby="draft-title">
       <div className="panel-head">
-        <h2 id="draft-title">
+        <h2 id="draft-title" tabIndex={-1}>
           Request for assistance <span className="muted">→ {doc.toName.en}</span>
         </h2>
         <div className="badges">
@@ -119,6 +133,14 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
             <Badge tone="muted">not approved</Badge>
           )}
           {doc.approvedCurrent ? <Stamp glyph="印" fresh={sealFresh} /> : null}
+          {sentByYou ? (
+            <span className="seal-pair">
+              <Badge tone="ok" title="You sent this version: your seal records the dispatch, not anyone's consent">
+                sent by you · v{sentByYou.version} · day {sentByYou.day}
+              </Badge>
+              <Stamp glyph={DISPATCH_GLYPH} fresh={dispatchFresh} />
+            </span>
+          ) : null}
         </div>
       </div>
 

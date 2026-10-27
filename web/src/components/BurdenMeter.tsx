@@ -13,9 +13,10 @@ const SHORT_LABELS: Record<string, { zh: string; en: string }> = {
 const COLORS: Record<string, string> = { vassal: '#6885b5', filial: '#a078ad', cession: '#bb754a', annual_silk: '#bd9b45', immediate_silk: '#4c9693', neutrality: '#888db4', marriage_alliance: '#ba748b' };
 const number = (value: number): string => value.toLocaleString('en', { maximumFractionDigits: 2 });
 
-export function BurdenMeter({ terms, catalog, goal, total, violations = [], lang, knownClauses = [], preview = false }: {
+/** `compact` keeps the total, the verdict and the stacked bar (for a document under review), without the breakdown. */
+export function BurdenMeter({ terms, catalog, goal, total, violations = [], lang, knownClauses = [], preview = false, compact = false }: {
   terms: Record<string, unknown>; catalog: CatalogView; goal: unknown; total: number;
-  violations?: string[]; lang: Lang; knownClauses?: TermsView['secret_clauses']; preview?: boolean;
+  violations?: string[]; lang: Lang; knownClauses?: TermsView['secret_clauses']; preview?: boolean; compact?: boolean;
 }) {
   const zh = lang === 'zh';
   const parts = burdenBreakdown(terms, catalog, knownClauses);
@@ -23,7 +24,7 @@ export function BurdenMeter({ terms, catalog, goal, total, violations = [], lang
   const over = scale.excess > 0;
   const biggest = Math.max(0, ...parts.map((p) => p.amount));
   return (
-    <div className={`meter burden-meter ${over ? 'meter-bad' : 'meter-ok'}`}>
+    <div className={`meter burden-meter ${over ? 'meter-bad' : 'meter-ok'} ${compact ? 'burden-compact' : ''}`}>
       <div className="burden-heading">
         <span className="small-head">{preview ? zh ? '调整后的负担' : 'Burden preview' : zh ? '协议负担' : 'Treaty burden'}</span>
         <span className="burden-total">{number(total)}{scale.limit !== null ? <small> / {number(scale.limit)}</small> : null}</span>
@@ -49,8 +50,8 @@ export function BurdenMeter({ terms, catalog, goal, total, violations = [], lang
         {scale.limit !== null && scale.limit > 0 ? <span className="burden-goal-label" style={{ left: `${scale.safe}%` }}>{zh ? '目标' : 'Goal'} {number(scale.limit)}</span> : null}
         <span className="burden-range-label">{zh ? '刻度' : 'Scale'} {number(scale.max)}</span>
       </div>
-      {scale.limit !== null ? <p className="burden-zone-key"><span>● {zh ? '目标内' : 'Within cap'} ≤ {number(scale.limit)}</span><span>● {zh ? '越界' : 'Over'} ≤ {number(scale.limit * 1.25)}</span><span>● {zh ? '严重超限' : 'High'} &gt; {number(scale.limit * 1.25)}</span></p> : null}
-      {parts.length > 0 ? <ul className="burden-parts">
+      {scale.limit !== null && !compact ? <p className="burden-zone-key"><span>● {zh ? '目标内' : 'Within cap'} ≤ {number(scale.limit)}</span><span>● {zh ? '越界' : 'Over'} ≤ {number(scale.limit * 1.25)}</span><span>● {zh ? '严重超限' : 'High'} &gt; {number(scale.limit * 1.25)}</span></p> : null}
+      {compact ? null : parts.length > 0 ? <ul className="burden-parts">
         {parts.map((part) => {
           const after = Math.max(0, Math.round((total - part.amount) * 1e6) / 1e6);
           return <li key={part.key}>
@@ -63,7 +64,7 @@ export function BurdenMeter({ terms, catalog, goal, total, violations = [], lang
         })}
       </ul> : <p className="hint">{zh ? '当前无负担条款。' : 'No burden-bearing terms.'}</p>}
       {violations.length > 0 ? <div className="burden-violations"><Badge tone="bad">{zh ? '目标条件未满足' : 'Goal conditions not met'}</Badge><p className="hint">{violations.join('; ')}</p></div> : null}
-      <p className="burden-footnote hint">{zh ? '负担分衡量条款代价；实际财帛与割地义务见条款。' : 'Burden points measure concessions. See the terms for actual payments and territorial obligations.'}</p>
+      {compact ? null : <p className="burden-footnote hint">{zh ? '负担分衡量条款代价；实际财帛与割地义务见条款。' : 'Burden points measure concessions. See the terms for actual payments and territorial obligations.'}</p>}
     </div>
   );
 }

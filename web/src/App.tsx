@@ -7,7 +7,8 @@ import type { Lang, ServerConfigView, SessionListItem, StateView, ViewMode } fro
 import { errorText, getJson, postJson, sessionUrl } from './api';
 import { CouncilPanel } from './components/CouncilPanel';
 import { DecisionModal } from './components/DecisionModal';
-import { DirectorDialog, NewSessionDialog, TransmitDialog } from './components/dialogs';
+import { DirectorDialog, NewSessionDialog } from './components/dialogs';
+import { DispatchCeremony } from './components/DispatchCeremony';
 import { DraftPanel } from './components/DraftPanel';
 import { EndingPlayer, endingPlayed, markEndingPlayed, preloadEndingArt } from './components/EndingPlayer';
 import { InspectorPanel } from './components/InspectorPanel';
@@ -37,6 +38,9 @@ export function App() {
   const [showNew, setShowNew] = useState(false);
   const [modalHidden, setModalHidden] = useState(false);
   const [transmit, setTransmit] = useState(false);
+  // "Back to edit" in the dispatch confirmation reopens the draft editor; after a dispatch, focus returns to the draft.
+  const [editRequest, setEditRequest] = useState(0);
+  const [dispatched, setDispatched] = useState(false);
   const [askDirector, setAskDirector] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +73,13 @@ export function App() {
     setReviewPact(false);
     document.getElementById('negotiation-title')?.scrollIntoView({ block: 'start' });
   }, [reviewPact, showEnding]);
+
+  // Once the sealed scroll has closed, focus the draft, which now carries the clerk's seal (the Transmit button is off).
+  useEffect(() => {
+    if (!dispatched || transmit) return;
+    setDispatched(false);
+    document.getElementById('draft-title')?.focus();
+  }, [dispatched, transmit]);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -273,7 +284,7 @@ export function App() {
                 <aside className="play-side" aria-label="Council and draft">
                   <SiegeWatch watch={s.siegeWatch} control={s.control} lang={lang} />
                   <CouncilPanel sessionId={sessionId} state={s} view={view} tick={live.tick} lang={lang} onChanged={live.refresh} onConfirmTransmit={() => setTransmit(true)} />
-                  <DraftPanel sessionId={sessionId} state={s} lang={lang} onChanged={live.refresh} onTransmit={() => setTransmit(true)} />
+                  <DraftPanel sessionId={sessionId} state={s} lang={lang} onChanged={live.refresh} onTransmit={() => setTransmit(true)} editRequest={editRequest} />
                 </aside>
               </div>
               </>
@@ -292,13 +303,19 @@ export function App() {
         <DecisionModal key={pause.id} sessionId={sessionId} state={s} pause={pause} lang={lang} onHide={() => setModalHidden(true)} onDone={live.refresh} />
       ) : null}
       {transmit && s && sessionId ? (
-        <TransmitDialog
+        <DispatchCeremony
           sessionId={sessionId}
           state={s}
           lang={lang}
           onCancel={() => setTransmit(false)}
+          onEdit={() => {
+            setTransmit(false);
+            setEditRequest((n) => n + 1);
+          }}
+          onChanged={live.refresh}
           onDone={(msg) => {
             setTransmit(false);
+            setDispatched(true);
             setBanner(msg);
             live.refresh();
           }}

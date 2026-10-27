@@ -1174,6 +1174,9 @@ details > summary {
 .burden-footnote { margin: 12px 0 0; font-size: 0.7rem; }
 .burden-violations { margin-top: 12px; }
 .burden-violations p { margin: 4px 0; }
+.burden-compact { padding: 10px 14px; }
+.burden-compact .burden-total { font-size: 1.4rem; }
+.burden-compact .burden-verdict { min-height: 0; margin-top: 2px; }
 .parchment-shell {
   width: min(1080px, 100%);
   min-width: 0;
@@ -1745,6 +1748,7 @@ details > summary {
 }
 
 /* ------------------------------------------------------------------ private counsel */
+.council { container-type: inline-size; }
 .whisper {
   display: flex;
   flex-wrap: wrap;
@@ -1767,6 +1771,38 @@ details > summary {
 .whisper .hint {
   flex-basis: 100%;
   margin: 2px 0 0;
+}
+.speak-composer.has-example {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
+  gap: 12px;
+  align-items: start;
+}
+.speak-entry { min-width: 0; }
+.speak-example {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.speak-example-head { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.speak-example-head strong { font-size: 0.82rem; color: var(--ink-2); }
+.speak-example-close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+.speak-example-close:hover { color: var(--ink); }
+.speak-example-topic { margin: 7px 0 4px; color: var(--accent); font-weight: 600; font-size: 0.86rem; }
+.speak-example-text { margin: 0; color: var(--ink-2); font-size: 0.9rem; line-height: 1.5; }
+@container (max-width: 600px) {
+  .speak-composer.has-example { grid-template-columns: minmax(0, 1fr); }
+  .speak-example { grid-row: 1; }
 }
 
 /* ------------------------------------------------------------------ negotiation track and action echoes */
@@ -1941,6 +1977,297 @@ details > summary {
   }
   to {
     transform: rotate(-8deg) scale(1);
+  }
+}
+
+/* ------------------------------------------------------------------ dispatch ceremony */
+/* The clerk's last review before the request goes out: the filled-in document unrolls between two rolled edges. Once
+   the server has committed the dispatch, the clerk's seal (遣) goes down with a brief ember glow at its edges, stays
+   to be read, and the scroll rolls up from both ends. Every animated layer rests on its final frame. */
+.seal-backdrop {
+  animation: seal-dim 0.3s ease both;
+}
+.seal-backdrop.phase-rolling {
+  animation: seal-undim 0.5s ease 0.1s both;
+}
+@keyframes seal-dim {
+  from {
+    background-color: transparent;
+  }
+}
+@keyframes seal-undim {
+  to {
+    background-color: transparent;
+  }
+}
+.parchment-shell.seal-scroll {
+  position: relative;
+  width: min(860px, 100%);
+}
+.seal-doc .parchment-subtitle {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+}
+.seal-scroll.phase-rolling {
+  animation: seal-fade 0.6s linear both;
+}
+@keyframes seal-fade {
+  80% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.seal-sheet {
+  clip-path: inset(0);
+  animation: seal-unroll 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes seal-unroll {
+  from {
+    clip-path: inset(50% 0);
+  }
+}
+.phase-rolling .seal-sheet {
+  animation: seal-rollup 0.6s cubic-bezier(0.55, 0, 0.75, 0.4) both;
+}
+@keyframes seal-rollup {
+  80%,
+  to {
+    clip-path: inset(50% 0);
+  }
+}
+/* The rolled edges: parchment wound on a rod, with dark wooden ends. */
+.seal-roller {
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  z-index: 2;
+  height: 18px;
+  border-radius: 9px;
+  background: linear-gradient(#f0d49c, #c69a58 38%, #8a5e2c 72%, #5a3916);
+  box-shadow: 0 3px 6px #0007, inset 0 1px 0 #fff3d6a0;
+  pointer-events: none;
+}
+.seal-roller::before,
+.seal-roller::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  width: 12px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(#5b3a1c, #2e1b0b);
+}
+.seal-roller::before {
+  left: -9px;
+}
+.seal-roller::after {
+  right: -9px;
+}
+.seal-roller-top {
+  top: -9px;
+  animation: seal-roller-top 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.seal-roller-bottom {
+  bottom: -9px;
+  animation: seal-roller-bottom 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes seal-roller-top {
+  from {
+    top: calc(50% - 18px);
+  }
+}
+@keyframes seal-roller-bottom {
+  from {
+    bottom: calc(50% - 18px);
+  }
+}
+.phase-rolling .seal-roller-top {
+  animation: seal-roller-top-in 0.6s cubic-bezier(0.55, 0, 0.75, 0.4) both;
+}
+.phase-rolling .seal-roller-bottom {
+  animation: seal-roller-bottom-in 0.6s cubic-bezier(0.55, 0, 0.75, 0.4) both;
+}
+@keyframes seal-roller-top-in {
+  80%,
+  to {
+    top: calc(50% - 18px);
+  }
+}
+@keyframes seal-roller-bottom-in {
+  80%,
+  to {
+    bottom: calc(50% - 18px);
+  }
+}
+/* The clerk's seal stays on the draft beside the label that says what it records. */
+.seal-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.seal-facts {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+}
+.seal-facts > div {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+.seal-facts dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.seal-facts dd {
+  margin: 0;
+}
+.seal-facts .stamp {
+  width: 22px;
+  height: 22px;
+  margin-right: 4px;
+  font-size: 0.78rem;
+  vertical-align: -5px;
+}
+.seal-doc .meter {
+  margin-top: 10px;
+}
+.seal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.seal-foot-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.seal-foot .dialog-actions {
+  margin: 0;
+}
+.seal-declaration {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+}
+.seal-slot {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+}
+.seal-place {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+/* The seal: it drops, its edges glow like embers for a moment, the paper scorches under it and the vermilion comes up. */
+.seal-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border: 4px solid #e2492d;
+  border-radius: 6px;
+  color: #e2492d;
+  background: color-mix(in srgb, #e2492d 14%, transparent);
+  font-family: var(--serif);
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: none;
+  transform: rotate(-6deg);
+  animation:
+    seal-drop 0.26s cubic-bezier(0.55, 0, 0.9, 0.55) both,
+    seal-ink 0.5s ease 0.3s both;
+}
+.seal-mark b {
+  position: relative;
+  z-index: 1;
+}
+@keyframes seal-drop {
+  from {
+    opacity: 0;
+    transform: rotate(-6deg) translateY(-30px) scale(1.55);
+  }
+}
+@keyframes seal-ink {
+  from {
+    color: #3b0f07;
+    border-color: #3b0f07;
+    background-color: transparent;
+  }
+}
+.seal-scorch {
+  position: absolute;
+  inset: -16px;
+  border-radius: 16px;
+  background: radial-gradient(closest-side, #2a12058c, #3d1a0866 62%, transparent);
+  pointer-events: none;
+  animation: seal-scorch 0.55s ease-out 0.25s both;
+}
+@keyframes seal-scorch {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+.seal-fire {
+  position: absolute;
+  inset: -7px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px #ffb070a0, 0 0 10px 3px #e2581d, 0 0 22px 8px #8f1d0b;
+  opacity: 0;
+  pointer-events: none;
+  animation: seal-fire 0.48s ease-out 0.24s both;
+}
+@keyframes seal-fire {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  45% {
+    opacity: 0.65;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+@media (max-width: 520px) {
+  .seal-facts > div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .seal-foot {
+    flex-wrap: wrap;
   }
 }
 
@@ -2600,7 +2927,10 @@ details > summary {
   .stamp-fresh,
   .token-travel,
   .road-end.pulse .avatar,
-  .cg * {
+  .cg *,
+  .seal-backdrop,
+  .seal-scroll,
+  .seal-scroll * {
     animation: none !important;
   }
   .token,

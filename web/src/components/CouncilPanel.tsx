@@ -4,7 +4,7 @@
  * action / dialogue / clarification), the dialogue log, and interrupts. An interrupt reaches everyone present, so
  * private counsel always goes through speech to one listener.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { DialogueView, InputResult, Lang, StateView, ViewMode } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl, viewParam } from '../api';
 import { BEARING_LABELS, BEARING_TONE, readRoom } from '../demeanor';
@@ -14,6 +14,7 @@ import { isPrivateLine, WHISPER_PRESETS, whisperText, type WhisperPreset } from 
 import { CharacterPortrait } from './portrait';
 import { CharacterDialog } from './CharacterDialog';
 import type { ConversationTopic } from '../character-topics';
+import { counselComposer, dialogueInput, visibleCounselExample } from '../counsel-composer';
 import { Badge, ErrorNote, Section } from './ui';
 
 export function CouncilPanel({
@@ -35,14 +36,14 @@ export function CouncilPanel({
 }) {
   const present = state.characters.filter((c) => c.present);
   const away = state.characters.filter((c) => !c.present);
-  const [to, setTo] = useState<string[]>(present.map((c) => c.id));
-  const [text, setText] = useState('');
-  const [mode, setMode] = useState<'speak' | 'command'>('speak');
+  const [composer, dispatch] = useReducer(counselComposer, present, (characters) => ({
+    to: characters.map((c) => c.id), text: '', mode: 'speak' as const, whisperTo: '', example: null,
+  }));
+  const { to, text, mode, whisperTo } = composer;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [instruction, setInstruction] = useState('');
-  const [whisperTo, setWhisperTo] = useState('');
   const [profileId, setProfileId] = useState<string | null>(null);
   const closeProfile = useCallback(() => setProfileId(null), []);
   const profileCharacter = state.characters.find((c) => c.id === profileId);
@@ -53,6 +54,7 @@ export function CouncilPanel({
   const whisperTarget = present.some((c) => c.id === whisperTo) ? whisperTo : (present[0]?.id ?? '');
   // One listener while others are present: only that person hears the line.
   const whispering = mode === 'speak' && to.length === 1 && present.length > 1;
+  const activeExample = visibleCounselExample(composer, present.map((c) => c.id));
   const canInterrupt = state.control.state === 'running' || state.control.state === 'awaiting_decision' || yourTurn;
   const rows = dialogue.data?.rows ?? [];
   useEffect(() => {
@@ -68,13 +70,8 @@ export function CouncilPanel({
     try {
       if (mode === 'speak') {
         if (to.length === 0) throw new Error('Choose at least one listener.');
-        await postJson<InputResult>(sessionUrl(sessionId, 'input'), { kind: 'dialogue', turn: state.control.turn, to, text: text.trim() });
-        setText('');
-        if (whispering) {
-          const name = present.find((c) => c.id === to[0])?.name.en ?? to[0];
-          setNote(`Whispered to ${name}: only they heard it. They may answer as the council deliberates.`);
-          setTo(present.map((c) => c.id));
-        }
+        await postJson<InputResult>(sessionUrl(sessionId, 'input'), dialogueInput(state.control.turn, composer));
+        dispatch({ type: 'sent', to: whispering ? present.map((c) => c.id) : undefined });
       } else {
         const r = await postJson<InputResult>(sessionUrl(sessionId, 'input'), { kind: 'text', turn: state.control.turn, text: text.trim() });
         const m = r.mapped;
@@ -93,7 +90,7 @@ export function CouncilPanel({
         } else {
           setNote('The command could not be interpreted.');
         }
-        if (m?.kind === 'action' || m?.kind === 'dialogue') setText('');
+        if (m?.kind === 'action' || m?.kind === 'dialogue') dispatch({ type: 'text', text: '' });
       }
       onChanged();
     } catch (err) {
@@ -106,9 +103,7 @@ export function CouncilPanel({
 
   const startWhisper = (preset: WhisperPreset): void => {
     if (!whisperTarget) return;
-    setMode('speak');
-    setTo([whisperTarget]);
-    setText(whisperText(preset, lang));
+    dispatch({ type: 'whisper-preset', characterId: whisperTarget, text: whisperText(preset, lang) });
     setNote(null);
     setError(null);
     // Let the player finish the line in the talk box.
@@ -122,14 +117,9 @@ export function CouncilPanel({
 
   const prepareTopic = (topic: ConversationTopic): void => {
     if (!profileCharacter?.present || state.session.ended || busy) return;
-    setMode('speak');
-    setTo([profileCharacter.id]);
-    setWhisperTo(profileCharacter.id);
-    setText(t(topic.text, lang));
+    dispatch({ type: 'topic', characterId: profileCharacter.id, topic });
     setError(null);
-    setNote(lang === 'zh'
-      ? `已准备对${t(profileCharacter.name, lang)}的私下进言草稿。${yourTurn ? '可编辑后发送。' : '待你的下一回合再编辑并发送。'}`
-      : `Private counsel to ${t(profileCharacter.name, lang)} prepared. ${yourTurn ? 'Edit it, then send when ready.' : 'Edit and send it on your next turn.'}`);
+    setNote(null);
     closeProfile();
     requestAnimationFrame(() => {
       talk.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -163,7 +153,7 @@ export function CouncilPanel({
           const read = readRoom(c.id, rows, state.siegeWatch);
           return (
             <li key={c.id}>
-              <button type="button" className="person person-button" onClick={() => setProfileId(c.id)} aria-haspopup="dialog" aria-label={lang === 'zh' ? `查看${t(c.name, lang)}的人物小传` : `View ${t(c.name, lang)}'s profile`}>
+              <button type="button" className="person person-button" onClick={() => { dispatch({ type: 'profile-character', characterId: c.id }); setProfileId(c.id); }} aria-haspopup="dialog" aria-label={lang === 'zh' ? `查看${t(c.name, lang)}的人物小传` : `View ${t(c.name, lang)}'s profile`}>
                 <CharacterPortrait id={c.id} name={c.name.en} />
                 <span className="person-body">
                   <span className="person-line">
@@ -193,10 +183,10 @@ export function CouncilPanel({
 
       <Section title="Speak">
         <div className="seg" role="group" aria-label="Input mode">
-          <button type="button" aria-pressed={mode === 'speak'} onClick={() => setMode('speak')}>
+          <button type="button" aria-pressed={mode === 'speak'} onClick={() => { setNote(null); dispatch({ type: 'mode', mode: 'speak' }); }}>
             Speak to…
           </button>
-          <button type="button" aria-pressed={mode === 'command'} onClick={() => setMode('command')}>
+          <button type="button" aria-pressed={mode === 'command'} onClick={() => { setNote(null); dispatch({ type: 'mode', mode: 'command' }); }}>
             Free-text command
           </button>
         </div>
@@ -205,7 +195,7 @@ export function CouncilPanel({
             <legend className="sr-only">Listeners</legend>
             {present.map((c) => (
               <label key={c.id} className="check">
-                <input type="checkbox" checked={to.includes(c.id)} onChange={(e) => setTo(e.target.checked ? [...to, c.id] : to.filter((x) => x !== c.id))} /> {c.name.en}
+                <input type="checkbox" checked={to.includes(c.id)} onChange={(e) => { setNote(null); dispatch({ type: 'recipients', to: e.target.checked ? [...to, c.id] : to.filter((x) => x !== c.id) }); }} /> {c.name.en}
               </label>
             ))}
           </fieldset>
@@ -217,7 +207,7 @@ export function CouncilPanel({
             <label id="whisper-label" htmlFor="whisper-to" className="whisper-label">
               Whisper privately to
             </label>
-            <select id="whisper-to" value={whisperTarget} disabled={!yourTurn || busy} onChange={(e) => setWhisperTo(e.target.value)}>
+            <select id="whisper-to" value={whisperTarget} disabled={!yourTurn || busy} onChange={(e) => { setNote(null); dispatch({ type: 'whisper-target', characterId: e.target.value }); }}>
               {present.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name.en}
@@ -232,21 +222,33 @@ export function CouncilPanel({
             <p className="hint">Only the person you choose hears it; the others present do not. Counsel is advice: they decide, and nothing you say becomes a fact.</p>
           </div>
         ) : null}
-        <label htmlFor="talk" className="sr-only">
-          Your words
-        </label>
-        <textarea
-          id="talk"
-          ref={talk}
-          rows={3}
-          value={text}
-          disabled={!yourTurn || busy}
-          placeholder={yourTurn ? (mode === 'speak' ? 'My lord, the draft is ready for your review…' : 'e.g. Reduce the annual silk tribute / delay the dispatch') : 'You can speak during your turn.'}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void send();
-          }}
-        />
+        <div className={`speak-composer${activeExample ? ' has-example' : ''}`}>
+          <div className="speak-entry">
+            <label htmlFor="talk" className="sr-only">Your words</label>
+            <textarea
+              id="talk"
+              ref={talk}
+              rows={3}
+              value={text}
+              disabled={!yourTurn || busy}
+              placeholder={yourTurn ? (mode === 'speak' ? 'My lord, the draft is ready for your review…' : 'e.g. Reduce the annual silk tribute / delay the dispatch') : 'You can speak during your turn.'}
+              onChange={(e) => dispatch({ type: 'text', text: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void send();
+              }}
+            />
+          </div>
+          {activeExample ? (
+            <aside className="speak-example" aria-label="Example — for reference only">
+              <div className="speak-example-head">
+                <strong>Example — for reference only</strong>
+                <button type="button" className="speak-example-close" onClick={() => dispatch({ type: 'close-example' })} aria-label="Close example">×</button>
+              </div>
+              <p className="speak-example-topic">{t(activeExample.topic.label, lang)}</p>
+              <p className="speak-example-text">{activeExample.topic.text.en}</p>
+            </aside>
+          ) : null}
+        </div>
         <div className="row">
           <button type="button" className="btn" disabled={!yourTurn || busy || !text.trim()} onClick={() => void send()}>
             {mode === 'speak' ? (whispering ? `Whisper to ${present.find((c) => c.id === to[0])?.name.en ?? to[0]}` : 'Say') : 'Interpret & apply'}

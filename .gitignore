@@ -19,6 +19,9 @@ coverage/
 .claude/launch.json
 .DS_Store
 # Internal documents
-/docs/
+/docs/*
+!/docs/INTERACTION_ARCHITECTURE.md
+!/docs/LIVE_RUNBOOK.md
+!/docs/demo_script.md
 /PLAN.md
 /.vscode/

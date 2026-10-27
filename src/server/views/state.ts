@@ -133,8 +133,20 @@ export function draftView(ctx: SessionCtx, doc: Document, viewer: ViewMode): Dra
     withinGoal: within,
     history: doc.history.map((h) => ({ version: h.version, by: h.by, byName: nameOf(names, h.by), round: h.round })),
     transmit,
+    sent: doc.status === 'sent' ? dispatchOf(ctx, doc.id) : null,
     suggestions,
   };
+}
+
+/** Who sent a document out, and which version: the world state keeps only that it went out, the event log the rest. */
+function dispatchOf(ctx: SessionCtx, docId: string): DraftView['sent'] {
+  const events = ctx.harness.repo.listEvents(ctx.sessionId);
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i]!;
+    const f = e.facts.find((x) => x.kind === 'document_dispatched' && x.data.docId === docId);
+    if (f) return { version: Number(f.data.docVersion), day: e.day, by: e.actor };
+  }
+  return null;
 }
 
 function characters(ctx: SessionCtx): CharacterView[] {

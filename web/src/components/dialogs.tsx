@@ -1,9 +1,8 @@
-/** New session, transmit confirmation and director-view unlock dialogs. */
+/** New session and director-view unlock dialogs (the transmit confirmation is the dispatch ceremony). */
 import { useState } from 'react';
-import type { Lang, ServerConfigView, StateView } from '../../../src/server/api-types';
+import type { Lang, ServerConfigView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
 import { t } from '../labels';
-import { TermsTable } from './terms';
 import { Dialog, ErrorNote } from './ui';
 
 export function NewSessionDialog({ config, onCreated, onCancel }: { config: ServerConfigView; onCreated: (id: string) => void; onCancel: (() => void) | null }) {
@@ -104,49 +103,6 @@ export function NewSessionDialog({ config, onCreated, onCancel }: { config: Serv
             </button>
           ) : null}
         </div>
-      </div>
-    </Dialog>
-  );
-}
-
-export function TransmitDialog({ sessionId, state, lang, onDone, onCancel }: { sessionId: string; state: StateView; lang: Lang; onDone: (msg: string) => void; onCancel: () => void }) {
-  const doc = state.document;
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  if (!doc) return null;
-  const transmit = async (): Promise<void> => {
-    setBusy(true);
-    setError(null);
-    try {
-      const r = await postJson<{ outcomes: Array<{ status: string; rule: string | null; feedback: string | null }> }>(sessionUrl(sessionId, 'input'), {
-        kind: 'action',
-        turn: state.control.turn,
-        action: { type: 'dispatch_document', args: { docId: doc.docId, docVersion: doc.version } },
-      });
-      const o = r.outcomes[0];
-      if (o && o.status !== 'committed') setError(`${o.status}${o.rule ? ` (${o.rule})` : ''}: ${o.feedback ?? ''}`);
-      else onDone('The envoy has left with the request.');
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <Dialog title="Transmit the request?" onEscape={onCancel} tone="confirm">
-      <p>
-        You are about to send version {doc.version}, sealed by Shi Jingtang, to {doc.toName.en}. This is your own decision (player-initiated): no pause follows, and a
-        dispatched request cannot be recalled by you.
-      </p>
-      <TermsTable terms={doc.terms} catalog={state.catalog} lang={lang} compact />
-      <ErrorNote error={error} />
-      <div className="row dialog-actions">
-        <button type="button" className="btn btn-transmit" disabled={busy} onClick={() => void transmit()} data-autofocus>
-          Transmit now
-        </button>
-        <button type="button" className="btn-ghost" onClick={onCancel}>
-          Cancel
-        </button>
       </div>
     </Dialog>
   );

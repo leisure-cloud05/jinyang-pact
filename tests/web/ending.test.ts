@@ -69,9 +69,10 @@ describe('lines', () => {
   });
 
   it('follow the land the pact gives, how the city fell, and who turned the talks down', () => {
-    const [none, yanmen, all, grain, pressure, never, withdrawn, khitan, shi, missed] = variants.map(endingLines);
+    const [none, yanmen, lulong, all, grain, pressure, never, withdrawn, khitan, shi, missed] = variants.map(endingLines);
     expect(none).toContain('without giving up a single prefecture');
     expect(yanmen).toContain('north of Yanmen Pass are pledged away');
+    expect(lulong).toContain('the Lulong circuit is pledged away');
     expect(all).toContain('all of Lulong');
     expect(grain).toContain('grain is gone');
     expect(pressure).toContain('breaks through');

@@ -99,7 +99,7 @@ npm run play:server
 
 Open `http://127.0.0.1:8787` unless the server reports another address.
 
-The web interface allows users to explore historical scenarios, interact with characters, edit diplomatic terms, review decisions and advance the narrative.
+The web interface allows users to explore historical scenarios, interact with characters, edit diplomatic terms, review decisions and advance the narrative. Character Profile topics select a private listener and show a dismissible example beside Speak; they never fill in the player's words. When the player transmits an approved request, a final review and seal ceremony records the dispatch after the server accepts it.
 
 Mock characters are deterministic test implementations. Their behavior should not be interpreted as evidence of real LLM capabilities.
 
@@ -146,14 +146,15 @@ npm run exp -- --plan dev
 # Pilot experiments with live models
 npm run exp -- --plan pilot --live
 
-# Freeze experimental configuration
-npm run exp -- --freeze
+# Freeze experimental configuration in a new study root
+npm run exp -- --freeze --runs-root runs/my-new-study
 
 # Main experiment with live models
-npm run exp -- --plan main --live
+npm run exp -- --plan main --live --runs-root runs/my-new-study --out runs/my-new-study/main-results
 ```
 
-The main live experiment requires a matching `runs/freeze.json`.
+Replace `my-new-study` with a unique name before running these commands. The main live experiment requires a
+matching `freeze.json` in the selected runs root; `--out` keeps its results in that study's directory.
 
 ### Reports and Analysis
 
@@ -209,6 +210,7 @@ The tests cover character behavior, rule enforcement, engine lifecycle, Harness 
 | [Interaction Architecture](docs/INTERACTION_ARCHITECTURE.md) | Multi-agent interaction, scheduling, pending work and recovery mechanisms |
 | [Live Runbook](docs/LIVE_RUNBOOK.md) | Live model configuration, experiment execution and reproducibility |
 | [Demo Script](docs/demo_script.md) | Demonstration walkthrough and presentation guidance |
+| [Player Guide](PLAYER_GUIDE.md) | Short English guide to playing the web game |
 
 Internal development notes, code-review histories, old proposals and team coordination documents are maintained separately from the public project repository.
 

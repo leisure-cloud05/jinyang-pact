@@ -13,8 +13,9 @@ copy .env.example .env
 notepad .env
 ```
 
-In `.env` set exactly two lines: `LLM_PROVIDER=openrouter` and `OPENROUTER_API_KEY=<your key>`. Leave everything else
-as is. Never paste the key into chat, a commit or a log; every program output redacts it.
+In `.env` set `LLM_PROVIDER=openrouter` and `OPENROUTER_API_KEY=<your key>`. For a frozen experiment, also match
+every runtime override recorded in that freeze's manifest; defaults alone may differ. Never paste the key into chat,
+a commit or a log; every program output redacts it.
 
 ## 1. Gate: smoke test (12 calls, a fraction of a cent)
 
@@ -40,19 +41,22 @@ step may be repeated. The held-out cases C1–C6 are refused by the pilot plan.
 After the Commander commits the final prompts:
 
 ```powershell
-npm run exp -- --freeze
+$studyRoot = 'runs/my-new-study'  # replace with a unique, unused directory
+npm run exp -- --freeze --runs-root $studyRoot
 ```
 
-Writes `runs/freeze.json` (hashes of every executed file + effective settings). From now on nothing that a run
-executes may change; a live `main` run refuses to start on any mismatch.
+Writes `$studyRoot/freeze.json` (hashes of every executed file + effective settings). Use the same runs root below
+and a new results directory. From now on nothing that a run executes may change; a live `main` run refuses to start
+on any mismatch.
 
 ## 4. Main experiment (36 runs: C1–C6 × baseline/no_judge/full × 2 reps)
 
 ```powershell
-npm run exp -- --plan main --live
-npm run reconcile -- runs/<main dir> --live
-npm run report -- runs/<main dir>
-npm run humaneval:packets -- runs/<main dir>
+$mainOut = "$studyRoot/main-results"
+npm run exp -- --plan main --live --runs-root $studyRoot --out $mainOut
+npm run reconcile -- $mainOut --live
+npm run report -- $mainOut
+npm run humaneval:packets -- $mainOut
 ```
 
 Hard cap per run: 100 calls and US$0.50 (`BUDGET_*` in `.env.example`). The report, figures and 18 blind

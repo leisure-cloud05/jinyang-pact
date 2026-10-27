@@ -45,10 +45,10 @@ export function CharacterDialog({ character, state, impression, lang, onClose, o
       </div>
       <section className="character-counsel" aria-labelledby="character-topics-title">
         <h3 id="character-topics-title">{zh ? '下一轮，可以这样开口' : 'Openings for your next turn'}</h3>
-        <p className="hint">{zh ? '结合当前表章与围城局势。点击词条，准备一段只对他进言的草稿；由你编辑并发送。' : 'Based on the current draft and siege. Choose a topic to prepare private counsel, then edit and send it yourself.'}</p>
+        <p className="hint">{zh ? '结合当前表章与围城局势。点击话题可选择私聊对象，并在输入框旁查看示例；发言仍由你自己填写。' : 'Choose a topic to select a private listener and view an example beside Speak. Write your own words before sending.'}</p>
         <div className="character-topics">
           {characterTopics(character.id, state).map((topic) => (
-            <button key={topic.id} type="button" className="btn-secondary" disabled={!canPrepare} onClick={() => onTopic(topic)} title={t(topic.text, lang)}>{t(topic.label, lang)} <span aria-hidden="true">↗</span></button>
+            <button key={topic.id} type="button" className="btn-secondary" disabled={!canPrepare} onClick={() => onTopic(topic)}>{t(topic.label, lang)} <span aria-hidden="true">↗</span></button>
           ))}
         </div>
         {!canPrepare ? <p className="hint">{zh ? '当前无法向此人进言。' : 'Counsel is unavailable for this character right now.'}</p> : null}

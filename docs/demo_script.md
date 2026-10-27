@@ -7,7 +7,7 @@ npm run play:web:build
 npm run play:server     # http://127.0.0.1:8787 (use a fresh --db for a clean session list)
 ```
 
-For a live demonstration add `-- --live` (needs `.env`, see `docs/NEXT_STEPS.md`); characters then speak with
+For a live demonstration add `-- --live` (needs `.env`, see [Live Runbook](LIVE_RUNBOOK.md)); characters then speak with
 the real model and the beats below still apply, but wording and exact turns vary.
 
 ## One-minute version
@@ -69,9 +69,12 @@ Part 3 shows the play aids in a fresh **C3 — Stricter acceptable terms** sessi
    *Takeaway: every turn spends time, and the alerts never decide for the player.*
 10. **Read the room.** Each person present has a bearing (Composed, Uneasy, Pressing) and what it rests on: the
     siege and the words you heard them say. *Takeaway: an impression from visible cues, never a hidden value.*
-11. **Private counsel.** Under *Speak to…*, choose **Sang Weihan** in *Whisper privately to*, click **Remind of the
-    long-term cost** and send it. The log marks the line **private → Sang Weihan**. *Takeaway: knowledge isolation
-    covers the player's own words; only he heard it.*
+11. **Private counsel and examples.** Open **Sang Weihan**'s Character Profile and choose an **Openings for your
+    next turn** topic. *Speak to…* selects Sang as the private listener and shows the original English line in an
+    **Example — for reference only** card beside the input (above it on a narrow screen). Type your own words and
+    click **Whisper to Sang Weihan**; the example is never inserted or sent. The log marks the line **private → Sang
+    Weihan**. Close the example or change listener or mode to dismiss it. *Takeaway: only Sang hears the player's
+    words; the example does not speak for the player.*
 12. **Negotiation track.** Speak to Shi and Sang (e.g. *明公，表已誊毕，请用印遣使。*), **End turn** and endorse the
     dispatch. Shi's seal stamps onto the draft and his courier sets out for the Khitan court; on day 10 the Khitan
     counter-offer arrives at Jinyang, listing what it changed. *Takeaway: the cards follow what the clerk knows; a
@@ -80,6 +83,12 @@ Part 3 shows the play aids in a fresh **C3 — Stricter acceptable terms** sessi
     map's last move, an illustration, then the ending card with the result. **Skip** shows the card at once,
     **Replay ending** plays it again, and **Watch the ending** below the story brings it back later. *Takeaway: the
     ending shows where the choices led, built from the chapter's own data.*
+14. **Seal and send (C6).** In a fresh **C6** session, speak to Shi and Sang as in step 12 and click **End turn**;
+    once Shi has approved the draft, click **Transmit…**. The request unrolls for a last review: both parties, the
+    version, every term and its burden, with Shi's own approval beside his seal. **Back to edit** reopens the editor;
+    **Confirm and seal** sends it, and only once the dispatch is recorded does the clerk's seal 遣 go down. The scroll
+    rolls up and the draft keeps *sent by you · v2* with the seal. *Takeaway: the seal records the clerk's own act of
+    sending, never anyone's consent.*
 
 ## If something goes wrong
 
