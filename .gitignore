@@ -7,6 +7,10 @@ web/dist/
 data/
 runs/*
 !runs/README.md
+!runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/
+runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/*
+!runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/freeze.json
+!runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/experiment-manifest.json
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

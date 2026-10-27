@@ -1,0 +1,133 @@
+{
+  "format": 1,
+  "recordedAt": "2026-10-27T03:50:23.472Z",
+  "git": {
+    "commit": "63bf553bb749fcb63c33c84246e734b6fe27535c",
+    "tree": "719ff44d0610c7303cd4dd021ebe3b04fa54d6d0",
+    "branch": "main",
+    "status": "clean"
+  },
+  "runtime": {
+    "node": "v22.23.4",
+    "npm": "10.9.9",
+    "platform": "darwin",
+    "arch": "arm64",
+    "packageLockSha256": "9a83fa787201477ca16977ed1b01e4b77e99160d45168d4ca2eeca921d0e8de1"
+  },
+  "freeze": {
+    "path": "/Users/leisurecloud/Documents/AIS-semester1/DSA4213/group_project/clean/JinYang/runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/freeze.json",
+    "identity": "c7777734a6c74cc0ed2489702da48d6586a86a13ff649657b31fb0475c8489c3",
+    "sha256": "63c8c1c20e1e846b6528fbdd77ed9a7b02f140e621a697e53eb73b2487cc4b3b",
+    "fileHash": "ae60918ba0e3de605690acb0394d4f3628f6eb6ee9f8e8ef281de2cb17d48bcd",
+    "promptHash": "7ddc076e967ba0cb691a743ef59e084a7e10e326a827b2dca981756af12ca741",
+    "settings": {
+      "provider": "openrouter",
+      "responseFormat": "json_schema",
+      "reasoning": "off",
+      "providerIgnore": [
+        "atlas-cloud"
+      ],
+      "temperatures": {
+        "character": 0.7,
+        "judge": 0.2,
+        "narrator": 0.7,
+        "mapper": 0.2,
+        "answer": 0.7,
+        "rater": 0.2,
+        "smoke": 0.2
+      },
+      "maxTokens": {
+        "character": 1000,
+        "judge": 500,
+        "narrator": 900,
+        "mapper": 300,
+        "answer": 300,
+        "rater": 500,
+        "smoke": 300
+      },
+      "maxInputChars": {
+        "character": 32000,
+        "judge": 16000,
+        "narrator": 12000,
+        "mapper": 8000,
+        "answer": 24000,
+        "rater": 48000,
+        "smoke": 8000
+      },
+      "timeoutMs": 60000,
+      "httpRetries": 2,
+      "clientBudget": {
+        "maxCallsPerSession": 100,
+        "maxUsdPerSession": 0.5
+      },
+      "runBudget": {
+        "maxCalls": 160,
+        "maxUsd": 0.5,
+        "wallClockMs": 1800000
+      },
+      "priceBounds": {
+        "deepseek/deepseek-v4-flash": {
+          "inputUsdPerMTok": 0.15,
+          "outputUsdPerMTok": 0.3
+        }
+      },
+      "lang": "zh",
+      "cases": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "modes": [
+        "baseline",
+        "no_judge",
+        "full"
+      ],
+      "reps": 2,
+      "seeds": {
+        "C1-r1": 73242648,
+        "C1-r2": 962984464,
+        "C2-r1": 129102389,
+        "C2-r2": 3366810914,
+        "C3-r1": 1829297769,
+        "C3-r2": 1458531387,
+        "C4-r1": 529827648,
+        "C4-r2": 3386636036,
+        "C5-r1": 3822225183,
+        "C5-r2": 1451216510,
+        "C6-r1": 2625452577,
+        "C6-r2": 1323235261
+      },
+      "maxRounds": {
+        "C1": 6,
+        "C2": 6,
+        "C3": 6,
+        "C4": 6,
+        "C5": 6,
+        "C6": 6
+      }
+    },
+    "models": {
+      "character": "deepseek/deepseek-v4-flash",
+      "judge": "deepseek/deepseek-v4-flash",
+      "narrator": "deepseek/deepseek-v4-flash",
+      "mapper": "deepseek/deepseek-v4-flash"
+    }
+  },
+  "main": {
+    "outputPath": "/Users/leisurecloud/Documents/AIS-semester1/DSA4213/group_project/clean/JinYang/runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/main-results",
+    "expectedRuns": 36,
+    "command": "node --import tsx src/cli/exp.ts --plan main --live --runs-root /Users/leisurecloud/Documents/AIS-semester1/DSA4213/group_project/clean/JinYang/runs/main-live-freeze-20261027-63bf553-cap1000-noatlas --out /Users/leisurecloud/Documents/AIS-semester1/DSA4213/group_project/clean/JinYang/runs/main-live-freeze-20261027-63bf553-cap1000-noatlas/main-results"
+  },
+  "priorFreeze": {
+    "path": "/Users/leisurecloud/Documents/AIS-semester1/DSA4213/group_project/clean/JinYang/runs/freeze.json",
+    "sha256": "89679b1ebc0c14e85611b42025f7dd1aae6c4753a84775674f172d59739e050c"
+  },
+  "preflight": {
+    "freezeMismatches": [],
+    "mainOutputExists": false,
+    "apiKeyPresent": true
+  }
+}

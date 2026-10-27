@@ -1,0 +1,124 @@
+{
+  "freezeFormat": 2,
+  "createdAt": "2026-10-27T03:50:05.640Z",
+  "models": {
+    "character": "deepseek/deepseek-v4-flash",
+    "judge": "deepseek/deepseek-v4-flash",
+    "narrator": "deepseek/deepseek-v4-flash",
+    "mapper": "deepseek/deepseek-v4-flash"
+  },
+  "settings": {
+    "provider": "openrouter",
+    "responseFormat": "json_schema",
+    "reasoning": "off",
+    "providerIgnore": [
+      "atlas-cloud"
+    ],
+    "temperatures": {
+      "character": 0.7,
+      "judge": 0.2,
+      "narrator": 0.7,
+      "mapper": 0.2,
+      "answer": 0.7,
+      "rater": 0.2,
+      "smoke": 0.2
+    },
+    "maxTokens": {
+      "character": 1000,
+      "judge": 500,
+      "narrator": 900,
+      "mapper": 300,
+      "answer": 300,
+      "rater": 500,
+      "smoke": 300
+    },
+    "maxInputChars": {
+      "character": 32000,
+      "judge": 16000,
+      "narrator": 12000,
+      "mapper": 8000,
+      "answer": 24000,
+      "rater": 48000,
+      "smoke": 8000
+    },
+    "timeoutMs": 60000,
+    "httpRetries": 2,
+    "clientBudget": {
+      "maxCallsPerSession": 100,
+      "maxUsdPerSession": 0.5
+    },
+    "runBudget": {
+      "maxCalls": 160,
+      "maxUsd": 0.5,
+      "wallClockMs": 1800000
+    },
+    "priceBounds": {
+      "deepseek/deepseek-v4-flash": {
+        "inputUsdPerMTok": 0.15,
+        "outputUsdPerMTok": 0.3
+      }
+    },
+    "lang": "zh",
+    "cases": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "modes": [
+      "baseline",
+      "no_judge",
+      "full"
+    ],
+    "reps": 2,
+    "seeds": {
+      "C1-r1": 73242648,
+      "C1-r2": 962984464,
+      "C2-r1": 129102389,
+      "C2-r2": 3366810914,
+      "C3-r1": 1829297769,
+      "C3-r2": 1458531387,
+      "C4-r1": 529827648,
+      "C4-r2": 3386636036,
+      "C5-r1": 3822225183,
+      "C5-r2": 1451216510,
+      "C6-r1": 2625452577,
+      "C6-r2": 1323235261
+    },
+    "maxRounds": {
+      "C1": 6,
+      "C2": 6,
+      "C3": 6,
+      "C4": 6,
+      "C5": 6,
+      "C6": 6
+    }
+  },
+  "hashes": {
+    "files": "ae60918ba0e3de605690acb0394d4f3628f6eb6ee9f8e8ef281de2cb17d48bcd",
+    "byPath": {
+      "content": "d7aeb3639003a33e2760e78f0dc7ecca3ef7ddf4b5acf7279389cda536ace84c",
+      "src/core": "bf7537d3bb86728404a51067f3eb491c08f4567ecf1c098e304858b62c3184ce",
+      "src/harness": "3dd4a91f560004064eb6cd96c9ada66de0aec763f0813d54daf9e859eda5b2ce",
+      "src/store": "2a2adc52d82fee49aa903eab93c9bd4356a1c16fbe06dde3ff5368dee5fc87ac",
+      "src/llm": "e813d03f6bf329df56f1fcfff4073c810f4802e625188fdf4e985201348eaac1",
+      "src/agents": "09955b05d1a26040666e3ccdeccf590a202d5e7a9cac8c99efdd200a8e1a7e9d",
+      "src/engine": "f88d2e0549f4b67cf5518a41e14b8f672a73211e660017e4cbd7141669fee278",
+      "src/content": "f20291a86e85a51a8bc869b910559cc7cca349ee9b191e9a42f2be62d470a777",
+      "src/config": "640d3755c2e26cf9742000ba59220b2f191a49cc286eb51c70b9d6e244614d28",
+      "src/eval/runner.ts": "bf35e1f998a30e5ed69b6bd1ea9c3fb9301774655d7b6aa2a60e55abb9ffe131",
+      "src/eval/engine-adapter.ts": "0b713992fd775b87ee1e9f09aa9df0c33cc5fad0602c60c55ed37d93d6e64fd5",
+      "src/eval/narration-listing.ts": "2de39d9885b52a051bba30e9a40917186dd6d9d2d9ff9fbfdd7a78522ab24267",
+      "src/eval/detectors.ts": "744ce6c78a5d846975925d3997b79d7a9ce60500cceb731eab5cd852763a02b7",
+      "src/eval/constraints.ts": "222b39116fd78078655e32fdd5874827f95e2a229f99131243f66237db1eb712",
+      "src/eval/leak.ts": "c31a585faaa4890c8f37c16ee338a89d6114d90020b79595765af316b9690d8a",
+      "src/eval/oracle": "86547781a0be52264338847e5b616553a468cf2f5b048a1d7ad436ba9cd042ae",
+      "src/eval/freeze.ts": "2c4f3c435c33ac788962dce86054f653a731fcc92cf9b09f473c9eb81ee3b268",
+      "src/cli/exp.ts": "82aac30efac0439b42557da3d8efa82ad5b721ac0c9b8e1e8613d5a847197ac1",
+      "package-lock.json": "454bf13f113d12b9f6c3e18d0b14824f48497954a78969f150c13390309df165"
+    },
+    "prompts": "7ddc076e967ba0cb691a743ef59e084a7e10e326a827b2dca981756af12ca741"
+  }
+}
