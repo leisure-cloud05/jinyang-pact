@@ -58,7 +58,7 @@ export function termsFor(raw: unknown, state: WorldState, config: CoreConfig, vi
     if (viewer !== 'director' && !knowsClause(state, config, viewer, id)) continue;
     const def = own(config.catalog.secretClauses, id);
     const text = typeof c === 'object' && c !== null && (c as { text?: L10n }).text ? (c as { text: L10n }).text : def?.text;
-    visible.push({ id, text: { zh: text?.zh ?? id, en: text?.en ?? id } });
+    visible.push({ id, text: { zh: text?.zh ?? id, en: text?.en ?? id }, burdenWeight: def?.burden_weight ?? 0 });
   }
   const num = (k: string): number => (typeof t[k] === 'number' ? (t[k] as number) : 0);
   return {

@@ -426,6 +426,12 @@ export const CharacterSchema = z.strictObject({
    * stances or source content): the only persona text an `ask` answer sees besides name and title (PLAN §7).
    */
   public_voice: LocalizedSchema,
+  /** Curated player-facing biography; never derived from private memory or model goals. */
+  public_profile: z.strictObject({
+    background: LocalizedSchema,
+    stance: LocalizedSchema,
+    concern: LocalizedSchema,
+  }).nullable().default(null),
   initial_knowledge: z.array(OwnKnowledgeSeedSchema).default([]),
   agendaTriggers: z.array(AgendaTriggerSchema).default([]),
   periodicActivation: z

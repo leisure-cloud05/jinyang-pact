@@ -92,24 +92,27 @@ export function Dialog({
   children,
   wide = false,
   tone,
+  dismissOnBackdrop = false,
 }: {
   title: ReactNode;
   onEscape?: () => void;
   children: ReactNode;
   wide?: boolean;
-  tone?: 'decision' | 'confirm';
+  tone?: 'decision' | 'confirm' | 'character' | 'parchment';
+  dismissOnBackdrop?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useModalFocus(ref, onEscape);
+  const content = <><h2 id={titleId} className="dialog-title">{title}</h2>{children}</>;
+  const dialog = (
+    <div ref={ref} className={`dialog ${wide ? 'dialog-wide' : ''} ${tone ? `dialog-${tone}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      {tone === 'parchment' ? <div className="parchment-content">{content}</div> : content}
+    </div>
+  );
   return (
-    <div className="backdrop">
-      <div ref={ref} className={`dialog ${wide ? 'dialog-wide' : ''} ${tone ? `dialog-${tone}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <h2 id={titleId} className="dialog-title">
-          {title}
-        </h2>
-        {children}
-      </div>
+    <div className="backdrop" onClick={dismissOnBackdrop ? (event) => { if (event.target === event.currentTarget) onEscape?.(); } : undefined}>
+      {tone === 'parchment' ? <div className="parchment-shell">{dialog}</div> : dialog}
     </div>
   );
 }

@@ -1,5 +1,15 @@
 # Sang Weihan (PLAN §12.3). Character-visible: no post-start facts; every cited source is `initial` for sang_weihan.
 id: sang_weihan
+public_profile:
+  background:
+    zh: 桑维翰是河东掌书记，负责文书与谋议。石敬瑭命他草拟向契丹求援的表章。
+    en: Sang is Hedong's secretary, responsible for documents and counsel. Shi has ordered him to draft the memorial seeking Khitan relief.
+  stance:
+    zh: 他在议事中力劝石敬瑭屈节求援，希望以诚意促成契丹出兵；他关心的是表章能否真正换来援军。
+    en: At the council he urged Shi to humble himself and seek Khitan help. His argument centers on whether the memorial can actually secure relief troops.
+  concern:
+    zh: 条件太轻能否打动契丹，议而不决是否贻误救援，都是可以向他追问的难题。
+    en: Would lighter concessions persuade the Khitan? Would prolonged debate delay relief? These are useful questions to put to him.
 name: { zh: 桑维翰, en: Sang Weihan }
 title: { zh: 河东掌书记, en: Secretary (zhang shuji) of the Hedong command }
 aliases:

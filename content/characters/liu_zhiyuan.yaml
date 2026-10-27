@@ -1,6 +1,16 @@
 # Liu Zhiyuan (PLAN §12.3). Character-visible: no post-start facts (in particular nothing about his later career);
 # every cited source is `initial` for liu_zhiyuan.
 id: liu_zhiyuan
+public_profile:
+  background:
+    zh: 刘知远任河东都押牙，是议事中的武将。他曾以地势险固、士马精强为由，劝石敬瑭称兵传檄。
+    en: Liu is chief of Hedong's headquarters guard and a military voice in the council. He urged Shi to raise troops, citing strong ground and capable men and horses.
+  stance:
+    zh: 他的进言从守城与用兵出发。面对求援表章，可以请他说明哪些条件有助解围，哪些应当再议。
+    en: His counsel starts from defending the city and using its troops. Ask which terms would help lift the siege and which deserve reconsideration.
+  concern:
+    zh: 眼前能否守住晋阳，以及所许条件会留下什么后患，是与他商议的两个切口；具体底线仍须当面询问。
+    en: Holding Jinyang now and the future consequences of its promises are two openings for discussion. Ask him directly where he would draw the line.
 name: { zh: 刘知远, en: Liu Zhiyuan }
 title: { zh: 河东都押牙, en: Chief of the Headquarters Guard (du yaya) of Hedong }
 aliases:

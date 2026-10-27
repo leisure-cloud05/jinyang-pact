@@ -150,6 +150,7 @@ function characters(ctx: SessionCtx): CharacterView[] {
       location: c.location,
       locationName: placeOf(names, c.location),
       present: c.location === ctx.playerLoc && c.status === 'alive',
+      profile: ctx.content.characters[id].public_profile ? structuredClone(ctx.content.characters[id].public_profile) : null,
     };
   });
 }

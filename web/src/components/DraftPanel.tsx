@@ -4,20 +4,23 @@
  * the clerk knows it, the council's suggestions, the goal and standing authorizations. "Transmit" is the player's
  * own decision (player-initiated: no pause), so it asks for confirmation first.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { InputResult, Lang, StateView } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl } from '../api';
 import { useJustChanged } from '../hooks';
 import { displayValue, englishDisplay, t, termValueText } from '../labels';
 import { notePresentation, noteToSubmit } from '../note-editor';
+import { draftGoalViolations } from '../burden';
+import { BurdenMeter } from './BurdenMeter';
 import { NegotiationTrack } from './NegotiationTrack';
 import { TermsEditor, TermsTable, burdenOf, limitsSummary, toDraft, type TermsDraft } from './terms';
-import { Badge, Empty, ErrorNote, Section, Stamp } from './ui';
+import { Badge, Dialog, Empty, ErrorNote, Section, Stamp } from './ui';
 
 export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { sessionId: string; state: StateView; lang: Lang; onChanged: () => void; onTransmit: () => void }) {
   const doc = state.document;
   const catalog = state.catalog;
   const [editing, setEditing] = useState(false);
+  const [editVersion, setEditVersion] = useState<number | null>(null);
   const [draft, setDraft] = useState<TermsDraft | null>(doc ? toDraft(doc.terms) : null);
   const [note, setNote] = useState<string | null>(null);
   const [reason, setReason] = useState('');
@@ -26,6 +29,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const yourTurn = state.control.state === 'awaiting_player';
+  const closeEditor = useCallback(() => { if (!busy) setEditing(false); }, [busy]);
   // Shi's seal is stamped down when his approval comes to cover the current version.
   const sealFresh = useJustChanged(doc?.approvedCurrent ? `${doc.docId}:${doc.approval?.version ?? doc.version}` : null);
 
@@ -63,7 +67,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
   };
 
   const revise = (): Promise<void> =>
-    act({ type: 'revise_document', args: { docId: doc.docId, baseDocVersion: doc.version, terms: draft, note: noteToSubmit(note, doc.note) } }, () => setEditing(false));
+    act({ type: 'revise_document', args: { docId: doc.docId, baseDocVersion: editVersion, terms: draft, note: noteToSubmit(note, doc.note) } }, () => setEditing(false));
 
   const suggest = (): Promise<void> => {
     const current = toDraft(doc.terms) as unknown as Record<string, unknown>;
@@ -80,8 +84,19 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
     act({ type: 'set_dispatch_timing', args: { docId: doc.docId, mode: timing.mode, rounds: timing.mode === 'delay' ? timing.rounds : null } });
 
   const goalMax = state.world.goal.limits.burden_max;
-  const draftBurden = burdenOf(draft as unknown as Record<string, unknown>, catalog);
+  const draftBurden = burdenOf(draft as unknown as Record<string, unknown>, catalog, doc.terms.secret_clauses);
+  const draftViolations = draftGoalViolations(draft as unknown as Record<string, unknown>, state.world.goal.limits, catalog, doc.terms.secret_clauses);
   const noteDisplay = notePresentation(doc.note, doc.terms, catalog, lang);
+  const staleEdit = editing && editVersion !== doc.version;
+  const openEditor = (): void => {
+    setDraft(toDraft(doc.terms));
+    setEditVersion(doc.version);
+    setNote(null);
+    setReason('');
+    setError(null);
+    setResult(null);
+    setEditing(true);
+  };
 
   return (
     <section className="panel draft" aria-labelledby="draft-title">
@@ -108,50 +123,52 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
       </div>
 
       {editing ? (
-        <div className="editing">
-          <TermsEditor value={draft} onChange={setDraft} catalog={catalog} lang={lang} knownClauses={doc.terms.secret_clauses} />
-          <div className="field">
-            <label htmlFor="doc-note">Note</label>
-            <input id="doc-note" type="text" value={note ?? noteDisplay.text} onChange={(e) => setNote(e.target.value)} aria-describedby={noteDisplay.summarized ? 'doc-note-help' : undefined} />
-            {noteDisplay.summarized ? <p id="doc-note-help" className="hint">English summary of the recorded draft terms, not a translation of the original note. The original note is kept unless you edit this field.</p> : null}
+        <Dialog wide tone="parchment" dismissOnBackdrop onEscape={closeEditor} title={<><span className="kicker">{lang === 'zh' ? '议约 · 晋阳' : 'The Jinyang memorial'}</span>{lang === 'zh' ? '修订求援表章' : 'Revise the appeal for relief'}</>}>
+          <button type="button" className="btn-ghost character-close" disabled={busy} onClick={closeEditor} aria-label={lang === 'zh' ? '关闭协议编辑' : 'Close treaty editor'}>×</button>
+          <p className="parchment-subtitle">{lang === 'zh' ? `呈 ${t(doc.toName, lang)} · 原稿 v${editVersion}` : `To ${t(doc.toName, lang)} · From draft v${editVersion}`}</p>
+          <div className="parchment-layout">
+            <div className="editing">
+              <fieldset className="parchment-fields" disabled={busy || !yourTurn || staleEdit || doc.status === 'sent'}>
+                <TermsEditor value={draft} onChange={setDraft} catalog={catalog} lang={lang} knownClauses={doc.terms.secret_clauses} />
+                <div className="field">
+                  <label htmlFor="doc-note">Note</label>
+                  <input id="doc-note" type="text" value={note ?? noteDisplay.text} onChange={(e) => setNote(e.target.value)} aria-describedby={noteDisplay.summarized ? 'doc-note-help' : undefined} />
+                  {noteDisplay.summarized ? <p id="doc-note-help" className="hint">English summary of the recorded draft terms, not a translation of the original note. The original note is kept unless you edit this field.</p> : null}
+                </div>
+                <div className="field">
+                  <label htmlFor="sug-reason">Reason (for a suggestion)</label>
+                  <input id="sug-reason" type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reduce annual tribute to avoid future hardship" />
+                </div>
+              </fieldset>
+              <p className="hint">Revising creates version {(editVersion ?? doc.version) + 1} and voids Shi’s approval; it never creates anyone’s consent. A suggestion is non-binding advice to the council.</p>
+              {staleEdit ? <p className="error-note" role="alert">{lang === 'zh' ? '表章已更新。请关闭后重新打开，以最新版本继续修订。' : 'The draft has changed. Close and reopen the editor to work from its latest version.'}</p> : null}
+              {!yourTurn ? <p className="hint">{lang === 'zh' ? '请等待你的回合再提交。' : 'Wait for your turn before submitting.'}</p> : null}
+              <ErrorNote error={error} />
+              {result ? <p className="note" role="status">{result}</p> : null}
+              <div className="row">
+                <button type="button" className="btn" disabled={busy || !yourTurn || staleEdit || doc.status === 'sent'} onClick={() => void revise()}>
+                  {lang === 'zh' ? '修订' : 'Revise'} (v{(editVersion ?? doc.version) + 1})
+                </button>
+                <button type="button" className="btn-secondary" disabled={busy || !yourTurn || staleEdit || doc.status === 'sent'} onClick={() => void suggest()}>
+                  {lang === 'zh' ? '仅向议事提出建议' : 'Suggest instead'}
+                </button>
+                <button type="button" className="btn-ghost" disabled={busy} onClick={closeEditor}>
+                  {lang === 'zh' ? '取消' : 'Cancel'}
+                </button>
+              </div>
+            </div>
+            <aside className="parchment-burden"><BurdenMeter preview terms={draft as unknown as Record<string, unknown>} catalog={catalog} goal={goalMax} total={draftBurden} violations={draftViolations} lang={lang} knownClauses={doc.terms.secret_clauses} /></aside>
           </div>
-          <div className="field">
-            <label htmlFor="sug-reason">Reason (for a suggestion)</label>
-            <input id="sug-reason" type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reduce annual tribute to avoid future hardship" />
-          </div>
-          <p className="hint">Revising creates version {doc.version + 1} and voids Shi’s approval; it never creates anyone’s consent. A suggestion is non-binding advice to the council.</p>
-          <div className="row">
-            <button type="button" className="btn" disabled={busy || !yourTurn} onClick={() => void revise()}>
-              Revise (v{doc.version + 1})
-            </button>
-            <button type="button" className="btn-secondary" disabled={busy || !yourTurn} onClick={() => void suggest()}>
-              Suggest instead
-            </button>
-            <button type="button" className="btn-ghost" onClick={() => setEditing(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <TermsTable terms={doc.terms} catalog={catalog} lang={lang} />
-          {doc.note ? <p className="doc-note">{noteDisplay.text}{noteDisplay.summarized ? <span className="hint"> (English terms summary; original note preserved.)</span> : null}</p> : null}
-          <div className="row">
-            <button type="button" className="btn-secondary" disabled={!yourTurn || doc.status === 'sent'} onClick={() => setEditing(true)}>
-              Edit terms
-            </button>
-          </div>
-        </>
-      )}
-
-      <div className={`meter ${doc.withinGoal.ok ? 'meter-ok' : 'meter-bad'}`} role="status">
-        <span>
-          Burden {editing ? draftBurden : doc.burden}
-          {typeof goalMax === 'number' ? ` / goal ≤ ${goalMax}` : ''}
-        </span>
-        {doc.withinGoal.ok ? <Badge tone="ok">within your goal</Badge> : <Badge tone="bad">beyond your goal</Badge>}
-        {!doc.withinGoal.ok ? <span className="hint">{doc.withinGoal.violations.join('; ')}</span> : null}
+        </Dialog>
+      ) : null}
+      <TermsTable terms={doc.terms} catalog={catalog} lang={lang} />
+      {doc.note ? <p className="doc-note">{noteDisplay.text}{noteDisplay.summarized ? <span className="hint"> (English terms summary; original note preserved.)</span> : null}</p> : null}
+      <div className="row">
+        <button type="button" className="btn-secondary" disabled={!yourTurn || doc.status === 'sent' || busy} onClick={openEditor}>
+          {lang === 'zh' ? '展开表章 · 调整条款' : 'Unroll the treaty · Edit terms'}
+        </button>
       </div>
+      <BurdenMeter terms={doc.terms as unknown as Record<string, unknown>} catalog={catalog} goal={goalMax} total={doc.burden} violations={doc.withinGoal.violations} lang={lang} />
 
       <Section title="Dispatch">
         <fieldset className="timing" disabled={!yourTurn || doc.status === 'sent' || busy}>

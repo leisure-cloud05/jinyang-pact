@@ -2,6 +2,16 @@
 # happened after the scenario start, and every source it cites is `initial` for shi_jingtang
 # (enforced by tests/content-real/load.test.ts).
 id: shi_jingtang
+public_profile:
+  background:
+    zh: 石敬瑭镇守河东，是后唐明宗的女婿。与唐廷决裂后，他与部众被围在晋阳。
+    en: Shi commands Hedong and is a son-in-law of the late Tang emperor Mingzong. After breaking with the Tang court, he and his followers are besieged at Jinyang.
+  stance:
+    zh: 晋阳的存亡系于眼前的抉择。书记与将佐可以进言，用印、遣使和允约仍须由他决定。
+    en: Jinyang's survival rests on the decisions before him. Staff and generals may advise, but sealing, dispatching and consenting remain his decisions.
+  concern:
+    zh: 求援需要付出代价，等待也在消耗守城的余地。进言时，可以请他权衡救急与长远负担。
+    en: Seeking relief carries a price, while waiting narrows the city's chances. Ask him to weigh immediate survival against lasting obligations.
 name: { zh: 石敬瑭, en: Shi Jingtang }
 title: { zh: 河东节度使（已被唐廷削夺官爵）, en: Military Governor of Hedong (stripped of his offices by the Tang court) }
 aliases:

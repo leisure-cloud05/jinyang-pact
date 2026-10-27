@@ -6,24 +6,13 @@ import { useId } from 'react';
 import type { CatalogView, Lang, TermLimitsView, TermsView } from '../../../src/server/api-types';
 import { fmt, t, termValueText } from '../labels';
 import { CessionPreview } from './TerritoryMap';
+import { burdenOf } from '../burden';
+export { burdenOf } from '../burden';
 
 export type TermsDraft = Omit<TermsView, 'secret_clauses'> & { secret_clauses: string[] };
 
 export function toDraft(terms: TermsView): TermsDraft {
   return { ...terms, secret_clauses: terms.secret_clauses.map((c) => c.id) };
-}
-
-export function burdenOf(terms: Record<string, unknown>, catalog: CatalogView): number {
-  let total = 0;
-  for (const e of catalog.terms) {
-    if (!e.applicable) continue;
-    if (catalog.burdenPayer !== null && e.payer !== catalog.burdenPayer) continue;
-    const v = terms[e.key];
-    if (e.type === 'boolean' && v === true) total += e.burdenWeight;
-    if (e.type === 'integer' && typeof v === 'number') total += (e.burdenWeight * v) / (e.burdenUnit ?? 1);
-    if (e.type === 'enum' && typeof v === 'string') total += e.burdenByValue?.[v] ?? 0;
-  }
-  return Math.round(total * 100) / 100;
 }
 
 export function TermsTable({ terms, catalog, lang, compact = false }: { terms: TermsView; catalog: CatalogView; lang: Lang; compact?: boolean }) {
@@ -59,7 +48,7 @@ export function TermsEditor({
   onChange: (v: TermsDraft) => void;
   catalog: CatalogView;
   lang: Lang;
-  knownClauses?: Array<{ id: string; text: { zh: string; en: string } }>;
+  knownClauses?: TermsView['secret_clauses'];
 }) {
   const base = useId();
   const set = (key: string, v: unknown): void => onChange({ ...value, [key]: v } as TermsDraft);
@@ -144,7 +133,7 @@ export function TermsEditor({
         </fieldset>
       ) : null}
       <p className="hint">
-        {lang === 'zh' ? '估计负担' : 'Estimated burden'}: <strong>{burdenOf(rec, catalog)}</strong>
+        {lang === 'zh' ? '估计负担' : 'Estimated burden'}: <strong>{burdenOf(rec, catalog, knownClauses)}</strong>
       </p>
     </div>
   );

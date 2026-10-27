@@ -140,7 +140,7 @@ export interface TermsView {
   neutrality: boolean;
   marriage_alliance: boolean;
   /** Only clauses the viewer knows (text included); hidden ones are never listed. */
-  secret_clauses: Array<{ id: string; text: L10n }>;
+  secret_clauses: Array<{ id: string; text: L10n; burdenWeight?: number }>;
 }
 
 export type TermLimitsView = Record<string, boolean | number | string | null>;
@@ -228,6 +228,7 @@ export interface CharacterView {
   location: string;
   locationName: L10n;
   present: boolean;
+  profile?: { background: L10n; stance: L10n; concern: L10n } | null;
 }
 
 export interface BeliefView {

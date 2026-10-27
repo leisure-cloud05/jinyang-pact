@@ -4,14 +4,17 @@
  * action / dialogue / clarification), the dialogue log, and interrupts. An interrupt reaches everyone present, so
  * private counsel always goes through speech to one listener.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DialogueView, InputResult, Lang, StateView, ViewMode } from '../../../src/server/api-types';
 import { errorText, postJson, sessionUrl, viewParam } from '../api';
 import { BEARING_LABELS, BEARING_TONE, readRoom } from '../demeanor';
 import { useResource } from '../hooks';
 import { displayText, t } from '../labels';
 import { isPrivateLine, WHISPER_PRESETS, whisperText, type WhisperPreset } from '../whisper';
-import { Avatar, Badge, ErrorNote, Section } from './ui';
+import { CharacterPortrait } from './portrait';
+import { CharacterDialog } from './CharacterDialog';
+import type { ConversationTopic } from '../character-topics';
+import { Badge, ErrorNote, Section } from './ui';
 
 export function CouncilPanel({
   sessionId,
@@ -40,6 +43,9 @@ export function CouncilPanel({
   const [note, setNote] = useState<string | null>(null);
   const [instruction, setInstruction] = useState('');
   const [whisperTo, setWhisperTo] = useState('');
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const closeProfile = useCallback(() => setProfileId(null), []);
+  const profileCharacter = state.characters.find((c) => c.id === profileId);
   const dialogue = useResource<DialogueView>(sessionUrl(sessionId, 'dialogue', { view: viewParam(view) }), tick);
   const log = useRef<HTMLOListElement>(null);
   const talk = useRef<HTMLTextAreaElement>(null);
@@ -114,6 +120,23 @@ export function CouncilPanel({
     });
   };
 
+  const prepareTopic = (topic: ConversationTopic): void => {
+    if (!profileCharacter?.present || state.session.ended || busy) return;
+    setMode('speak');
+    setTo([profileCharacter.id]);
+    setWhisperTo(profileCharacter.id);
+    setText(t(topic.text, lang));
+    setError(null);
+    setNote(lang === 'zh'
+      ? `已准备对${t(profileCharacter.name, lang)}的私下进言草稿。${yourTurn ? '可编辑后发送。' : '待你的下一回合再编辑并发送。'}`
+      : `Private counsel to ${t(profileCharacter.name, lang)} prepared. ${yourTurn ? 'Edit it, then send when ready.' : 'Edit and send it on your next turn.'}`);
+    closeProfile();
+    requestAnimationFrame(() => {
+      talk.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (yourTurn) talk.current?.focus();
+    });
+  };
+
   const interrupt = async (): Promise<void> => {
     if (!instruction.trim()) return;
     setBusy(true);
@@ -139,17 +162,20 @@ export function CouncilPanel({
         {present.map((c) => {
           const read = readRoom(c.id, rows, state.siegeWatch);
           return (
-            <li key={c.id} className="person">
-              <Avatar name={c.name.en} />
-              <div className="person-body">
-                <div className="person-line">
-                  <span className="person-name">{c.name.en}</span>
-                  <Badge tone={BEARING_TONE[read.bearing]}>{BEARING_LABELS[read.bearing]}</Badge>
-                  {c.status !== 'alive' ? <Badge tone="bad">{c.status}</Badge> : null}
-                </div>
-                <span className="person-title">{t(c.title, lang)}</span>
-                <span className="person-read">{read.reasons.map((reason) => displayText(reason, lang)).join(' ')}</span>
-              </div>
+            <li key={c.id}>
+              <button type="button" className="person person-button" onClick={() => setProfileId(c.id)} aria-haspopup="dialog" aria-label={lang === 'zh' ? `查看${t(c.name, lang)}的人物小传` : `View ${t(c.name, lang)}'s profile`}>
+                <CharacterPortrait id={c.id} name={c.name.en} />
+                <span className="person-body">
+                  <span className="person-line">
+                    <span className="person-name">{c.name.en}</span>
+                    <Badge tone={BEARING_TONE[read.bearing]}>{BEARING_LABELS[read.bearing]}</Badge>
+                    {c.status !== 'alive' ? <Badge tone="bad">{c.status}</Badge> : null}
+                  </span>
+                  <span className="person-title">{t(c.title, lang)}</span>
+                  <span className="person-read">{read.reasons.map((reason) => displayText(reason, lang)).join(' ')}</span>
+                  <span className="person-profile-hint">{lang === 'zh' ? '人物小传 · 进言切口 ↗' : 'Profile · Counsel topics ↗'}</span>
+                </span>
+              </button>
             </li>
           );
         })}
@@ -267,6 +293,7 @@ export function CouncilPanel({
           ))}
         </ol>
       </Section>
+      {profileCharacter ? <CharacterDialog character={profileCharacter} state={state} impression={readRoom(profileCharacter.id, rows, state.siegeWatch)} lang={lang} onClose={closeProfile} onTopic={prepareTopic} /> : null}
     </section>
   );
 }
