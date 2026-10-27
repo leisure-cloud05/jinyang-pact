@@ -3,7 +3,7 @@
  * locked until the chapter ends or is explicitly unlocked, and clearly labelled when on.
  */
 import { useCallback, useEffect, useState } from 'react';
-import type { Lang, ServerConfigView, SessionListItem, ViewMode } from '../../src/server/api-types';
+import type { Lang, ServerConfigView, SessionListItem, StateView, ViewMode } from '../../src/server/api-types';
 import { errorText, getJson, postJson, sessionUrl } from './api';
 import { CouncilPanel } from './components/CouncilPanel';
 import { DecisionModal } from './components/DecisionModal';
@@ -259,6 +259,7 @@ export function App() {
               {/* Keyed by session: another session starts with fresh panels (no carried-over edits or echoes). */}
               <div className="play-grid" key={sessionId}>
                 <div className="play-main">
+                  <RoundFocus state={s} />
                   <StoryPanel sessionId={sessionId} state={s} view={view} tick={live.tick} lang={lang} startNote={config?.scenario.startNote ?? null} />
                   <ActionBar
                     state={s}
@@ -333,6 +334,43 @@ function PlayGuide({ state }: { state: string }) {
         <li className={active === 2 ? 'guide-active' : ''}><span>02</span><strong>Speak or edit</strong><small>Council and draft</small></li>
         <li className={active === 3 ? 'guide-active' : ''}><span>03</span><strong>Respond</strong><small>End turn; decide if asked</small></li>
       </ol>
+    </section>
+  );
+}
+
+const ROUND_FOCUS = [
+  'Read the siege outlook and your goal. Decide what you want to discuss with the council.',
+  'Compare the council’s suggestions with the draft. Which terms support your goal?',
+  'Check whether any message has been sent and what remains only a draft.',
+  'Check the road for replies and consider the time a new message would take.',
+  'Recheck resources, consent and open decisions before time runs short.',
+] as const;
+
+function RoundFocus({ state }: { state: StateView }) {
+  if (state.control.state !== 'awaiting_player') return null;
+  const { round, maxRounds } = state.siegeWatch;
+  const focus = round >= maxRounds
+    ? 'This is the last round. Prioritize a concrete choice before ending your turn.'
+    : ROUND_FOCUS[Math.min(round - 1, ROUND_FOCUS.length - 1)] ?? ROUND_FOCUS[0];
+  const latest = state.negotiationTrack.cards.at(-1);
+  let next = 'You can speak to the council before changing the draft; only the characters can make their own commitments.';
+  if (latest?.stage === 'received' || latest?.stage === 'countered') {
+    next = 'A reply is known. Compare it with your goal before deciding whether to respond.';
+  } else if (latest?.stage === 'proposed' || latest?.stage === 'awaiting') {
+    next = 'A message is still on the road. Check the negotiation track before expecting a reply.';
+  } else if (state.document?.transmit.ok) {
+    next = 'The current draft can be sent. Check its terms and timing before choosing whether to transmit it.';
+  } else if (state.document) {
+    next = 'Review the draft and any objections; you can revise it, seek approval or leave it unsent.';
+  }
+  return (
+    <section className="round-focus" aria-label={`Round ${round} guidance`}>
+      <h2>Round {round} of {maxRounds} · What to focus on</h2>
+      <ul>
+        <li>{focus}</li>
+        <li>{next}</li>
+      </ul>
+      <p>Suggestions only — you decide what to do this round.</p>
     </section>
   );
 }
