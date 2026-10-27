@@ -171,7 +171,7 @@ export function openThread(s: WorldState, pair: PairId): Commitment | null {
 
 type Scalar = Exclude<keyof TermSet, 'secret_clauses'>;
 export const SCALARS: readonly Scalar[] = ['vassal', 'filial', 'cession', 'annual_silk', 'immediate_silk', 'aid_cavalry', 'aid_arrival_days', 'neutrality', 'marriage_alliance'];
-const CESSIONS = ['none', 'yanmen_north', 'sixteen_prefectures'];
+const CESSIONS = ['none', 'yanmen_north', 'lulong_only', 'sixteen_prefectures'];
 const DEFAULTS: Record<Scalar, unknown> = {
   vassal: false,
   filial: false,
@@ -270,7 +270,7 @@ export function limitViolations(t: TermSet, l: TermLimits, c: CoreConfig, pair: 
   for (const key of ['vassal', 'filial', 'neutrality', 'marriage_alliance'] as const) {
     if (l[key] !== null && t[key] !== l[key]) v.push(`${key} must be ${String(l[key])}`);
   }
-  const rank = (x: string) => CESSIONS.indexOf(x);
+  const rank = (x: string) => x === 'none' ? 0 : x === 'sixteen_prefectures' ? 2 : CESSIONS.includes(x) ? 1 : -1;
   if (l.cession_min !== null && rank(t.cession) < rank(l.cession_min)) v.push(`cession below ${l.cession_min}`);
   if (l.cession_max !== null && rank(t.cession) > rank(l.cession_max)) v.push(`cession beyond ${l.cession_max}`);
   for (const key of ['annual_silk', 'immediate_silk', 'aid_cavalry', 'aid_arrival_days'] as const) {

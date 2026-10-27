@@ -1,5 +1,5 @@
 /** Small accessible building blocks: dialog with focus trap, badge, tabs, empty state. */
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 
 export function Badge({ tone = 'muted', children, title }: { tone?: string; children: ReactNode; title?: string }) {
   return (
@@ -48,22 +48,11 @@ export function ErrorNote({ error }: { error: string | null | undefined }) {
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Modal dialog: labelled, focus trapped, Escape calls `onEscape` (if given). Focus returns to the opener. */
-export function Dialog({
-  title,
-  onEscape,
-  children,
-  wide = false,
-  tone,
-}: {
-  title: ReactNode;
-  onEscape?: () => void;
-  children: ReactNode;
-  wide?: boolean;
-  tone?: 'decision' | 'confirm';
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const titleId = useId();
+/**
+ * Modal focus for the element in `ref`: focuses `[data-autofocus]` or the first control, keeps Tab inside, Escape
+ * calls `onEscape` (if given); focus returns to the opener when it closes.
+ */
+export function useModalFocus(ref: RefObject<HTMLElement | null>, onEscape?: () => void): void {
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     const node = ref.current;
@@ -93,7 +82,26 @@ export function Dialog({
       document.removeEventListener('keydown', onKey);
       opener?.focus?.();
     };
-  }, [onEscape]);
+  }, [ref, onEscape]);
+}
+
+/** Modal dialog: labelled, focus trapped, Escape calls `onEscape` (if given). Focus returns to the opener. */
+export function Dialog({
+  title,
+  onEscape,
+  children,
+  wide = false,
+  tone,
+}: {
+  title: ReactNode;
+  onEscape?: () => void;
+  children: ReactNode;
+  wide?: boolean;
+  tone?: 'decision' | 'confirm';
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalFocus(ref, onEscape);
   return (
     <div className="backdrop">
       <div ref={ref} className={`dialog ${wide ? 'dialog-wide' : ''} ${tone ? `dialog-${tone}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>

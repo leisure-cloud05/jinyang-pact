@@ -171,20 +171,24 @@ terms_catalog:
     - key: cession
       label: { zh: 割地, en: cession of territory }
       type: enum
-      values: [none, yanmen_north, sixteen_prefectures]
+      values: [none, yanmen_north, lulong_only, sixteen_prefectures]
       value_labels:
         none: { zh: 不割地, en: no cession }
         yanmen_north: { zh: 雁门关以北诸州（不含卢龙一道）, en: the prefectures north of Yanmen Pass only (not the Lulong circuit) }
+        lulong_only: { zh: 仅卢龙一道（不含雁门关以北诸州）, en: the Lulong circuit only (not the prefectures north of Yanmen Pass) }
         sixteen_prefectures: { zh: 卢龙一道及雁门关以北诸州, en: the whole Lulong circuit and the prefectures north of Yanmen Pass }
-      burden_by_value: { none: 0, yanmen_north: 30, sixteen_prefectures: 60 }
+      burden_by_value: { none: 0, yanmen_north: 30, lulong_only: 30, sixteen_prefectures: 60 }
       applicable_pairs: [hedong-khitan]
       note:
         zh: >-
           未来义务，于"事捷之日"兑现，本章之内不执行。"雁门以北"是游戏设计的部分割让等级，史料中并无此单独选项；
+          lulong_only 为仅割让卢龙的游戏设计选项，与 yanmen_north 同属部分割让等级；
           sixteen_prefectures 指卢龙一道加雁门关以北诸州（合计十六州）。
         en: >-
           Future obligation, due 'on the day the enterprise succeeds'; never executed in this chapter. `yanmen_north` is
-          a GAME-DESIGN partial level with no separate historical counterpart; `sixteen_prefectures` = the Lulong circuit
+          a GAME-DESIGN partial level with no separate historical counterpart. `lulong_only` is an alternative game-design
+          partial cession of the Lulong circuit only, with the same burden and min/max concession rank as `yanmen_north`;
+          these limits measure concession level, not geographic inclusion. `sixteen_prefectures` = the Lulong circuit
           plus the prefectures north of Yanmen Pass (sixteen prefectures in all).
       source_refs: [zztj280-012]
     - key: annual_silk

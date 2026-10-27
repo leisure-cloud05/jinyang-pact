@@ -40,7 +40,7 @@ export const RELIEF_FACTION: FactionId = 'khitan';
 export const BESIEGER_FACTION: FactionId = 'tang';
 export const ASSISTANCE_PAIR: PairId = 'hedong-khitan';
 
-export const CESSION_VALUES = ['none', 'yanmen_north', 'sixteen_prefectures'] as const;
+export const CESSION_VALUES = ['none', 'yanmen_north', 'lulong_only', 'sixteen_prefectures'] as const;
 export type Cession = (typeof CESSION_VALUES)[number];
 
 export interface Localized {

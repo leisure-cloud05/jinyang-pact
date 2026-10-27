@@ -1703,14 +1703,667 @@ details > summary {
   }
 }
 
+/* ------------------------------------------------------------------ ending CG */
+/* Phases: map (the map's last move) → enter (into the illustration) → scene (camera and effects) → card. Every
+   animated layer rests on its final frame, so the card (or Skip) always shows a still. */
+.cg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 16px;
+  background: radial-gradient(ellipse at 50% 38%, #221a13 0%, #0d0a08 62%, #070504 100%);
+}
+.cg {
+  width: min(1180px, 100%);
+  /* Short enough that the picture and the card below it fit on screen together. */
+  width: min(1180px, 100%, max(420px, (100dvh - 200px) * 16 / 9));
+  display: grid;
+  gap: 18px;
+  color: #f3ead8;
+}
+.cg-frame {
+  position: relative;
+}
+.cg-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #1a1612;
+  box-shadow: 0 0 0 1px rgba(226, 191, 131, 0.22), 0 30px 80px rgba(0, 0, 0, 0.65);
+}
+/* A hairline gold mount inside the picture, and a fine film grain over it. */
+.cg-mount {
+  position: absolute;
+  inset: 12px;
+  z-index: 1;
+  border: 1px solid rgba(240, 210, 160, 0.3);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.cg-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.phase-enter .cg-grain,
+.phase-scene .cg-grain {
+  animation: cg-grain 0.5s steps(3) infinite;
+}
+@keyframes cg-grain {
+  33% {
+    background-position: 47px 23px;
+  }
+  66% {
+    background-position: -31px 61px;
+  }
+}
+.cg-art,
+.cg-quake,
+.cg-map {
+  position: absolute;
+  inset: 0;
+}
+.cg-art svg,
+.cg-art img,
+.cg-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cg-paper,
+.cg-grade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cg-paper {
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.01 0.02' numOctaves='4' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.62  0 0 0 0 0.52  0 0 0 0 0.4  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
+}
+.cg-grade {
+  mix-blend-mode: soft-light;
+}
+.cg-pact_concluded .cg-grade {
+  background: radial-gradient(ellipse at 68% 50%, rgba(255, 214, 150, 0.55), transparent 60%), linear-gradient(to bottom, rgba(90, 60, 110, 0.25), transparent 50%);
+}
+.cg-jinyang_falls .cg-grade {
+  background: radial-gradient(ellipse at 45% 55%, rgba(255, 140, 60, 0.5), transparent 58%), linear-gradient(to bottom, rgba(10, 10, 20, 0.45), transparent 55%);
+}
+.cg-no_assistance .cg-grade {
+  background: radial-gradient(ellipse at 38% 68%, rgba(255, 200, 120, 0.42), transparent 40%), linear-gradient(to bottom, rgba(40, 60, 110, 0.35), transparent 70%);
+}
+.cg-talks_failed .cg-grade {
+  background: radial-gradient(ellipse at 60% 45%, rgba(220, 235, 240, 0.45), transparent 50%), linear-gradient(to right, rgba(30, 50, 70, 0.3), transparent 40%, transparent 60%, rgba(30, 50, 70, 0.3));
+}
+.cg-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(10, 8, 6, 0.55) 100%);
+  pointer-events: none;
+}
+.cg-art {
+  opacity: 0;
+  transform-origin: 62% 62%;
+  will-change: transform, opacity;
+}
+.cg-pact_concluded .cg-art {
+  transform-origin: 66% 54%;
+}
+.cg-jinyang_falls .cg-art {
+  transform-origin: 44% 66%;
+}
+.cg-no_assistance .cg-art {
+  transform-origin: 38% 72%;
+}
+.cg-talks_failed .cg-art {
+  transform-origin: 59% 52%;
+}
+.phase-enter .cg-art {
+  opacity: 1;
+  transition: opacity 1s ease;
+}
+.phase-scene .cg-art,
+.phase-card .cg-art {
+  opacity: 1;
+}
+/* Camera: rests on its last frame (push: closer, pull: wider) and starts from the other end during the scene. */
+.camera-push .cg-art {
+  transform: scale(1.08);
+}
+.camera-push.phase-map .cg-art,
+.camera-push.phase-enter .cg-art {
+  transform: scale(1);
+}
+.camera-push.phase-scene .cg-art {
+  animation: cg-push 4.5s ease-out both;
+}
+.camera-pull .cg-art {
+  transform: scale(1);
+}
+.camera-pull.phase-map .cg-art,
+.camera-pull.phase-enter .cg-art {
+  transform: scale(1.08);
+}
+.camera-pull.phase-scene .cg-art {
+  animation: cg-pull 4.5s ease-out both;
+}
+@keyframes cg-push {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+@keyframes cg-pull {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.cg-jinyang_falls.phase-scene .cg-quake {
+  animation: cg-quake 0.5s ease-in-out 0.6s 4;
+}
+@keyframes cg-quake {
+  25% {
+    transform: translate(-5px, 3px);
+  }
+  50% {
+    transform: translate(4px, -3px);
+  }
+  75% {
+    transform: translate(-3px, -2px);
+  }
+}
+/* Scene effects run through enter and scene (5.5 s) and come to rest on their final frame. */
+.cg [class^='fx-'] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.phase-enter .fx-drift,
+.phase-scene .fx-drift {
+  animation: fx-drift 5.5s linear both;
+}
+.phase-enter .fx-drift-slow,
+.phase-scene .fx-drift-slow {
+  animation: fx-drift-back 5.5s ease-out both;
+}
+@keyframes fx-drift {
+  from {
+    transform: translateX(70px);
+  }
+}
+@keyframes fx-drift-back {
+  from {
+    transform: translateX(-50px);
+  }
+}
+.phase-enter .fx-wisp,
+.phase-scene .fx-wisp {
+  animation: fx-wisp 5.5s linear both;
+}
+@keyframes fx-wisp {
+  from {
+    transform: translateX(-40px);
+  }
+}
+.phase-enter .fx-birds,
+.phase-scene .fx-birds {
+  animation: fx-birds 5.5s ease-in-out both;
+}
+@keyframes fx-birds {
+  from {
+    transform: translate(-90px, 18px);
+  }
+}
+.phase-enter .fx-motes,
+.phase-scene .fx-motes {
+  animation: fx-motes 5.5s ease-in-out both;
+}
+@keyframes fx-motes {
+  from {
+    transform: translate(-24px, 36px);
+    opacity: 0.2;
+  }
+}
+.phase-enter .fx-thread,
+.phase-scene .fx-thread {
+  animation: fx-thread 5.5s ease-out both;
+}
+@keyframes fx-thread {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+.fx-rays {
+  opacity: 0.18;
+}
+.phase-enter .fx-rays,
+.phase-scene .fx-rays {
+  animation: fx-rays 5.5s ease-in-out both;
+}
+@keyframes fx-rays {
+  from {
+    opacity: 0.05;
+  }
+}
+.phase-enter .fx-flag,
+.phase-scene .fx-flag,
+.phase-enter .fx-sway,
+.phase-scene .fx-sway {
+  transform-origin: left center;
+  animation: fx-sway 1.4s ease-in-out 4 alternate;
+}
+@keyframes fx-sway {
+  to {
+    transform: skewY(-6deg) scaleX(0.94);
+  }
+}
+.phase-enter .fx-smoke,
+.phase-scene .fx-smoke {
+  animation: fx-smoke 5.5s ease-out both;
+}
+@keyframes fx-smoke {
+  from {
+    transform: translateY(60px) scale(0.9);
+    opacity: 0.4;
+  }
+}
+.phase-enter .fx-embers,
+.phase-scene .fx-embers {
+  animation: fx-embers 5.5s linear both;
+}
+@keyframes fx-embers {
+  from {
+    transform: translateY(80px);
+    opacity: 0.2;
+  }
+}
+.fx-dusk {
+  opacity: 0.38;
+}
+.phase-enter .fx-dusk,
+.phase-scene .fx-dusk {
+  animation: fx-dusk 5.5s ease-in both;
+}
+@keyframes fx-dusk {
+  from {
+    opacity: 0;
+  }
+}
+.phase-enter .fx-flicker,
+.phase-scene .fx-flicker {
+  animation: fx-flicker 0.9s ease-in-out 6 alternate;
+}
+@keyframes fx-flicker {
+  to {
+    opacity: 0.7;
+  }
+}
+.cg .fx-walk {
+  transform-origin: center bottom;
+  transform: translateY(-14px) scale(0.82);
+}
+.phase-enter .fx-walk,
+.phase-scene .fx-walk {
+  animation: fx-walk 5.5s linear both;
+}
+@keyframes fx-walk {
+  from {
+    transform: none;
+  }
+}
+.phase-enter .fx-drop,
+.phase-scene .fx-drop {
+  animation: fx-drop 0.9s cubic-bezier(0.3, 0.7, 0.4, 1) 0.4s both;
+}
+@keyframes fx-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-180px) rotate(-10deg);
+  }
+}
+/* The map: shown first, then fades as the illustration comes in. */
+.cg-map {
+  transition: opacity 0.8s ease;
+}
+.phase-enter .cg-map,
+.phase-scene .cg-map,
+.phase-card .cg-map {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, visibility 0s 0.8s;
+}
+.cg-map .cg-route {
+  fill: none;
+  stroke: #7a5130;
+  stroke-width: 6;
+  stroke-dasharray: 1 13;
+  stroke-linecap: round;
+}
+.cg-map .cg-route-south,
+.cg-map .cg-route-far {
+  stroke: #9a8463;
+  stroke-width: 4;
+  opacity: 0.55;
+}
+.cg-map .cg-place rect,
+.cg-map .cg-place path {
+  fill: #4e3c2c;
+}
+.cg-map .cg-city-jinyang rect {
+  fill: #a63e2d;
+}
+.cg-map .cg-place .cg-gate {
+  fill: #f3e8cf;
+}
+.cg-map .cg-khitan path:last-of-type {
+  fill: none;
+  stroke: #4e3c2c;
+  stroke-width: 3;
+}
+.cg-map .cg-label {
+  fill: #33271d;
+  font-family: var(--serif);
+  font-size: 34px;
+  letter-spacing: 0.04em;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #f3e8cf;
+  stroke-width: 7px;
+  stroke-linejoin: round;
+}
+.cg-map .cg-label-small {
+  font-size: 24px;
+  font-style: italic;
+  fill: #5a4632;
+}
+.cg-map .cg-pass path {
+  fill: none;
+  stroke: #5a4632;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.cg-map .cg-pass rect {
+  fill: #5a4632;
+}
+.cg-map .cg-camp {
+  transform: translate(var(--dx), var(--dy));
+}
+.cg-map .cg-camp path {
+  fill: #7a2a20;
+  stroke: #7a2a20;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.cg-map .cg-cartouche rect {
+  fill: rgba(243, 232, 207, 0.75);
+  stroke: #6b5440;
+  stroke-width: 2;
+}
+.cg-map .cg-cartouche rect + rect {
+  fill: none;
+  stroke-width: 1;
+}
+.cg-map .cg-cartouche text {
+  fill: #3b2e24;
+  font-family: var(--serif);
+  font-size: 30px;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+}
+.cg-map .cg-compass circle {
+  fill: rgba(243, 232, 207, 0.6);
+  stroke: #6b5440;
+  stroke-width: 2;
+}
+.cg-map .cg-compass path {
+  fill: #b9a27c;
+}
+.cg-map .cg-compass .cg-compass-north {
+  fill: #a63e2d;
+}
+.cg-map .cg-compass text {
+  fill: #4e3c2c;
+  font-family: var(--serif);
+  font-size: 22px;
+  text-anchor: middle;
+}
+.cg-map .cg-courier circle {
+  fill: #a63e2d;
+  stroke: #fff4e0;
+  stroke-width: 4;
+}
+.cg-map .cg-envelope {
+  fill: none;
+  stroke: #fff4e0;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+.cg-map .cg-seal {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: stamp-down 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.2) 1.25s both;
+}
+.cg-map .cg-seal rect {
+  fill: rgba(255, 244, 224, 0.85);
+  stroke: #a63e2d;
+  stroke-width: 6;
+}
+.cg-map .cg-seal text {
+  fill: #a63e2d;
+  font-family: var(--serif);
+  font-size: 46px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.cg-jinyang_falls .cg-camp {
+  animation: cg-close-in 1.3s ease-in 0.2s forwards;
+}
+@keyframes cg-close-in {
+  to {
+    transform: translate(calc(var(--dx) * 0.38), calc(var(--dy) * 0.38));
+  }
+}
+.cg-jinyang_falls .cg-city-jinyang rect {
+  animation: cg-fall 0.5s ease 1.2s forwards;
+}
+@keyframes cg-fall {
+  to {
+    fill: #2a1a14;
+  }
+}
+.cg-no_assistance .cg-route-north {
+  animation: cg-route-out 1.2s ease 0.3s forwards;
+}
+@keyframes cg-route-out {
+  to {
+    opacity: 0.06;
+  }
+}
+.cg-talks_failed .cg-route-north {
+  animation: cg-route-closed 0.5s ease 1.25s forwards;
+}
+@keyframes cg-route-closed {
+  to {
+    stroke: #8c8478;
+    opacity: 0.3;
+  }
+}
+.cg-epilogue {
+  position: absolute;
+  top: 26px;
+  left: 28px;
+  z-index: 1;
+  margin: 0;
+  padding: 4px 12px;
+  border: 1px solid rgba(240, 210, 160, 0.4);
+  border-radius: 2px;
+  background: rgba(16, 11, 7, 0.45);
+  color: #f3dfb4;
+  font-family: var(--serif);
+  font-size: 0.8rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  opacity: 0;
+}
+.phase-scene .cg-epilogue,
+.phase-card .cg-epilogue {
+  opacity: 1;
+  transition: opacity 0.8s ease 0.4s;
+}
+.cg-skip {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  z-index: 2;
+  padding: 5px 16px;
+  border: 1px solid rgba(240, 210, 160, 0.45);
+  border-radius: 999px;
+  background: rgba(16, 11, 7, 0.5);
+  color: #fbeed3;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+.cg-skip:hover {
+  background: rgba(16, 11, 7, 0.8);
+}
+.cg-caption {
+  margin-top: 14px;
+  opacity: 0;
+}
+.cg-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  color: #e2bf83;
+  font-size: 0.74rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.cg-kicker::before {
+  content: '';
+  width: 28px;
+  border-top: 1px solid currentColor;
+}
+.cg-caption h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #fdf3df;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.55);
+}
+.cg-caption p {
+  margin: 8px 0 0;
+  max-width: 58ch;
+  color: #efe3cc;
+  font-family: var(--serif);
+  font-size: 1.04rem;
+  line-height: 1.6;
+}
+.phase-card .cg-caption {
+  opacity: 1;
+  transition: opacity 1.2s ease;
+}
+.cg-card {
+  display: grid;
+  gap: 14px;
+  opacity: 0;
+  visibility: hidden;
+}
+.phase-card .cg-card {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1s ease 0.8s;
+}
+.cg-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 0;
+  margin: 0;
+}
+.cg-summary div {
+  padding: 2px 18px;
+  border-left: 1px solid rgba(226, 191, 131, 0.3);
+}
+.cg-summary dt {
+  color: #d9b77c;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.cg-summary dd {
+  margin: 4px 0 0;
+  color: #f8eedb;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+.cg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+.cg-actions .btn-secondary {
+  border-color: rgba(226, 191, 131, 0.55);
+  background: transparent;
+  color: #f3e3c3;
+}
+.cg-actions .btn-secondary:hover:not(:disabled) {
+  border-color: #e2bf83;
+  background: rgba(226, 191, 131, 0.12);
+}
+.cg-actions .btn-ghost {
+  color: #d8cab0;
+}
+.is-skipped,
+.is-skipped * {
+  animation: none !important;
+  transition: none !important;
+}
+/* Wide screens: the title and lines sit on the picture's quiet lower band; phones keep them below the picture. */
+@media (min-width: 760px) {
+  .cg-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    margin: 0;
+    padding: 64px 44px 30px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(to top, rgba(10, 7, 5, 0.9), rgba(10, 7, 5, 0.6) 55%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .alert-critical,
   .stamp-fresh,
   .token-travel,
-  .road-end.pulse .avatar {
-    animation: none;
+  .road-end.pulse .avatar,
+  .cg * {
+    animation: none !important;
   }
-  .token {
-    transition: none;
+  .token,
+  .cg * {
+    transition: none !important;
   }
 }

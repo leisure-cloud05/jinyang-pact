@@ -9,12 +9,14 @@ import { CouncilPanel } from './components/CouncilPanel';
 import { DecisionModal } from './components/DecisionModal';
 import { DirectorDialog, NewSessionDialog, TransmitDialog } from './components/dialogs';
 import { DraftPanel } from './components/DraftPanel';
+import { EndingPlayer, endingPlayed, markEndingPlayed, preloadEndingArt } from './components/EndingPlayer';
 import { InspectorPanel } from './components/InspectorPanel';
 import { SiegeWatch, topAlert } from './components/SiegeWatch';
 import { StoryPanel } from './components/StoryPanel';
 import { TimelinePanel } from './components/TimelinePanel';
 import { Badge, ErrorNote, Tabs } from './components/ui';
 import { UsagePanel } from './components/UsagePanel';
+import { endingFacts, isEndingKind } from './ending';
 import { useLiveSession, usePref } from './hooks';
 import { CATEGORY_LABELS, CONTROL_LABELS, TERMINAL_LABELS, t } from './labels';
 
@@ -39,13 +41,34 @@ export function App() {
   const [banner, setBanner] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showEnding, setShowEnding] = useState(false);
+  const [reviewPact, setReviewPact] = useState(false);
   const live = useLiveSession(sessionId, view);
   const s = live.state;
   const lang: Lang = 'en';
+  const terminalKind = s?.world.terminal?.kind ?? null;
+  const endingKind = terminalKind !== null && isEndingKind(terminalKind) ? terminalKind : null;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => preloadEndingArt(), []);
+
+  // The ending CG plays by itself the first time this viewer sees the chapter end; a reload does not replay it.
+  useEffect(() => {
+    if (!sessionId || !endingKind || s?.session.sessionId !== sessionId || s.control.state !== 'finished') return;
+    if (endingPlayed(sessionId, endingKind)) return;
+    markEndingPlayed(sessionId, endingKind);
+    setShowEnding(true);
+  }, [sessionId, endingKind, s?.session.sessionId, s?.control.state]);
+
+  // After the CG has closed (and handed focus back), bring the pact's letters into view.
+  useEffect(() => {
+    if (!reviewPact || showEnding) return;
+    setReviewPact(false);
+    document.getElementById('negotiation-title')?.scrollIntoView({ block: 'start' });
+  }, [reviewPact, showEnding]);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -71,6 +94,7 @@ export function App() {
       setSessionId(id);
       setView('player');
       setModalHidden(false);
+      setShowEnding(false);
       setArea('play');
       void loadSessions();
     },
@@ -113,9 +137,20 @@ export function App() {
     else setAskDirector(true);
   };
 
+  const reviewEnding = (): void => {
+    setShowEnding(false);
+    if (endingKind !== 'pact_concluded') {
+      setArea('timeline');
+      return;
+    }
+    setArea('play');
+    setReviewPact(true);
+  };
+
   const control = s?.control;
   const pause = s?.pendingPause ?? null;
   const needsNew = config !== null && !sessionId;
+  const facts = s ? endingFacts(s) : null;
 
   return (
     <div className={`app ${view === 'director' ? 'is-director' : ''}`}>
@@ -231,6 +266,7 @@ export function App() {
                     onAdvance={() => void advance()}
                     onOpenDecision={() => setModalHidden(false)}
                     onReview={() => setArea('timeline')}
+                    onWatchEnding={endingKind ? () => setShowEnding(true) : null}
                   />
                 </div>
                 <aside className="play-side" aria-label="Council and draft">
@@ -250,6 +286,7 @@ export function App() {
         ) : null}
       </main>
 
+      {showEnding && endingKind && facts ? <EndingPlayer kind={endingKind} facts={facts} onClose={() => setShowEnding(false)} onReview={reviewEnding} /> : null}
       {s && sessionId && pause && control?.state === 'awaiting_decision' && !modalHidden ? (
         <DecisionModal key={pause.id} sessionId={sessionId} state={s} pause={pause} lang={lang} onHide={() => setModalHidden(true)} onDone={live.refresh} />
       ) : null}
@@ -300,7 +337,21 @@ function PlayGuide({ state }: { state: string }) {
   );
 }
 
-function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview }: { state: NonNullable<ReturnType<typeof useLiveSession>['state']>; busy: boolean; onAdvance: () => void; onOpenDecision: () => void; onReview: () => void }) {
+function ActionBar({
+  state,
+  busy,
+  onAdvance,
+  onOpenDecision,
+  onReview,
+  onWatchEnding,
+}: {
+  state: NonNullable<ReturnType<typeof useLiveSession>['state']>;
+  busy: boolean;
+  onAdvance: () => void;
+  onOpenDecision: () => void;
+  onReview: () => void;
+  onWatchEnding: (() => void) | null;
+}) {
   const c = state.control;
   const watch = state.siegeWatch;
   const alert = topAlert(watch);
@@ -365,6 +416,11 @@ function ActionBar({ state, busy, onAdvance, onOpenDecision, onReview }: { state
           <button type="button" className="btn-secondary" onClick={onReview}>
             Review the timeline
           </button>
+          {onWatchEnding ? (
+            <button type="button" className="btn-secondary" onClick={onWatchEnding}>
+              Watch the ending
+            </button>
+          ) : null}
         </>
       );
       break;

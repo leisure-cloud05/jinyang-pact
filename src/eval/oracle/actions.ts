@@ -18,7 +18,7 @@ const CLAUSE = z.string().regex(/^[A-Za-z][A-Za-z0-9_-]*$/);
 export const OracleTermArgs = z.strictObject({
   vassal: z.boolean(),
   filial: z.boolean(),
-  cession: z.enum(['none', 'yanmen_north', 'sixteen_prefectures']),
+  cession: z.enum(['none', 'yanmen_north', 'lulong_only', 'sixteen_prefectures']),
   annual_silk: INT0,
   immediate_silk: INT0,
   aid_cavalry: INT0,
@@ -31,7 +31,7 @@ export const OracleTermArgs = z.strictObject({
 const Suggestion = z.strictObject({
   vassal: z.boolean().nullable(),
   filial: z.boolean().nullable(),
-  cession: z.enum(['none', 'yanmen_north', 'sixteen_prefectures']).nullable(),
+  cession: z.enum(['none', 'yanmen_north', 'lulong_only', 'sixteen_prefectures']).nullable(),
   annual_silk: INT0.nullable(),
   immediate_silk: INT0.nullable(),
   aid_cavalry: INT0.nullable(),

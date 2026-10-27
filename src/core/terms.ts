@@ -132,7 +132,7 @@ export function payerFor(key: ScalarTermKey | 'secret_clauses', pair: PairId): F
 // ---------------------------------------------------------------------------------------------------------------
 
 export function cessionRank(value: Cession): number {
-  return CESSION_VALUES.indexOf(value);
+  return value === 'none' ? 0 : value === 'sixteen_prefectures' ? 2 : 1;
 }
 
 export function isDefaultValue(key: ScalarTermKey, value: TermSet[ScalarTermKey]): boolean {

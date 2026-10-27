@@ -188,7 +188,7 @@ export function DraftPanel({ sessionId, state, lang, onChanged, onTransmit }: { 
       ) : null}
       <ErrorNote error={error} />
 
-      <Section title="Negotiation as you know it">
+      <Section title="Negotiation as you know it" id="negotiation-title">
         <NegotiationTrack track={state.negotiationTrack} negotiation={state.world.negotiation} catalog={catalog} lang={lang} draft={doc} terminal={state.world.terminal} />
       </Section>
 

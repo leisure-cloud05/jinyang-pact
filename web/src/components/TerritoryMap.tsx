@@ -5,7 +5,7 @@ import type { Lang } from '../../../src/server/api-types';
 export function TerritoryMap({ cession = 'none', lang = 'en', children }: { cession?: string; lang?: Lang; children?: ReactNode }) {
   const title = useId();
   const west = cession === 'yanmen_north' || cession === 'sixteen_prefectures';
-  const east = cession === 'sixteen_prefectures';
+  const east = cession === 'lulong_only' || cession === 'sixteen_prefectures';
   return (
     <svg className="territory-map" viewBox="0 0 640 340" role="img" aria-labelledby={title}>
       <title id={title}>{lang === 'zh' ? '割地与信使路线示意图' : 'Schematic territory and courier map'}</title>
@@ -25,7 +25,7 @@ export function TerritoryMap({ cession = 'none', lang = 'en', children }: { cess
 }
 
 export function CessionPreview({ value, lang }: { value: string; lang: Lang }) {
-  const label = value === 'sixteen_prefectures' ? (lang === 'zh' ? '十六州范围' : 'Sixteen Prefectures') : value === 'yanmen_north' ? (lang === 'zh' ? '仅雁门以北' : 'North of Yanmen only') : (lang === 'zh' ? '不割地' : 'No cession');
+  const label = value === 'sixteen_prefectures' ? (lang === 'zh' ? '十六州范围' : 'Sixteen Prefectures') : value === 'yanmen_north' ? (lang === 'zh' ? '仅雁门以北' : 'North of Yanmen only') : value === 'lulong_only' ? (lang === 'zh' ? '仅卢龙一道' : 'Lulong circuit only') : (lang === 'zh' ? '不割地' : 'No cession');
   return (
     <figure className="cession-preview">
       <figcaption><strong>{lang === 'zh' ? '拟议割地' : 'Proposed cession'}</strong><span aria-live="polite">{label}</span></figcaption>

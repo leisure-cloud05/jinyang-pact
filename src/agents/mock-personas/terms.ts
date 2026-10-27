@@ -8,10 +8,10 @@ import type { Cession, FactionId, PairId, TermLimits } from '../../core/types.js
 import type { CatalogEntryView, CharacterContext, OfferContextView, PreferenceView } from '../context.js';
 import type { TermsView } from '../util.js';
 
-export const CESSION_ORDER: readonly Cession[] = ['none', 'yanmen_north', 'sixteen_prefectures'];
+export const CESSION_ORDER: readonly Cession[] = ['none', 'yanmen_north', 'lulong_only', 'sixteen_prefectures'];
 
 export function cessionRank(c: Cession): number {
-  return CESSION_ORDER.indexOf(c);
+  return c === 'none' ? 0 : c === 'sixteen_prefectures' ? 2 : 1;
 }
 
 export function toArgs(t: TermsView | TermSetArgs): TermSetArgs {

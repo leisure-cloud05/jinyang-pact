@@ -63,9 +63,13 @@ try {
   await page.waitForFunction(() => document.querySelector('.journey-map').dataset.playing === 'true');
   await map.getByRole('button', { name: 'Skip' }).click();
   const select = page.getByLabel('Cession of territory', { exact: true });
-  for (const [value, count] of [['none', 0], ['yanmen_north', 1], ['sixteen_prefectures', 2]]) {
+  for (const [value, count] of [['none', 0], ['yanmen_north', 1], ['lulong_only', 1], ['sixteen_prefectures', 2]]) {
     await select.selectOption(value);
     assert.equal(await page.locator('.cession-preview .is-selected').count(), count);
+    if (value === 'lulong_only') {
+      assert.equal(await page.locator('.cession-preview .map-region').nth(0).getAttribute('class'), 'map-region ');
+      assert.match(await page.locator('.cession-preview .map-region').nth(1).getAttribute('class'), /is-selected/);
+    }
   }
   const number = page.getByLabel('Annual silk', { exact: true });
   await number.fill('50000');

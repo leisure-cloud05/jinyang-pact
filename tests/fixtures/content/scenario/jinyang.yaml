@@ -56,12 +56,13 @@ terms_catalog:
     - key: cession
       label: { zh: 割地, en: territorial cession }
       type: enum
-      values: [none, yanmen_north, sixteen_prefectures]
+      values: [none, yanmen_north, lulong_only, sixteen_prefectures]
       value_labels:
         none: { zh: 不割地, en: no cession }
         yanmen_north: { zh: 雁门以北, en: north of Yanmen }
+        lulong_only: { zh: 仅卢龙一道（不含雁门关以北诸州）, en: the Lulong circuit only (not the prefectures north of Yanmen Pass) }
         sixteen_prefectures: { zh: 幽云十六州, en: the Sixteen Prefectures }
-      burden_by_value: { none: 0, yanmen_north: 25, sixteen_prefectures: 60 }
+      burden_by_value: { none: 0, yanmen_north: 25, lulong_only: 25, sixteen_prefectures: 60 }
       applicable_pairs: [hedong-khitan]
       note: { zh: 雁门以北为游戏设计的部分割让等级。, en: yanmen_north is a game-design partial level. }
     - key: annual_silk

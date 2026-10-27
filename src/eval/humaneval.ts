@@ -72,6 +72,7 @@ function termsZh(t: Record<string, unknown> | null | undefined): string {
   if (t.vassal) parts.push('称臣');
   if (t.filial) parts.push('以父礼事之');
   if (t.cession === 'yanmen_north') parts.push('割雁门以北诸州');
+  if (t.cession === 'lulong_only') parts.push('仅割卢龙一道');
   if (t.cession === 'sixteen_prefectures') parts.push('割卢龙及雁门以北十六州');
   if (Number(t.annual_silk) > 0) parts.push(`岁帛${String(t.annual_silk)}匹`);
   if (Number(t.immediate_silk) > 0) parts.push(`即付帛${String(t.immediate_silk)}匹`);

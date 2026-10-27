@@ -33,6 +33,7 @@ export const RESOURCE_LABELS: Record<ResourceKey, Localized & { unitZh: string; 
 const CESSION_FALLBACK: Record<Cession, Localized> = {
   none: { zh: '不割地', en: 'no cession' },
   yanmen_north: { zh: '雁门关以北诸州', en: 'the prefectures north of Yanmen Pass' },
+  lulong_only: { zh: '仅卢龙一道（不含雁门关以北诸州）', en: 'the Lulong circuit only (not the prefectures north of Yanmen Pass)' },
   sixteen_prefectures: { zh: '卢龙一道及雁门关以北诸州', en: 'the Lulong circuit and the prefectures north of Yanmen Pass' },
 };
 

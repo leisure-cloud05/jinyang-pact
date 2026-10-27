@@ -76,6 +76,10 @@ Part 3 shows the play aids in a fresh **C3 — Stricter acceptable terms** sessi
     dispatch. Shi's seal stamps onto the draft and his courier sets out for the Khitan court; on day 10 the Khitan
     counter-offer arrives at Jinyang, listing what it changed. *Takeaway: the cards follow what the clerk knows; a
     letter moves by the courier's schedule, and a reply appears only once it reaches headquarters.*
+13. **Ending.** Play on until the chapter ends (in C3 the talks fail on day 25). A short silent ending plays: the
+    map's last move, an illustration, then the ending card with the result. **Skip** shows the card at once,
+    **Replay ending** plays it again, and **Watch the ending** below the story brings it back later. *Takeaway: the
+    ending shows where the choices led, built from the chapter's own data.*
 
 ## If something goes wrong
 
